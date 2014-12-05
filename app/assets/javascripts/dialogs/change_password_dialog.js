@@ -7,16 +7,16 @@ chorus.dialogs.ChangePassword = chorus.dialogs.Base.extend({
     persistent:true,
 
     save:function (e) {
-        e.preventDefault();
+        e && e.preventDefault();
 
-        this.bindings.add(this.model, "saved", this.saved);
+        this.listenTo(this.model, "saved", this.saved);
         this.model.save({
             password:this.$("input[name=password]").val(),
             passwordConfirmation:this.$("input[name=passwordConfirmation]").val()
-        })
+        });
     },
 
     saved:function () {
-        $(document).trigger("close.facebox");
+        this.closeModal();
     }
 });

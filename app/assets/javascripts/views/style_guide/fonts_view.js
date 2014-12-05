@@ -28,8 +28,7 @@
     combinations = {
         "12 normal text3":"secondary-text-small, activity timestamps,...",
         "12 normal text2":"comment timestamp in workspace list sidebar, results console message",
-        "12 semibold text1":"font-normal-gamma",
-        "12 semibold text2":"font-content-details (sub-header), comment author name in workspace list",
+        "12 semibold text2":"comment author name in workspace list",
         "12 semibold link":"sidebar actions links",
 
         "13 normal text2":"dialog-label",
@@ -46,7 +45,7 @@
         "16 normal text1":"default font, user show page",
         "16 normal text4":"disabled buttons",
 
-        "18 normal text2":"instance name in instance list",
+        "18 normal text2":"data source name in data source list",
         "18 normal link":"user and workfile names on list pages",
         "18 semibold link":"workspace names on dashboard workspace list",
 

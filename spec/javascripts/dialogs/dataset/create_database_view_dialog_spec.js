@@ -1,7 +1,7 @@
 describe("chorus.dialogs.CreateDatabaseView", function() {
     beforeEach(function() {
-        this.dataset = fixtures.chorusView({workspace: {id: "42"}});
-        this.schema = rspecFixtures.schema();
+        this.dataset = backboneFixtures.workspaceDataset.chorusView({workspace: {id: "42"}});
+        this.schema = backboneFixtures.schema();
         spyOn(this.schema, "canonicalName").andReturn("I.D.S");
         spyOn(this.dataset, "schema").andReturn(this.schema);
         this.view = new chorus.dialogs.CreateDatabaseView({ pageModel: this.dataset });
@@ -13,7 +13,7 @@ describe("chorus.dialogs.CreateDatabaseView", function() {
     });
 
     it('should have a close link', function() {
-        var $cancelButton = this.view.$('.modal_controls .cancel');
+        var $cancelButton = this.view.$('.form_controls .cancel');
         expect($cancelButton).toContainTranslation("actions.cancel");
     });
 
@@ -47,21 +47,6 @@ describe("chorus.dialogs.CreateDatabaseView", function() {
     });
 
     describe("input", function() {
-        describe("invalid input", function() {
-            beforeEach(function() {
-                this.view.$("input#create_database_view_name").val("0123");
-                this.view.$("button.submit").click();
-            });
-
-            it("rejects names that don't match the ChorusIdentifier64 rules", function() {
-                expect(this.view.$("input#create_database_view_name")).toHaveClass("has_error");
-            });
-
-            itAcceptsValidInput();
-        });
-
-        itAcceptsValidInput();
-
         function itAcceptsValidInput() {
             describe("valid input", function() {
                 beforeEach(function() {
@@ -83,7 +68,7 @@ describe("chorus.dialogs.CreateDatabaseView", function() {
                 context("save succeeds", function() {
                     it("shows a toast", function() {
                         spyOn(chorus, "toast");
-                        this.server.completeSaveFor(this.view.model, {id: 'foo', workspace: {id: 25} });
+                        this.server.completeCreateFor(this.view.model, {id: 'foo', workspace: {id: 25} });
                         expect(chorus.toast).toHaveBeenCalledWith("create_database_view.toast_success", {
                             viewName: "a_name",
                             canonicalName: "I.D.S"
@@ -93,7 +78,7 @@ describe("chorus.dialogs.CreateDatabaseView", function() {
                     context("and returned data includes a workspace", function() {
                         it("navigates to show page of new db view", function() {
                             spyOn(chorus.router, 'navigate');
-                            this.server.completeSaveFor(this.view.model, {id: 'foo', workspace: {id: 25} });
+                            this.server.completeCreateFor(this.view.model, {id: 'foo', workspace: {id: 25} });
                             expect(chorus.router.navigate).toHaveBeenCalledWith("#/workspaces/25/datasets/foo");
                         });
                     });
@@ -101,7 +86,7 @@ describe("chorus.dialogs.CreateDatabaseView", function() {
                     context("and returned data does not have a workspace", function() {
                         it("uses the Chorus View's workspace to navigate to the show page of the new db view", function() {
                             spyOn(chorus.router, 'navigate');
-                            this.server.completeSaveFor(this.view.model, { id: 'foo' });
+                            this.server.completeCreateFor(this.view.model, { id: 'foo' });
                             expect(chorus.router.navigate).toHaveBeenCalledWith("#/workspaces/42/datasets/foo");
                         });
                     });
@@ -114,5 +99,20 @@ describe("chorus.dialogs.CreateDatabaseView", function() {
                 });
             });
         }
+
+        describe("invalid input", function() {
+            beforeEach(function() {
+                this.view.$("input#create_database_view_name").val("0123");
+                this.view.$("button.submit").click();
+            });
+
+            it("rejects names that don't match the ChorusIdentifier64 rules", function() {
+                expect(this.view.$("input#create_database_view_name")).toHaveClass("has_error");
+            });
+
+            itAcceptsValidInput();
+        });
+
+        itAcceptsValidInput();
     });
 });

@@ -1,0 +1,12 @@
+DROP DATABASE IF EXISTS "<%= database_name %>";
+DROP DATABASE IF EXISTS "<%= database_name %>_priv";
+DROP DATABASE IF EXISTS "<%= database_name %>_with_''_";
+DROP DATABASE IF EXISTS "<%= database_name %>_wo_pub";
+-- DROP DATABASE IF EXISTS "<%= database_name %>_with_""_";
+
+CREATE DATABASE "<%= database_name %>" OWNER gpadmin;
+REVOKE CONNECT ON DATABASE "<%= database_name %>" FROM PUBLIC;
+CREATE DATABASE "<%= database_name %>_priv" OWNER gpadmin;
+CREATE DATABASE "<%= database_name %>_with_''_" OWNER gpadmin;
+CREATE DATABASE "<%= database_name %>_wo_pub" OWNER gpadmin;
+-- CREATE DATABASE "<%= database_name %>_with_""_" OWNER gpadmin;

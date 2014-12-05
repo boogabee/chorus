@@ -9,7 +9,15 @@
         }
     };
 
-    $.jGrowl.defaults.closerTemplate = '';
+    Messenger.options = {
+        extraClasses: 'messenger-fixed messenger-on-top messenger-on-right',
+        theme: 'future',
+        messageDefaults: {
+            hideAfter: 3,
+            showCloseButton: true,
+            hideOnNavigate: false
+        }
+    };
 
     _.mixin(_.str.exports());
 
@@ -28,6 +36,6 @@
     if (!_.isFunction(String.prototype.trim)) {
         String.prototype.trim = function() {
             return _.trim(this);
-        }
+        };
     }
 })();

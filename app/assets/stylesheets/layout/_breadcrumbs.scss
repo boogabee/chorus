@@ -1,20 +1,19 @@
 .breadcrumbs {
-    @include background-image(linear-gradient($body-glow-color, $body-background-color));
-    @include ellipsis;
-    height: $breadcrumbs-height;
-
     ol {
         padding: $padding-y ($padding-x + $guts-padding + 1px);
     }
 
     li {
-        display: inline-block;
+        display: inline;
         @include font-normal-beta;
+        word-break: break-all;
+        word-wrap: break-word;
+        max-width: 245px;
+        vertical-align: top;
     }
 
     a {
         color : $color-text1;
-        border-bottom : 1px dotted $color-text1;
         margin-right : $padding-x;
     }
 

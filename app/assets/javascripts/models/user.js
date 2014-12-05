@@ -18,7 +18,7 @@ chorus.models.User = chorus.models.Base.extend({
 
     activeWorkspaces: function() {
         if(!this._activeWorkspaces) {
-            this._activeWorkspaces = new chorus.collections.WorkspaceSet([], {userId: this.get("id"), active: true})
+            this._activeWorkspaces = new chorus.collections.WorkspaceSet([], {userId: this.get("id"), active: true});
         }
 
         return this._activeWorkspaces;
@@ -48,7 +48,7 @@ chorus.models.User = chorus.models.Base.extend({
 
     fetchImageUrl: function (options) {
         var size = (options && options.size) || "original";
-        url = this.get("image") && this.get("image")[size];
+        var url = this.get("image") && this.get("image")[size];
         return url && new URI(url)
             .addSearch({ iebuster: chorus.cachebuster() })
             .toString();
@@ -93,7 +93,7 @@ chorus.models.User = chorus.models.Base.extend({
     },
 
     maxImageSize:function () {
-      return chorus.models.Config.instance().get("fileSizesMbUserIcon");
+        return chorus.models.Config.instance().get("fileSizesMbUserIcon");
     },
 
     attrToLabel:{

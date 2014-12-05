@@ -1,6 +1,6 @@
 describe("chorus.models.WorkfileVersion", function() {
     beforeEach(function() {
-        this.model = rspecFixtures.workfileVersion({
+        this.model = backboneFixtures.workfileVersion({
             id: 1,
             versionInfo: {
                 id: 123,
@@ -17,10 +17,10 @@ describe("chorus.models.WorkfileVersion", function() {
 
     describe("destroy", function() {
         it("notifies the page of workfile_version:deleted event", function() {
-            spyOn(chorus.PageEvents, "broadcast");
+            spyOn(chorus.PageEvents, "trigger");
             this.model.destroy();
             this.server.completeDestroyFor(this.model);
-            expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("workfile_version:deleted", 2);
+            expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("workfile_version:deleted", 2);
         });
     });
 });

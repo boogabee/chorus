@@ -1,0 +1,30 @@
+{{#if canUpdate}}
+    <div class="actions">
+        <label>{{t "sidebar.selected.one"}}</label>
+        <ul>
+            <li><a class="edit_job dialog" href="#">{{t "job.actions.edit_job"}}</a></li>
+
+            {{#if ableToRun}}
+                <li><a class="run_job dialog">{{t "job.actions.run_job"}}</a></li>
+            {{else}}
+                <li><span class="disabled run_job dialog">{{t "job.actions.run_job"}}</span></li>
+            {{/if}}
+            {{#if running}}
+                <li><a class="stop_job dialog">{{t "job.actions.stop_job"}}</a></li>
+            {{else}}
+                <li><span class="disabled stop_job dialog">{{t "job.actions.stop_job"}}</span></li>
+            {{/if}}
+
+            {{#unless runsOnDemand}}
+                {{#if enabled}}
+                    <li><a class="disable dialog" href="#">{{t "job.actions.disable"}}</a></li>
+                {{else}}
+                    <li><a class="enable dialog" href="#">{{t "job.actions.enable"}}</a></li>
+                {{/if}}
+            {{/unless}}
+            <li><a class="delete_job dialog" href="#">{{t "job.actions.delete"}}</a></li>
+        </ul>
+    </div>
+{{/if}}
+
+<div class="tab_control"></div>

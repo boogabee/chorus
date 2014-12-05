@@ -1,8 +1,5 @@
+require 'minimal_spec_helper'
 require_relative "../../packaging/install/installer_io"
-
-RSpec.configure do |config|
-  config.mock_with :rr
-end
 
 describe InstallerIO do
   let(:io) { described_class.new(silent) }
@@ -52,7 +49,7 @@ describe InstallerIO do
         let(:user_input) { input }
 
         it "should not cancel the install" do
-          expect { subject }.not_to raise_error(InstallerErrors::InstallAborted, /Cancelled by user/)
+          expect { subject }.not_to raise_error()
         end
       end
     end

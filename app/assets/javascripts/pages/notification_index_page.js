@@ -7,24 +7,24 @@ chorus.pages.NotificationIndexPage = chorus.pages.Base.extend({
 
     setup: function() {
         this.collection = new chorus.collections.NotificationSet([]);
-        this.bindings.add(this.collection, "loaded", this.notificationsFetched, this);
-        this.collection.fetchAll();
+        this.listenTo(this.collection, "loaded", this.notificationsFetched);
+        this.collection.fetch();
 
-        chorus.PageEvents.subscribe("notification:deleted", this.refreshNotifications, this);
+        this.subscribePageEvent("notification:deleted", this.refreshNotifications);
 
         this.mainContent = new chorus.views.MainContentView({
             collection: this.collection,
-            contentHeader:chorus.views.StaticTemplate("default_content_header", {title:t("header.your_notifications")}),
+            contentHeader: new chorus.views.StaticTemplate("default_content_header", {title:t("header.your_notifications")}),
             content: new chorus.views.NotificationList({ collection: this.collection, allowMoreLink: true })
         });
     },
 
     notificationsFetched: function() {
-        this.collection.markAllRead({})
+        this.collection.markAllRead({});
         this.render();
     },
 
     refreshNotifications: function() {
-        this.collection.fetch()
+        this.collection.fetch();
     }
 });

@@ -1,0 +1,41 @@
+{{#if resource}}
+    <div class="info">
+        {{#if showVersions}}
+          <a class="version_list" href="#">
+            <span class="chosen">{{t "workfile.version_title" versionNum=versionInfo.versionNum}}</span>
+            <img src="/images/blue-menu-triangle.png"/>
+          </a>
+        {{/if}}
+    </div>
+    <div class="actions">
+        <label>{{t "sidebar.selected.one"}}</label>
+        <ul>
+            {{#if showRunWorkflow}}
+                {{#unless isRunning}}
+                    <li><a class="run_now" href="#">{{t 'work_flows.actions.run_now'}}</a></li>
+                    <li><span class="stop disabled" href="#">{{t 'work_flows.actions.stop'}}</span></li>
+                {{else}}
+                    <li><span class="disabled run_now">{{t 'work_flows.actions.run_now'}}</span></li>
+                    <li><a class="stop" href="#">{{t 'work_flows.actions.stop'}}</a></li>
+                {{/unless}}
+
+            {{/if}}
+            {{#if showAddNoteLink}}
+                <li><a class="new_note dialog" href="#">{{t "actions.add_note"}}</a></li>
+            {{/if}}
+            <li><a class="edit_tags" href="#">{{t "sidebar.edit_tags"}}</a></li>
+            {{#if showEditLinks}}<li><a class="rename" href="#">{{t "workfile.rename.button"}}</a></li>{{/if}}
+            {{#if showCopyLink}}
+                <li><a href="#" class="copy dialog">{{t "actions.copy_workfile"}}</a></li>
+            {{/if}}
+            {{#if showDownloadLink}}
+                <li><a href="{{downloadUrl}}" class="download">{{t "actions.download"}}</a></li>
+            {{/if}}
+            {{#if showEditLinks}}
+                <li><a href="#" class="delete alert">{{t "workfile.delete.button"}}</a></li>
+            {{/if}}
+        </ul>
+    </div>
+
+    <div class="tab_control"></div>
+{{/if}}

@@ -1,19 +1,19 @@
 describe("chorus.collections.Search", function() {
     beforeEach(function() {
-        this.search = fixtures.searchResult({
-            instances: {
+        this.search = backboneFixtures.searchResult({
+            dataSources: {
                 numFound: 131,
                 results: [
-                    chorus.Mixins.Fetching.camelizeKeys(rspecFixtures.gpdbInstanceJson({ response: { name: "instance101", id: '101' } }).response),
-                    chorus.Mixins.Fetching.camelizeKeys(rspecFixtures.gpdbInstanceJson({ response: { name: "instance102", id: '102' } }).response),
-                    chorus.Mixins.Fetching.camelizeKeys(rspecFixtures.gpdbInstanceJson({ response: { name: "instance103", id: '103' } }).response),
-                    chorus.Mixins.Fetching.camelizeKeys(rspecFixtures.gpdbInstanceJson({ response: { name: "instance104", id: '104' } }).response),
-                    chorus.Mixins.Fetching.camelizeKeys(rspecFixtures.gpdbInstanceJson({ response: { name: "instance105", id: '105' } }).response)
+                    chorus.Mixins.Fetching.camelizeKeys(backboneFixtures.gpdbDataSourceJson({ response: { name: "dataSource101", id: '101' } }).response),
+                    chorus.Mixins.Fetching.camelizeKeys(backboneFixtures.jdbcDataSourceJson({ response: { name: "dataSource102", id: '102' } }).response),
+                    chorus.Mixins.Fetching.camelizeKeys(backboneFixtures.hdfsDataSourceJson({ response: { name: "dataSource103", id: '103' } }).response),
+                    chorus.Mixins.Fetching.camelizeKeys(backboneFixtures.gnipDataSourceJson({ response: { name: "dataSource104", id: '104' } }).response),
+                    chorus.Mixins.Fetching.camelizeKeys(backboneFixtures.gpdbDataSourceJson({ response: { name: "dataSource105", id: '105' } }).response),
+                    chorus.Mixins.Fetching.camelizeKeys(backboneFixtures.gpdbDataSourceJson({ response: { name: "dataSource106", id: '106' } }).response)
                 ]
             }
         });
-
-        this.collection = new chorus.collections.Search.InstanceSet([], {search: this.search})
+        this.collection = new chorus.collections.Search.DataSourceSet([], {search: this.search});
     });
 
     describe("#refreshFromSearch", function() {
@@ -29,12 +29,13 @@ describe("chorus.collections.Search", function() {
         });
 
         it("populates the collection with the right data from the search", function() {
-            expect(this.collection.length).toBe(5);
-            expect(this.collection.at(0).id).toBe('101');
-            expect(this.collection.at(1).id).toBe('102');
-            expect(this.collection.at(2).id).toBe('103');
-            expect(this.collection.at(3).id).toBe('104');
-            expect(this.collection.at(4).id).toBe('105');
+            expect(this.collection.length).toBe(6);
+            expect(this.collection.at(0).get('id')).toBe('101');
+            expect(this.collection.at(1).get('id')).toBe('102');
+            expect(this.collection.at(2).get('id')).toBe('103');
+            expect(this.collection.at(3).get('id')).toBe('104');
+            expect(this.collection.at(4).get('id')).toBe('105');
+            expect(this.collection.at(5).get('id')).toBe('106');
         });
 
         it("sets the collection's pagination information correctly, *before* triggering a reset", function() {
@@ -54,14 +55,15 @@ describe("chorus.collections.Search", function() {
 
         it("refreshes the collection on success", function() {
             this.server.completeFetchFor(this.search, new chorus.models.SearchResult({
-                instances: {
+                dataSources: {
                     numFound: 51,
                     results: [
-                        rspecFixtures.gpdbInstanceJson({ response: { name: "instance121", id: '121' } }).response,
-                        rspecFixtures.gpdbInstanceJson({ response: { name: "instance122", id: '122' } }).response,
-                        rspecFixtures.gpdbInstanceJson({ response: { name: "instance123", id: '123' } }).response
+                        backboneFixtures.gpdbDataSourceJson({ response: { name: "dataSource121", id: '121' } }).response,
+                        backboneFixtures.gpdbDataSourceJson({ response: { name: "dataSource122", id: '122' } }).response,
+                        backboneFixtures.gpdbDataSourceJson({ response: { name: "dataSource123", id: '123' } }).response
                     ]
-                }}));
+                }
+            }));
 
             expect(this.collection.pagination.records).toBe(51);
             expect(this.collection.length).toBe(3);

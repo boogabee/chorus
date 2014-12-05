@@ -1,0 +1,16 @@
+.job_result_detail {
+  table {
+    margin-top: 20px;
+    border-collapse: collapse;
+    th {
+      width: 20%;
+    }
+    th, td {
+      border: 1px solid grey;
+      padding: 10px;
+    }
+    td {
+      padding-right: 25px;
+    }
+  }
+}

@@ -1,7 +1,7 @@
 describe("chorus.views.DatasetFilterWizard", function() {
     beforeEach(function() {
-        this.dataset = newFixtures.workspaceDataset.sandboxTable();
-        this.columnSet = this.dataset.columns().reset([fixtures.databaseColumn(), fixtures.databaseColumn()]);
+        this.dataset = backboneFixtures.workspaceDataset.datasetTable();
+        this.columnSet = this.dataset.columns().reset([backboneFixtures.databaseColumn(), backboneFixtures.databaseColumn()]);
         this.view = new chorus.views.DatasetFilterWizard({columnSet: this.columnSet});
     });
 
@@ -11,7 +11,7 @@ describe("chorus.views.DatasetFilterWizard", function() {
         });
 
         it("displays the filter title", function() {
-            expect(this.view.$("h1.filter_title").text()).toMatchTranslation("dataset.filter.title");
+            expect(this.view.$(".filter_title").text()).toMatchTranslation("dataset.filter.title");
         });
 
         it("displays one filter when rendered at first", function() {
@@ -54,7 +54,7 @@ describe("chorus.views.DatasetFilterWizard", function() {
                 it("resets back to the default filter", function() {
                     this.view.resetFilters();
                     expect(this.view.$('li.dataset_filter').length).toBe(1);
-                })
+                });
             });
 
             describe("removing the filter", function() {

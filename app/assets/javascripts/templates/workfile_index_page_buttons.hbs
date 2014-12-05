@@ -1,0 +1,21 @@
+{{#if canUpdate}}
+<button class="import_workfile button_action">{{t "actions.import_workfile"}}</button>
+<button class="new_workfile button_action">{{t "actions.create_workfile"}}<span class="down_arrow"></span></button>
+{{/if}}
+
+<div class="hidden">
+    <div class="create_workfile_menu">
+        <ul class="run_menu">
+            {{#if currentUserCanCreateWorkFlow}}
+                <li>
+                    <a href="#" class="create_work_flow">{{t "work_flows.actions.create_work_flow"}}</a>
+                </li>
+            {{/if}}
+            {{#each createActions}}
+                <li>
+                    <a href="#" class="{{className}}">{{text}}</a>
+                </li>
+            {{/each}}
+        </ul>
+    </div>
+</div>

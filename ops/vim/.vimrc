@@ -4,10 +4,12 @@ set nocompatible
 " ---------------------------
 filetype off
 filetype plugin indent on
+source ~/.vim/plugins.vim
 
 " Load initialization files
 " ---------------------------
-"runtime! init/**.vim
+runtime! init/**.vim
+source ~/.vim/mappings.vim
 
 " Load machine-local settings
 " ---------------------------

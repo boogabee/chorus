@@ -1,0 +1,25 @@
+.edit_tags {
+    .dialog_content .tags_input {
+
+        border: none;
+        padding: 0px;
+
+        .text-core .text-wrap {
+            overflow-y: visible;
+            input {
+                margin: 3px;
+            }
+            .text-tags {
+                height: 150px;
+                overflow-y: scroll;
+                .text-tag {
+                    margin: 3px;
+                }
+            }
+        }
+
+    }
+    .form_controls {
+        margin-top: 0px;
+    }
+}

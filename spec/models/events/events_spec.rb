@@ -6,15 +6,15 @@ describe "Event types" do
   extend EventHelpers
 
   let(:actor) { users(:owner) }
-  let(:gpdb_instance) { gpdb_instances(:default) }
-  let(:aurora_instance) { gpdb_instances(:aurora) }
-  let(:hadoop_instance) { hadoop_instances(:hadoop) }
-  let(:gnip_instance) { gnip_instances(:default) }
+  let(:gpdb_data_source) { data_sources(:default) }
+  let(:hdfs_data_source) { hdfs_data_sources(:hadoop) }
+  let(:gnip_data_source) { gnip_data_sources(:default) }
   let(:user) { users(:the_collaborator) }
   let(:workfile) { workfiles(:public) }
   let(:workspace) { workfile.workspace }
-  let(:dataset) { datasets(:table) }
-  let(:hdfs_entry) { hadoop_instance.hdfs_entries.create!(:path => "/any/path/should/work.csv")}
+  let(:dataset) { datasets(:view) }
+  let(:destination_dataset) { datasets(:table) }
+  let(:hdfs_entry) { hdfs_data_source.hdfs_entries.create!(:path => "/any/path/should/work.csv")}
 
   let(:chorus_view) { datasets(:chorus_view) }
 
@@ -32,6 +32,7 @@ describe "Event types" do
     its(:targets) { should == {:dataset => chorus_view, :source_object => dataset, :workspace => workspace} }
 
     it_creates_activities_for { [actor, chorus_view, dataset, workspace] }
+    it_does_not_create_a_global_activity
   end
 
   describe "ViewCreated" do
@@ -48,6 +49,7 @@ describe "Event types" do
     its(:targets) { should == {:dataset => dataset, :source_dataset => chorus_view, :workspace => workspace} }
 
     it_creates_activities_for { [actor, chorus_view, dataset, workspace] }
+    it_does_not_create_a_global_activity
   end
 
   describe "ChorusViewChanged" do
@@ -63,146 +65,97 @@ describe "Event types" do
     its(:targets) { should == {:dataset => chorus_view, :workspace => workspace} }
 
     it_creates_activities_for { [actor, workspace, chorus_view] }
+    it_does_not_create_a_global_activity
   end
 
-  describe "GreenplumInstanceCreated" do
+  describe "HdfsDataSourceCreated" do
     subject do
-      Events::GreenplumInstanceCreated.add(
+      Events::HdfsDataSourceCreated.add(
           :actor => actor,
-          :gpdb_instance => gpdb_instance
+          :hdfs_data_source => hdfs_data_source
       )
     end
 
-    its(:action) { should == "GreenplumInstanceCreated" }
-    its(:gpdb_instance) { should == gpdb_instance }
-    its(:targets) { should == {:gpdb_instance => gpdb_instance} }
+    its(:action) { should == "HdfsDataSourceCreated" }
+    its(:hdfs_data_source) { should == hdfs_data_source }
+    its(:targets) { should == {:hdfs_data_source => hdfs_data_source} }
 
-    it_creates_activities_for { [actor, gpdb_instance] }
+    it_creates_activities_for { [actor, hdfs_data_source] }
     it_creates_a_global_activity
   end
 
-  describe "HadoopInstanceCreated" do
+  describe "GnipDataSourceCreated" do
     subject do
-      Events::HadoopInstanceCreated.add(
+      Events::GnipDataSourceCreated.add(
           :actor => actor,
-          :hadoop_instance => hadoop_instance
+          :gnip_data_source => gnip_data_source
       )
     end
 
-    its(:action) { should == "HadoopInstanceCreated" }
-    its(:hadoop_instance) { should == hadoop_instance }
-    its(:targets) { should == {:hadoop_instance => hadoop_instance} }
+    its(:action) { should == "GnipDataSourceCreated" }
+    its(:gnip_data_source) { should == gnip_data_source }
+    its(:targets) { should == {:gnip_data_source => gnip_data_source} }
 
-    it_creates_activities_for { [actor, hadoop_instance] }
+    it_creates_activities_for { [actor, gnip_data_source] }
     it_creates_a_global_activity
   end
 
-  describe "GnipInstanceCreated" do
+  describe "DataSourceChangedOwner" do
     subject do
-      Events::GnipInstanceCreated.add(
+      Events::DataSourceChangedOwner.add(
           :actor => actor,
-          :gnip_instance => gnip_instance
-      )
-    end
-
-    its(:action) { should == "GnipInstanceCreated" }
-    its(:gnip_instance) { should == gnip_instance }
-    its(:targets) { should == {:gnip_instance => gnip_instance} }
-
-    it_creates_activities_for { [actor, gnip_instance] }
-    it_creates_a_global_activity
-  end
-
-  describe "GreenplumInstanceChangedOwner" do
-    subject do
-      Events::GreenplumInstanceChangedOwner.add(
-          :actor => actor,
-          :gpdb_instance => gpdb_instance,
+          :data_source => gpdb_data_source,
           :new_owner => user
       )
     end
 
-    its(:gpdb_instance) { should == gpdb_instance }
+    its(:data_source) { should == gpdb_data_source }
     its(:new_owner) { should == user }
-    its(:targets) { should == {:gpdb_instance => gpdb_instance, :new_owner => user} }
+    its(:targets) { should == {:data_source => gpdb_data_source, :new_owner => user} }
 
-    it_creates_activities_for { [user, gpdb_instance] }
+    it_creates_activities_for { [user, gpdb_data_source] }
     it_creates_a_global_activity
   end
 
-  describe "GreenplumInstanceChangedName" do
+  describe "DataSourceChangedName" do
     subject do
-      Events::GreenplumInstanceChangedName.add(
+      Events::DataSourceChangedName.add(
           :actor => actor,
-          :gpdb_instance => gpdb_instance,
+          :data_source => gpdb_data_source,
           :old_name => "brent",
           :new_name => "brenda"
       )
     end
 
-    its(:gpdb_instance) { should == gpdb_instance }
+    its(:data_source) { should == gpdb_data_source }
     its(:old_name) { should == "brent" }
     its(:new_name) { should == "brenda" }
 
-    its(:targets) { should == {:gpdb_instance => gpdb_instance} }
+    its(:targets) { should == {:data_source => gpdb_data_source} }
     its(:additional_data) { should == {'old_name' => "brent", 'new_name' => "brenda"} }
 
-    it_creates_activities_for { [actor, gpdb_instance] }
+    it_creates_activities_for { [actor, gpdb_data_source] }
     it_creates_a_global_activity
   end
 
-  describe "HadoopInstanceChangedName" do
+  describe "HdfsDataSourceChangedName" do
     subject do
-      Events::HadoopInstanceChangedName.add(
+      Events::HdfsDataSourceChangedName.add(
           :actor => actor,
-          :hadoop_instance => hadoop_instance,
+          :hdfs_data_source => hdfs_data_source,
           :old_name => "brent",
           :new_name => "brenda"
       )
     end
 
-    its(:hadoop_instance) { should == hadoop_instance }
+    its(:hdfs_data_source) { should == hdfs_data_source }
     its(:old_name) { should == "brent" }
     its(:new_name) { should == "brenda" }
 
-    its(:targets) { should == {:hadoop_instance => hadoop_instance} }
+    its(:targets) { should == {:hdfs_data_source => hdfs_data_source} }
     its(:additional_data) { should == {'old_name' => "brent", 'new_name' => "brenda"} }
 
-    it_creates_activities_for { [actor, hadoop_instance] }
-    it_creates_a_global_activity
-  end
-
-  describe "ProvisioningSuccess" do
-    subject do
-      Events::ProvisioningSuccess.add(
-          :actor => actor,
-          :gpdb_instance => aurora_instance
-      )
-    end
-
-    its(:action) { should == "ProvisioningSuccess" }
-    its(:gpdb_instance) { should == aurora_instance }
-    its(:targets) { should == {:gpdb_instance => aurora_instance} }
-
-    it_creates_activities_for { [actor, aurora_instance] }
-    it_creates_a_global_activity
-  end
-
-  describe "ProvisioningFail" do
-    subject do
-      Events::ProvisioningFail.add(
-          :actor => actor,
-          :gpdb_instance => aurora_instance,
-          :error_message => "provisioning has failed"
-      )
-    end
-
-    its(:action) { should == "ProvisioningFail" }
-    its(:gpdb_instance) { should == aurora_instance }
-    its(:targets) { should == {:gpdb_instance => aurora_instance} }
-    its(:additional_data) { should == {'error_message' => "provisioning has failed"} }
-
-    it_creates_activities_for { [actor, aurora_instance] }
+    it_creates_activities_for { [actor, hdfs_data_source] }
     it_creates_a_global_activity
   end
 
@@ -301,7 +254,7 @@ describe "Event types" do
     its(:targets) { should == { :workspace => workspace } }
 
     it_creates_activities_for { [actor, workspace] }
-    it_creates_a_global_activity
+    it_does_not_create_a_global_activity
   end
 
   describe "WorkspaceUnarchived" do
@@ -317,7 +270,7 @@ describe "Event types" do
     its(:targets) { should == { :workspace => workspace } }
 
     it_creates_activities_for { [actor, workspace] }
-    it_creates_a_global_activity
+    it_does_not_create_a_global_activity
   end
 
   describe "WorkfileCreated" do
@@ -353,7 +306,7 @@ describe "Event types" do
     its(:targets) { should == {:dataset => dataset, :workspace => workspace} }
 
     it_creates_activities_for { [actor, dataset, workspace] }
-    it_creates_a_global_activity
+    it_does_not_create_a_global_activity
   end
 
   describe "UserAdded" do
@@ -382,26 +335,49 @@ describe "Event types" do
     its(:targets) { should == {:workspace => workspace} }
 
     it_creates_activities_for { [actor, workspace] }
-    it_creates_a_global_activity
+    it_does_not_create_a_global_activity
   end
 
-  describe "WorkspaceAddHdfsAsExtTable" do
+  describe "HDFS file/directory as external table events" do
+    [Events::HdfsFileExtTableCreated,
+     Events::HdfsDirectoryExtTableCreated].each do |klass|
+      subject do
+        klass.add(
+            :actor => actor,
+            :workspace => workspace,
+            :hdfs_entry => hdfs_entry,
+            :dataset => dataset
+        )
+      end
+
+      its(:dataset) { should == dataset }
+      its(:hdfs_entry) { should == hdfs_entry }
+
+      its(:targets) { should == {:dataset => dataset, :hdfs_entry => hdfs_entry, :workspace => workspace} }
+
+      it_creates_activities_for { [actor, dataset, workspace, hdfs_entry] }
+    end
+  end
+
+  describe "HDFS as external table with file expression event" do
     subject do
-      Events::WorkspaceAddHdfsAsExtTable.add(
+      Events::HdfsPatternExtTableCreated.add(
           :actor => actor,
           :workspace => workspace,
-          :hdfs_file => hdfs_entry,
-          :dataset => dataset
+          :hdfs_entry => hdfs_entry,
+          :dataset => dataset,
+          :file_pattern => '*.csv'
       )
     end
 
     its(:dataset) { should == dataset }
-    its(:hdfs_file) { should == hdfs_entry }
+    its(:hdfs_entry) { should == hdfs_entry }
 
-    its(:targets) { should == {:dataset => dataset, :hdfs_file => hdfs_entry, :workspace => workspace} }
+    its(:targets) { should == {:dataset => dataset, :hdfs_entry => hdfs_entry, :workspace => workspace} }
 
     it_creates_activities_for { [actor, dataset, workspace, hdfs_entry] }
-    it_creates_a_global_activity
+
+    its(:additional_data) { should == {'file_pattern' => '*.csv'}}
   end
 
   describe "FileImportCreated" do
@@ -443,11 +419,60 @@ describe "Event types" do
     it_does_not_create_a_global_activity
   end
 
-  describe "DatasetImportCreated" do
-    let(:source_dataset) { datasets(:other_table) }
-    let!(:workspace_association) { workspace.bound_datasets << source_dataset }
+  describe "WorkspaceImportFailed" do
+    let(:source_dataset) {datasets(:other_table)}
+    let!(:workspace_association) { workspace.source_datasets << source_dataset }
     subject do
-      Events::DatasetImportCreated.add(
+      Events::WorkspaceImportFailed.add(
+        :actor => actor,
+        :source_dataset => source_dataset,
+        :destination_table => 'test',
+        :workspace => workspace,
+        :error_message => 'Flying Monkey Attack again',
+        :dataset => destination_dataset
+      )
+    end
+
+    its(:targets) { should == {:workspace => workspace, :source_dataset => source_dataset, :dataset => destination_dataset} }
+    its(:additional_data) { should == {'destination_table' => 'test', 'error_message' => 'Flying Monkey Attack again'} }
+
+    it "has a workspace in the source_dataset" do
+      subject.source_dataset.bound_workspaces.should include(workspace)
+    end
+
+    it_creates_activities_for { [actor, workspace, source_dataset, destination_dataset] }
+    it_does_not_create_a_global_activity
+  end
+
+  describe "WorkspaceImportSuccess" do
+    let(:source_dataset) { datasets(:other_table) }
+    let!(:workspace_association) { workspace.source_datasets << source_dataset }
+    subject do
+      Events::WorkspaceImportSuccess.add(
+        :actor => actor,
+        :dataset => dataset,
+        :source_dataset => source_dataset,
+        :workspace => workspace
+      )
+    end
+
+    its(:dataset) { should == dataset }
+    its(:targets) { should == {:workspace => workspace, :dataset => dataset, :source_dataset => source_dataset} }
+
+    it "has a workspace in the source_dataset" do
+      subject.source_dataset.bound_workspaces.should include(workspace)
+    end
+
+    it_creates_activities_for { [actor, workspace, dataset, source_dataset] }
+    it_does_not_create_a_global_activity
+
+  end
+
+  describe "ImportScheduleUpdated" do
+    let(:source_dataset) { datasets(:other_table) }
+    let!(:workspace_association) { workspace.source_datasets << source_dataset }
+    subject do
+      Events::ImportScheduleUpdated.add(
           :actor => actor,
           :dataset => dataset,
           :source_dataset => source_dataset,
@@ -464,28 +489,25 @@ describe "Event types" do
     it_does_not_create_a_global_activity
   end
 
-  describe "DatasetImportSuccess" do
+  describe "ImportScheduleDeleted" do
     let(:source_dataset) { datasets(:other_table) }
-    let!(:workspace_association) { workspace.bound_datasets << source_dataset }
+    let!(:workspace_association) { workspace.source_datasets << source_dataset }
     subject do
-      Events::DatasetImportSuccess.add(
+      Events::ImportScheduleDeleted.add(
           :actor => actor,
           :dataset => dataset,
           :source_dataset => source_dataset,
-          :workspace => workspace
+          :workspace => workspace,
+          :destination_table => dataset.name
       )
     end
 
     its(:dataset) { should == dataset }
     its(:targets) { should == {:workspace => workspace, :dataset => dataset, :source_dataset => source_dataset} }
-
-    it "has a workspace in the source_dataset" do
-      subject.source_dataset.bound_workspaces.should include(workspace)
-    end
+    its(:additional_data) { should == { 'destination_table' => dataset.name } }
 
     it_creates_activities_for { [actor, workspace, dataset, source_dataset] }
     it_does_not_create_a_global_activity
-
   end
 
   describe "FileImportFailed" do
@@ -496,91 +518,68 @@ describe "Event types" do
           :import_type => 'file',
           :destination_table => 'test',
           :workspace => workspace,
-          :error_message => 'Flying Monkey Attack'
+          :error_message => 'Flying Monkey Attack',
+          :dataset => destination_dataset
       )
     end
 
-    its(:targets) { should == {:workspace => workspace} }
+    its(:targets) { should == {:workspace => workspace, :dataset => destination_dataset} }
     its(:additional_data) { should == {'file_name' => "import.csv", 'import_type' => "file", 'destination_table' => 'test', 'error_message' => 'Flying Monkey Attack'} }
 
-    it_creates_activities_for { [actor, workspace] }
-    it_does_not_create_a_global_activity
-  end
-
-  describe "DatasetImportFailed" do
-    let(:source_dataset) {datasets(:other_table)}
-    let!(:workspace_association) { workspace.bound_datasets << source_dataset }
-    subject do
-      Events::DatasetImportFailed.add(
-          :actor => actor,
-          :source_dataset => source_dataset,
-          :destination_table => 'test',
-          :workspace => workspace,
-          :error_message => 'Flying Monkey Attack again'
-      )
-    end
-
-    its(:targets) { should == {:workspace => workspace, :source_dataset => source_dataset} }
-    its(:additional_data) { should == {'destination_table' => 'test', 'error_message' => 'Flying Monkey Attack again'} }
-
-    it "has a workspace in the source_dataset" do
-      subject.source_dataset.bound_workspaces.should include(workspace)
-    end
-
-    it_creates_activities_for { [actor, workspace, source_dataset] }
+    it_creates_activities_for { [actor, workspace, destination_dataset] }
     it_does_not_create_a_global_activity
   end
 
   describe "GnipStreamImportCreated" do
-    let(:gnip_instance) { gnip_instances(:default) }
+    let(:gnip_data_source) { gnip_data_sources(:default) }
     subject do
       Events::GnipStreamImportCreated.add(
           :dataset => dataset,
-          :gnip_instance => gnip_instance,
+          :gnip_data_source => gnip_data_source,
           :workspace => workspace
       )
     end
 
     its(:dataset) { should == dataset }
-    its(:targets) { should == {:workspace => workspace, :dataset => dataset, :gnip_instance => gnip_instance} }
+    its(:targets) { should == {:workspace => workspace, :dataset => dataset, :gnip_data_source => gnip_data_source} }
 
-    it_creates_activities_for { [workspace, dataset, gnip_instance] }
+    it_creates_activities_for { [workspace, dataset, gnip_data_source] }
     it_does_not_create_a_global_activity
   end
 
   describe "GnipStreamImportSuccess" do
-    let(:gnip_instance) { gnip_instances(:default) }
+    let(:gnip_data_source) { gnip_data_sources(:default) }
     subject do
       Events::GnipStreamImportSuccess.add(
           :dataset => dataset,
-          :gnip_instance => gnip_instance,
+          :gnip_data_source => gnip_data_source,
           :workspace => workspace
       )
     end
 
     its(:dataset) { should == dataset }
-    its(:targets) { should == {:workspace => workspace, :dataset => dataset, :gnip_instance => gnip_instance} }
+    its(:targets) { should == {:workspace => workspace, :dataset => dataset, :gnip_data_source => gnip_data_source} }
 
-    it_creates_activities_for { [workspace, dataset, gnip_instance] }
+    it_creates_activities_for { [workspace, dataset, gnip_data_source] }
     it_does_not_create_a_global_activity
   end
 
   describe "GnipStreamImportFailed" do
-    let(:gnip_instance) { gnip_instances(:default) }
+    let(:gnip_data_source) { gnip_data_sources(:default) }
     subject do
       Events::GnipStreamImportFailed.add(
           :destination_table => dataset.name,
-          :gnip_instance => gnip_instance,
+          :gnip_data_source => gnip_data_source,
           :workspace => workspace,
           :error_message => 'Flying Monkey Attack'
       )
     end
 
     its(:destination_table) { should == dataset.name }
-    its(:targets) { should == {:workspace => workspace, :gnip_instance => gnip_instance} }
+    its(:targets) { should == {:workspace => workspace, :gnip_data_source => gnip_data_source} }
     its(:error_message) { should == 'Flying Monkey Attack' }
 
-    it_creates_activities_for { [workspace, gnip_instance] }
+    it_creates_activities_for { [workspace, gnip_data_source] }
     it_does_not_create_a_global_activity
   end
 
@@ -640,6 +639,33 @@ describe "Event types" do
 
     it_creates_activities_for { [actor, workspace] }
     it_does_not_create_a_global_activity
+  end
+
+  describe "WorkspaceDeleted" do
+    subject do
+      Events::WorkspaceDeleted.add(
+          :actor => actor,
+          :workspace => workspace
+      )
+    end
+
+    context "when workspace is not public " do
+      let(:workspace) {workspaces(:private)}
+
+      its(:workspace) { should == workspace }
+
+      its(:targets) { should == {:workspace => workspace} }
+
+      it_creates_activities_for { [actor] }
+      it_does_not_create_a_global_activity
+    end
+
+    context "when workspace is public" do
+
+      let(:workspace) {workspaces(:public)}
+
+      it_creates_a_global_activity
+    end
   end
 
   describe "TableauWorkbookPublished" do

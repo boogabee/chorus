@@ -1,6 +1,6 @@
 describe("chorus.models.Comment", function() {
     beforeEach(function() {
-        this.model = fixtures.noteComment({
+        this.model = backboneFixtures.comment({
             id: '41',
             author: {
                 id: "45",
@@ -12,17 +12,17 @@ describe("chorus.models.Comment", function() {
 
     describe("#urlTemplate", function() {
         it("is just comments", function() {
-           expect(this.model.url()).toContain("/comments/41")
+            expect(this.model.url()).toContain("/comments/41");
         });
     });
 
     describe("validation", function() {
         it("should return a falsy value if there is no text", function() {
-            this.model.set({ text: "" });
+            this.model.set({ body: "" });
             expect(this.model.performValidation()).toBeFalsy();
         });
         it("should return a truthy value if there is a text", function() {
-            this.model.set({ text: "foo" });
+            this.model.set({ body: "foo" });
             expect(this.model.performValidation()).toBeTruthy();
         });
     });

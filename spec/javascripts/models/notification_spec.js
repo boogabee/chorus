@@ -1,12 +1,12 @@
 describe("chorus.models.Notification", function() {
     beforeEach(function() {
-        this.collection = rspecFixtures.notificationSet();
+        this.collection = backboneFixtures.notificationSet();
         this.notification = this.collection.at(0);
     });
 
     describe("initialization", function() {
         it("has the correct url template", function() {
-            expect(this.notification.urlTemplate).toBe("notification/{{id}}");
+            expect(this.notification.urlTemplate).toBe("notifications/{{id}}");
         });
     });
 
@@ -52,8 +52,8 @@ describe("chorus.models.Notification", function() {
             });
 
             it("has the right body", function() {
-                expect(this.notification.get("comment").text).toBeDefined();
-                expect(this.activity.get("body")).toBe(this.notification.get("comment").text);
+                expect(this.notification.get("comment").body).toBeDefined();
+                expect(this.activity.get("body")).toBe(this.notification.get("comment").body);
             });
 
             it("has the right author data", function() {

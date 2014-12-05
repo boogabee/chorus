@@ -1,81 +1,103 @@
-@import "_common.scss";
+@import "_common";
 
-$login-width : 450px;
 div.login {
-    margin-top: 190px;
+    $card-height: 420px;
+    $card-padding-top: 50px;
+    $card-width : 620px;
+    $card-top: 150px;
+    $image-fudge: 10px;
 
+    background: $login-background;
+    height: 100%;
+    
+    .errors {
+        margin-left: auto;
+        margin-right: auto;   
+    }
+    
+    .login_content {
+        position: relative;
+        margin-left: auto;
+        margin-right: auto; 
+        top: $card-top;  
+    }
+    
     .card {
-        @include borderbox;
-        background-color: $element-background;
-        border: 2px solid $border-color;
-        margin: auto;
-        width: $login-width;
+        margin-left: auto;
+        margin-right: auto;
+
+        border: $strong-border-canon;
+        background-color: $body-background-color;
+        border-radius: 5px;
+
+        height: $card-height - $card-padding-top;
+        width: $card-width;
+        padding-top: $card-padding-top;
         overflow: auto;
 
-        h1 {
-            font-weight: bold;
-            font-size: 23px;
-            margin-bottom: 15px;
-            text-align: left;
-        }
-
         form {
-            text-align: center;
-            padding: 11px 15px 9px 20px;
-            .content {
-                margin: auto;
-                text-align: left;
-                width: 300px;
-                padding-top: 5px;
+            width: 260px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
 
-                input {
-                    margin-bottom: 12px;
-                }
+            input {
+                border: $border-canon;
+                border-radius: 3px;
+                height:35px;
+                margin: 5px 0px;
             }
 
-            .modal_controls {
-                @include after-clearfix;
+            button { font-size: 16px; height: 40px; width: 100%; margin: 0px;}
+
+            .logo.alpine {
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                margin-bottom: $image-fudge;
+                height: 50px;
+            }
+
+            .logo.pivotal {
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                margin-bottom: $image-fudge;
             }
         }
     }
 
-    footer {
-        width : $login-width;
-        color: #999999;
-        font-size : 10px;
-        text-align: center;
+    .login_footer {
+        
         margin-left: auto;
         margin-right: auto;
 
+        width : $card-width;
+        color: $color-text3;
+        font-size : $small-font;
+        text-align: center;
+
         .logos {
             @include after-clearfix;
-            width: $login-width;
+            width: $card-width;
             margin: 25px 0;
 
-            .greenplum {
-                float: left;
-            }
-
-            .emc {
-                float: right;
-            }
+            .greenplum { float: left; }
+            .emc { float: right; }
         }
 
         .legal {
             text-align: left;
-            
+            &.alpine { text-align: center; }
+
             p {
                 padding-bottom: 12px;
                 span {
                     display: inline-block;
 
-                    &.version {
-                        padding-right: 4px;
-                    }
+                    &.version {}
 
-                    &.copyright {
-                        padding-left: 4px;
-                    }
+                    &.copyright {}
                 }
             }
         }

@@ -1,14 +1,12 @@
 describe("chorus.views.SearchWorkspace", function() {
     beforeEach(function() {
-        this.result = fixtures.searchResult({workspaces: {results: [
+        this.result = backboneFixtures.searchResult({workspaces: {results: [
             {
                 entityType: "workspace",
                 id: "10000",
-                isDeleted: false,
-                public: false,
-                lastUpdatedStamp: "2012-02-24 16:08:32",
+                "public": false,
                 name: "ws",
-                content: "ws <i>other text</i>",
+                summary: "ws <i>other text</i>",
                 owner: {
                     firstName: "EDC",
                     id: "InitialUser",
@@ -16,7 +14,6 @@ describe("chorus.views.SearchWorkspace", function() {
                 },
                 comments: [
                     {
-                        "lastUpdatedStamp": "2012-03-08 09:57:46",
                         "isPublished": false,
                         "body": "good version",
                         "isComment": false,
@@ -26,17 +23,18 @@ describe("chorus.views.SearchWorkspace", function() {
                         "highlightedAttributes": {"body": ["good <em>version<\/em>"]},
                         "owner": {"id": "InitialUser", "lastName": "Admin", "firstName": "EDC"}
                     }
-                ],
-                highlightedAttributes: {
-                    name: "<em>ws</em>",
-                    content: "<em>ws</em> <i>other text</i>"
-                }
+                ]
             }
         ]}});
 
         this.model = this.result.workspaces().models[0];
+        this.model.set("highlightedAttributes", {
+            name: "<em>ws</em>",
+            summary: "<em>ws</em> <i>other text</i>"
+        });
+        this.model.set("tags", [{ name: 'tag' }]);
         this.view = new chorus.views.SearchWorkspace({ model: this.model });
-        this.view.render()
+        this.view.render();
     });
 
     it("includes the correct workspace file icon", function() {
@@ -47,8 +45,8 @@ describe("chorus.views.SearchWorkspace", function() {
         expect(this.view.$('a.name').attr('href')).toBe("#/workspaces/10000");
     });
 
-    it("shows matching description if any", function() {
-        expect(this.view.$(".description .description_content").html()).toContain("<em>ws</em> <i>other text</i>");
+    it("shows matching description", function() {
+        expect(this.view.$el.html()).toContain("<em>ws</em> <i>other text</i>");
     });
 
     it("shows matching name", function() {
@@ -59,17 +57,19 @@ describe("chorus.views.SearchWorkspace", function() {
         expect(this.view.$(".comments .comment").length).toBe(1);
     });
 
+    it("shows tags", function() {
+        expect(this.view.$('.item_tag_list')).toContainText('tag');
+    });
+
     context("the description does not contain the search string", function() {
         beforeEach(function() {
-            this.result = fixtures.searchResult({workspaces: {results: [
+            this.result = backboneFixtures.searchResult({workspaces: {results: [
                 {
                     entityType: "workspace",
                     id: "10000",
-                    isDeleted: false,
-                    public: false,
-                    lastUpdatedStamp: "2012-02-24 16:08:32",
+                    "public": false,
                     name: "ws",
-                    content: "<i>that is not highlighted</i>",
+                    summary: "<i>that is not highlighted</i>",
                     owner: {
                         firstName: "EDC",
                         id: "InitialUser",
@@ -77,7 +77,6 @@ describe("chorus.views.SearchWorkspace", function() {
                     },
                     comments: [
                         {
-                            "lastUpdatedStamp": "2012-03-08 09:57:46",
                             "isPublished": false,
                             "content": "good version",
                             "isComment": false,
@@ -87,20 +86,20 @@ describe("chorus.views.SearchWorkspace", function() {
                             "highlightedAttributes": {"body": ["good <em>version<\/em>"]},
                             "owner": {"id": "InitialUser", "lastName": "Admin", "firstName": "EDC"}
                         }
-                    ],
-                    highlightedAttributes: {
-                        name: "<em>ws</em>"
-                    }
+                    ]
                 }
             ]}});
 
             this.model = this.result.workspaces().models[0];
+            this.model.unset('highlightedAttributes');
             this.view = new chorus.views.SearchWorkspace({ model: this.model });
-            this.view.render()
-        })
+            this.view.render();
+        });
 
         it("uses the displaySearchMatchFromSafeField method for the description", function() {
-            expect(this.view.$(".description .description_content").html()).toContain("<i>that is not highlighted</i>");
-        })
-    })
+            expect(this.view.$el.html()).toContain("<i>that is not highlighted</i>");
+        });
+    });
+
+    itBehavesLike.ItPresentsModelWithTags();
 });

@@ -1,6 +1,6 @@
 describe("chorus.views.WorkfileVersionList", function() {
     beforeEach(function() {
-        var version2attributes = rspecFixtures.workfileVersion({
+        var version2attributes = backboneFixtures.workfileVersion({
             versionInfo: {
                 modifier: {firstName: 'Bob', lastName: 'Doe'},
                 id: 1,
@@ -9,7 +9,7 @@ describe("chorus.views.WorkfileVersionList", function() {
             }
         }).attributes;
 
-        var version1attributes = rspecFixtures.workfileVersion({
+        var version1attributes = backboneFixtures.workfileVersion({
             versionInfo: {
                 modifier: {firstName: 'Rob', lastName: 'Doe'},
                 versionNum: 1,
@@ -44,11 +44,13 @@ describe("chorus.views.WorkfileVersionList", function() {
 
     it("displays the author and date for each item", function() {
         expect(this.view.$("li:eq(0) .version_details")).toContainTranslation("workfile.version_saved_by", {
-            authorName: "Bob Doe", formattedDate: "November 29, 2012"
+            authorName: "Bob Doe",
+            formattedDate: "November 29, 2012"
         });
 
         expect(this.view.$("li:eq(1) .version_details")).toContainTranslation("workfile.version_saved_by", {
-            authorName: "Rob Doe", formattedDate: "November 29, 2011"
+            authorName: "Rob Doe",
+            formattedDate: "November 29, 2011"
         });
     });
 
@@ -75,6 +77,16 @@ describe("chorus.views.WorkfileVersionList", function() {
         it("does not display the delete link", function () {
             expect(this.view.$("li:eq(0) .delete_link")).not.toExist();
 
+        });
+    });
+
+    describe("clicking a version link", function() {
+        it("triggers version changed page event", function() {
+            this.workfileVersionChangedSpy = jasmine.createSpy();
+            chorus.PageEvents.on("workfileVersion:changed", this.workfileVersionChangedSpy);
+
+            this.view.$("a.version_link:eq(1)").click();
+            expect(this.workfileVersionChangedSpy).toHaveBeenCalledWith(2);
         });
     });
 });

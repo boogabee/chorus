@@ -1,0 +1,17 @@
+@import "compass/css3/images";
+
+ul.messenger {
+  &.messenger-fixed {
+    z-index: 16000;
+  }
+}
+
+ul.messenger-theme-future {
+  .messenger-message.alert-info .messenger-message-inner:before {
+    @include background(linear-gradient(top, $body-background-color, $link-color));
+  }
+
+  .messenger-message.alert-error .messenger-message-inner:before {
+    @include background(linear-gradient(top, $notification-error-light, $notification-error-dark));
+  }
+}

@@ -1,0 +1,39 @@
+.CodeMirror-activeline-background {
+  background-color: #e8f2ff
+}
+
+.cm-matchhighlight {
+  font-weight: $semibold;
+  font-style: italic;
+}
+
+.CodeMirror {
+  height: auto;
+  background: $body-background-color;
+  position: inherit;
+  overflow-x: hidden;
+}
+.CodeMirror-scroll {
+  overflow-y: hidden;
+  overflow-x: hidden;
+  min-height: $texteditor-min-height;
+  width: 100%;
+}
+
+.CodeMirror.cm-s-editable {
+  background: white;
+  width: 100%;
+}
+
+.CodeMirror-gutters {
+  height:  100%;
+  min-height: $texteditor-min-height;
+}
+
+.CodeMirror-vscrollbar {
+  display: none !important;
+}
+
+.CodeMirror-hscrollbar {
+  display: none !important;
+}

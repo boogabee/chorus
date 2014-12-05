@@ -1,0 +1,48 @@
+<div class="girdle">
+    <fieldset>
+        <div class="destination">
+            {{#if allowSchemaSelection}}
+                <a class="select_schema">{{t "import.select_schema"}}</a>
+                <a class="selection">{{t "import.no_schema_selected"}}</a>
+                <a class="change_schema hidden">{{t "actions.change"}}</a>
+            {{else}}
+                {{t "import.destination" canonicalName=canonicalName}}
+            {{/if}}
+        </div>
+    </fieldset>
+
+    <div class="options">
+        <fieldset class="new_table row">
+            <input type="radio" name="imports" id="import_now_new_table" checked="checked"/>
+            <label class="main" for="import_now_new_table">{{t "import.new_table"}}</label>
+            <input type="text" class="name" name="toTable" maxlength="64"/>
+        </fieldset>
+
+        <fieldset class="existing_table row">
+            <input type="radio" name="imports" id="import_now_existing_table"/>
+            <label class="main" for="import_now_existing_table">{{t "import.existing_table"}}</label>
+            <span class="dataset_picked" name="existingTableName">{{t "dataset.import.select_destination"}}</span>
+            <a href="#" class="dataset_picked hidden"
+               name="existingTableName">{{t "dataset.import.select_destination"}}</a>
+        </fieldset>
+
+        <fieldset class="titled-input-group">
+            <legend class="subtitle">
+                <div class="text">Options</div>
+                <hr/>
+            </legend>
+
+            <div class="row">
+                <input type="checkbox" class="truncate" name="truncate" id="import_now_truncate"/>
+                <label for="import_now_truncate">{{t "import.truncate"}}</label>
+            </div>
+
+            <div class="row limit">
+                <input type="checkbox" name="limit_num_rows" id="import_now_limit_rows_existing"/>
+                <label for="import_now_limit_rows_existing">{{t "import.limit_rows"}}</label>
+                <input class="row_limit" type="text" name="sampleCount" maxlength="10" disabled="disabled" value="500"/>
+            </div>
+        </fieldset>
+    </div>
+</div>
+{{formControlsWithDisabledSubmit submitKey}}

@@ -8,7 +8,7 @@ describe WorkfilePresenter, :type => :view do
   let(:presenter) { WorkfilePresenter.new(workfile, view, options) }
 
   before(:each) do
-    stub(ActiveRecord::Base).current_user { user }
+    set_current_user(user)
   end
 
   describe "#to_hash" do
@@ -20,67 +20,136 @@ describe WorkfilePresenter, :type => :view do
 
       hash.should have_key(:file_name)
       hash.should have_key(:file_type)
-      hash.should have_key(:latest_version_id)
-      hash.should have_key(:has_draft)
       hash.should have_key(:is_deleted)
-      hash.should_not have_key(:execution_schema)
+      hash.should have_key(:recent_comments)
+      hash.should have_key(:comment_count)
+      hash.should have_key(:tags)
+      hash.should have_key(:user_modified_at)
+      hash.should have_key(:status)
     end
 
     it "uses the workspace presenter to serialize the workspace" do
       hash[:workspace].to_hash.should == (WorkspacePresenter.new(workspace, view).presentation_hash)
     end
 
-    it "uses the user presenter to serialize the owner" do
-      hash[:owner].to_hash.should == (UserPresenter.new(user, view).presentation_hash)
+    it "the workspace presenter does not lose the succinct option" do
+      options[:succinct] = true
+      hash[:workspace].to_hash.should == (WorkspacePresenter.new(workspace, view, :succinct => true).presentation_hash)
+    end
+
+    it "uses the succinct user presenter to serialize the owner" do
+      hash[:owner].to_hash.should == (UserPresenter.new(user, view, :succinct => true).presentation_hash)
     end
 
     it "uses the workfile file name" do
       hash[:file_name].should == workfile.file_name
     end
 
-    context "workfile has a draft for that user" do
-      it "has_draft value is true" do
-        FactoryGirl.create(:workfile_draft, :workfile_id => workfile.id, :owner_id => user.id)
-        hash = presenter.to_hash
-        hash[:has_draft].should == true
+    it "includes entity_subtype" do
+      stub(workfile).entity_subtype { 'something' }
+      hash[:entity_subtype].should == 'something'
+    end
+
+    context "when presenting for a list" do
+      let(:options) { { :list_view => true }}
+      it "uses the succinct workspace presenter" do
+        hash[:workspace].to_hash.should == (WorkspacePresenter.new(workspace, view, :succinct => true).presentation_hash)
       end
     end
 
-    context "No workfile draft for that user" do
-      it "has_draft value is false" do
-        hash[:has_draft].should == false
+    context "when the workfile has tags" do
+      let(:workfile) { workfiles(:tagged) }
+
+      it 'includes the tags' do
+        hash[:tags].count.should be > 0
+        hash[:tags].should == Presenter.present(workfile.tags, @view)
       end
     end
 
-    context ":include_execution_schema is passed as an option" do
-      let(:presenter) { WorkfilePresenter.new(workfile, view, :include_execution_schema => true) }
+    context "when there are notes on a workfile" do
+      let(:recent_comments) { hash[:recent_comments] }
+      let(:today) { Time.current }
+      let(:yesterday) { today - 1.day }
 
-      it "includes the execution_schema" do
-        hash[:execution_schema].should == GpdbSchemaPresenter.new(workfile.execution_schema, view).presentation_hash
+      before do
+        workfile.events.clear
+        Timecop.freeze yesterday do
+          Events::NoteOnWorkfile.create!({:note_target => workfile, :body => 'note for yesterday'}, :as => :create)
+        end
+        Timecop.freeze today do
+          Events::NoteOnWorkfile.create!({:workfile => workfile, :body => 'note for today'}, :as => :create)
+        end
+        workfile.reload
+      end
+
+      it "presents the notes as comments in reverse timestamp order" do
+        recent_comments[0][:author].to_hash.should == Presenter.present(user, view, {:succinct => true, :activity_stream => true})
+        recent_comments[0][:body].should == "note for today"
+        recent_comments[0][:timestamp].to_i.should == today.to_i
+      end
+
+      it "presents only the last comment" do
+        recent_comments.count.should == 1
+      end
+
+      it "includes the comment count" do
+        hash[:comment_count].should == 2
+      end
+
+      context "when there is a comment on a note" do
+        let(:comment_timestamp) { today + 2.hours }
+
+        before do
+          Timecop.freeze comment_timestamp do
+            last_note = workfile.events.last
+            FactoryGirl.create :comment, :event => last_note, :body => "comment on yesterday's note", :author => user
+          end
+        end
+
+        context "when the comment is newer than the notes" do
+          it "presents the comment before the notes" do
+            recent_comments[0][:author].to_hash.should == Presenter.present(user, view, :succinct => true)
+            recent_comments[0][:body].should == "comment on yesterday's note"
+            recent_comments[0][:timestamp].to_i.should == comment_timestamp.to_i
+          end
+        end
+
+        context "when the comment is older than the newest note" do
+          let(:comment_timestamp) { today - 2.hours }
+
+          it "presents the comment after the newset note" do
+            recent_comments[0][:body].should == "note for today"
+          end
+        end
+
+        it "includes the comment in the comment count" do
+          hash[:comment_count].should == 3
+        end
       end
     end
 
-    it "sanitizes file name" do
-      bad_value = 'file_ending_in_invalid_quote"'
-      workfile = FactoryGirl.create(:workfile)
-      workfile_version = FactoryGirl.create(:workfile_version, :contents => test_file(bad_value), :workfile => workfile)
-      json = WorkfilePresenter.new(workfile, view).to_hash
+    context "for activity stream" do
+      let(:options) { {:activity_stream => true} }
 
-      json[:file_name].should_not include '"'
-    end
-  end
-
-  describe "complete_json?" do
-    context "when not including execution schema" do
-      it "is not true" do
-        presenter.complete_json?.should_not be_true
+      it "should not include owner or draft status" do
+        hash[:owner].should be_nil
+        hash[:has_draft].should be_nil
       end
     end
 
-    context "when including execution schema" do
-      let(:options) { {:include_execution_schema => true} }
-      it "is true" do
-        presenter.complete_json?.should be_true
+    describe "complete_json?" do
+      context "when rendering activity stream" do
+        let(:options) { {:activity_stream => true} }
+        it "should be false" do
+          presenter.should_not be_complete_json
+        end
+      end
+
+      context "when not rendering for activity stream" do
+        let(:options) { {:activity_stream => false} }
+        it "is true" do
+          presenter.complete_json?.should be_true
+        end
       end
     end
   end

@@ -1,5 +1,7 @@
 chorus.views.ResultsConsole = chorus.views.Base.extend({
     templateName: "results_console",
+    constructorName: "ResultsConsole",
+
     events: {
         "click .cancel": "cancelExecution",
         "click a.maximize": "maximizeTable",
@@ -12,13 +14,53 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
         "click a.download_csv": "saveToDesktop"
     },
 
+    defaultBoundingContainer: function (view) {
+        return {
+            getAvailableHeight: function () {
+                return $(window).height() - this.distanceFromTopOfWindow() - this.distanceFromBottomOfWindow();
+            },
+
+            distanceFromTopOfWindow: function() {
+                var distance = view.$(".data_grid").offset().top;
+                return distance - $(window).scrollTop();
+            },
+
+            distanceFromBottomOfWindow: function() {
+                var verticalDialogPadding = 0;
+                if (view.options.verticalDialogPadding) {
+                    verticalDialogPadding = view.options.verticalDialogPadding;
+                }
+
+                return verticalDialogPadding + this.bottomGutterHeight() + this.footerSize();
+            },
+
+            bottomGutterHeight: function() {
+                var bottomGutter = view.$(".bottom_gutter");
+                if( bottomGutter.is(":visible") ){
+                    return bottomGutter.height();
+                } else {
+                    return 0;
+                }
+            },
+
+            footerSize: function() {
+                if (view.options.footerSize) {
+                    return view.options.footerSize();
+                } else {
+                    return 0;
+                }
+            }
+        };
+    },
+
     setup: function() {
+        this.boundingContainer = this.options.boundingContainer || this.defaultBoundingContainer(this);
         this.showDownloadDialog = this.options.showDownloadDialog;
         this.dataset = this.options.dataset;
-        chorus.PageEvents.subscribe("file:executionStarted", this.executionStarted, this);
-        chorus.PageEvents.subscribe("file:executionSucceeded", this.executionSucceeded, this);
-        chorus.PageEvents.subscribe("file:executionFailed", this.executionFailed, this);
-        chorus.PageEvents.subscribe("file:executionCancelled", this.hideSpinner, this);
+        this.subscribePageEvent("file:executionStarted", this.executionStarted);
+        this.subscribePageEvent("file:executionSucceeded", this.executionSucceeded);
+        this.subscribePageEvent("file:executionFailed", this.executionFailed);
+        this.subscribePageEvent("file:executionCancelled", this.hideSpinner);
     },
 
     teardown: function() {
@@ -37,14 +79,15 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
                 filename: this.resource.name() + ".csv",
                 mime_type: "text/csv"
             };
-            $.fileDownload("/download_data", { data: data, httpMethod: "post" });
+            chorus.fileDownload("/download_data", { data: data, httpMethod: "POST" });
         }
     },
 
     constructFileContent: function() {
         var columnNames = _.pluck(this.resource.getColumns(), "name");
+        var uniqueNames = _.pluck(this.resource.getColumns(), "uniqueName");
         return new chorus.utilities.CsvWriter(
-            columnNames, this.resource.getRows(), this.options).toCsv();
+            columnNames, uniqueNames, this.resource.getRows(), this.options).toCsv();
 
     },
 
@@ -52,17 +95,18 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
         this.setModel(task);
         task.save();
         this.executionStarted();
-        this.bindings.add(task, "saved", _.bind(this.executionSucceeded, this, task));
-        this.bindings.add(task, "saveFailed", _.bind(this.executionFailed, this, task));
+        this.listenTo(task, "saved", _.bind(this.executionSucceeded, this, task));
+        this.listenTo(task, "saveFailed", _.bind(this.executionFailed, this, task));
     },
 
     executionStarted: function() {
         this.executionStartedTime = $.now();
         this.$('.controls').addClass('hidden');
-        this.$(".right").addClass("executing")
+        this.$(".right").addClass("executing");
 
         this.$(".spinner").addClass("hidden").startLoading();
         _.delay(_.bind(this.showSpinner, this), 250);
+        this.$(".elapsed_time").text("");
         this.elapsedTimer = setInterval(_.bind(this.updateElapsedTime, this), 1000);
         this.$(".execution").removeClass("hidden");
         this.$(".bottom_gutter").addClass("hidden");
@@ -80,13 +124,13 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
     },
 
     hideSpinner: function() {
-        this.cancelTimers()
+        this.cancelTimers();
         this.$(".right").removeClass("executing");
         this.$(".spinner").addClass('hidden').stopLoading();
     },
 
     executionSucceeded: function(task) {
-        this.showResultTable(task);
+        this.initializeDataGrid(task);
         this.hideSpinner();
 
         if (!task.hasResults()) {
@@ -94,11 +138,13 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
         }
     },
 
-    showResultTable: function(task) {
-        this.dataTable = new chorus.views.TaskDataTable({shuttle: this.options.shuttle, model: task});
-        this.dataTable.render();
-        this.$(".result_table").removeClass("hidden").html(this.dataTable.el);
+    initializeDataGrid: function(task) {
+        this.dataGrid && this.dataGrid.teardown();
+        this.dataGrid = new chorus.views.DataGrid({model: task});
+        this.registerSubView(this.dataGrid);
+        this.$(".result_table").removeClass("hidden").html(this.dataGrid.el);
         this.$(".controls").removeClass("hidden");
+        this.dataGrid.render();
         this.minimizeTable();
     },
 
@@ -130,8 +176,8 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
     },
 
     minimizeTable: function(e) {
-        e && e.preventDefault()
-        this.$('.data_table').css("height", "");
+        e && e.preventDefault();
+        this.$('.data_grid').css("height", "");
         this.$("a.minimize").addClass("hidden");
         this.$("a.maximize").removeClass("hidden");
         this.$(".controls").removeClass("collapsed");
@@ -143,11 +189,12 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
         this.$(".bottom_gutter").removeClass("hidden");
         this.$(".arrow").removeClass("down");
         this.$(".arrow").addClass("up");
+        this.dataGrid.resizeGridToResultsConsole();
         this.recalculateScrolling();
     },
 
     maximizeTable: function(e) {
-        e && e.preventDefault()
+        e && e.preventDefault();
         this.$("a.maximize").addClass("hidden");
         this.$("a.minimize").removeClass("hidden");
         this.$(".controls").removeClass("collapsed");
@@ -155,19 +202,15 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
         this.$(".result_table").removeClass("collapsed");
         this.$(".result_table").removeClass("minimized");
         this.$(".result_table").addClass("maximized");
-        this.$(".data_table").css("height", this.getDesiredDataTableHeight());
+        this.$(".data_grid").css("height", this.getDesiredDataGridHeight());
+        this.dataGrid.resizeGridToResultsConsole();
         this.recalculateScrolling();
     },
 
-    getDesiredDataTableHeight: function() {
-        return $(window).height() - this.$(".data_table").offset().top - this.$(".bottom_gutter").height() - this.footerSize();
-    },
-
-    footerSize: function() {
-        if (this.options.footerSize) {
-            return this.options.footerSize();
-        }
-        return 0;
+    getDesiredDataGridHeight: function() {
+        var baseHeight = this.boundingContainer.getAvailableHeight();
+        var arbitrarySpacing = 2; // to eliminate spurious y-scrollbar
+        return baseHeight - arbitrarySpacing;
     },
 
     collapseTable: function() {
@@ -178,7 +221,7 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
         this.$(".result_table").addClass("collapsed");
         this.$(".result_table").removeClass("minimized");
         this.$(".result_table").removeClass("maximized");
-        this.$(".data_table").css("height", "");
+        this.$(".data_grid").css("height", "");
     },
 
     closeError: function(e) {
@@ -189,7 +232,7 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
     clickCloseError: function(e) {
         e && e.preventDefault();
         this.closeError();
-        this.clickClose()
+        this.clickClose();
     },
 
     viewErrorDetails: function(e) {
@@ -223,7 +266,7 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
     clickClose: function(e) {
         e && e.preventDefault();
         this.$(".controls").addClass("hidden");
-        chorus.PageEvents.broadcast("action:closePreview");
+        chorus.PageEvents.trigger("action:closePreview");
     },
 
     additionalContext: function(ctx) {
@@ -233,7 +276,7 @@ chorus.views.ResultsConsole = chorus.views.Base.extend({
             enableResize: this.options.enableResize,
             enableExpander: this.options.enableExpander,
             hasResults: this.model && this.model.hasResults()
-        }
+        };
     }
 });
 

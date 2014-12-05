@@ -3,17 +3,18 @@ describe("chorus.views.DatasetContentDetails", function() {
         beforeEach(function() {
             this.$columnList = $("<ul/>");
             this.qtipMenu = stubQtip();
-            this.dataset = rspecFixtures.workspaceDataset.datasetTable();
-            this.collection = this.dataset.columns([fixtures.databaseColumn(), fixtures.databaseColumn()]);
+            this.dataset = backboneFixtures.workspaceDataset.datasetTable();
+            this.collection = this.dataset.columns([backboneFixtures.databaseColumn(), backboneFixtures.databaseColumn()]);
 
             this.view = new chorus.views.DatasetContentDetails({
                 dataset: this.dataset,
                 collection: this.collection,
                 $columnList: this.$columnList
             });
+            spyOn(this.view, "scrollHandler");
             spyOn(this.view.filterWizardView, 'resetFilters').andCallThrough();
             spyOn(chorus, "search");
-            this.server.completeFetchFor(this.dataset.statistics(), rspecFixtures.datasetStatisticsView());
+            this.server.completeFetchFor(this.dataset.statistics(), backboneFixtures.datasetStatisticsView());
             this.view.render();
             $("#jasmine_content").append(this.view.el);
         });
@@ -23,7 +24,7 @@ describe("chorus.views.DatasetContentDetails", function() {
         });
 
         it("renders the title", function() {
-            expect(this.view.$(".data_preview h1").text().trim()).toMatchTranslation("dataset.data_preview")
+            expect(this.view.$(".data_preview h1").text().trim()).toMatchTranslation("dataset.data_preview");
         });
 
         it("renders the 'Preview Data' button", function() {
@@ -49,7 +50,7 @@ describe("chorus.views.DatasetContentDetails", function() {
 
             expect(searchInput).toExist();
             expect(chorus.search).toHaveBeenCalled();
-            var searchOptions = chorus.search.mostRecentCall.args[0];
+            var searchOptions = chorus.search.lastCall().args[0];
 
             expect(searchOptions.input).toBe(searchInput);
             expect(searchOptions.list).toBe(this.$columnList);
@@ -68,8 +69,8 @@ describe("chorus.views.DatasetContentDetails", function() {
             });
         });
 
-        it("subscribes to the action:closePreview broadcast", function() {
-            expect(chorus.PageEvents.hasSubscription("action:closePreview", this.view.closeDataPreview, this.view)).toBeTruthy();
+        it("subscribes to the action:closePreview trigger", function() {
+            expect(this.view).toHaveSubscription("action:closePreview", this.view.closeDataPreview);
         });
 
         describe("sql definition", function() {
@@ -81,21 +82,21 @@ describe("chorus.views.DatasetContentDetails", function() {
 
                 context("when there is no sql", function() {
                     beforeEach(function() {
-                        var dataset = rspecFixtures.workspaceDataset.datasetTable()
+                        var dataset = backboneFixtures.workspaceDataset.datasetTable();
                         this.view = new chorus.views.DatasetContentDetails({dataset: dataset, collection: this.collection});
-                        this.server.completeFetchFor(dataset.statistics(), rspecFixtures.datasetStatisticsTable());
+                        this.server.completeFetchFor(dataset.statistics(), backboneFixtures.datasetStatisticsTable());
                         this.view.render();
                     });
 
                     it("does not show the SQL definition", function() {
                         expect(this.view.$(".sql_content")).not.toExist();
-                    })
+                    });
                 });
             });
 
             context("when the object is a CHORUS VIEW", function() {
                 beforeEach(function() {
-                    var dataset = rspecFixtures.workspaceDataset.chorusView();
+                    var dataset = backboneFixtures.workspaceDataset.chorusView();
                     this.view = new chorus.views.DatasetContentDetails({dataset: dataset, collection: this.collection});
                     this.server.completeFetchFor(dataset.statistics());
                     this.view.render();
@@ -112,15 +113,15 @@ describe("chorus.views.DatasetContentDetails", function() {
             context("when in default dataset page", function() {
                 beforeEach(function() {
                     this.view.$(".column_count .preview").click();
-                })
+                });
 
                 it("should hide the column count bar", function() {
                     expect(this.view.$(".column_count")).toHaveClass("hidden");
-                })
+                });
 
                 it("should display the data preview bar", function() {
                     expect(this.view.$(".data_preview")).not.toHaveClass("hidden");
-                })
+                });
 
                 describe("data preview bar", function() {
                     it("should display a close button", function() {
@@ -166,12 +167,12 @@ describe("chorus.views.DatasetContentDetails", function() {
                             });
 
                             it("should not display '.column_count' ", function() {
-                               expect(this.view.$(".column_count")).toHaveClass("hidden");
-                               expect(this.view.$(".data_preview")).toHaveClass("hidden");
+                                expect(this.view.$(".column_count")).toHaveClass("hidden");
+                                expect(this.view.$(".data_preview")).toHaveClass("hidden");
                             });
                         });
                     });
-                })
+                });
             });
 
             context("when in editChorusView page", function() {
@@ -191,7 +192,7 @@ describe("chorus.views.DatasetContentDetails", function() {
                 describe("data preview bar", function() {
                     it("should display a close button", function() {
                         expect(this.view.$(".data_preview .close")).toExist();
-                    })
+                    });
 
                     context("when the close button is clicked", function() {
                         beforeEach(function() {
@@ -221,14 +222,70 @@ describe("chorus.views.DatasetContentDetails", function() {
             });
         });
 
-        describe("definition bar", function() {
+        describe("action bar", function() {
             it("renders", function() {
                 expect(this.view.$(".definition")).toExist();
             });
 
-            it("renders the 'Visualize' button", function() {
-                expect(this.view.$("button.visualize")).toExist();
-                expect(this.view.$("button.visualize").text()).toMatchTranslation("dataset.content_details.visualize");
+            context("when dataset is oracle", function() {
+                beforeEach(function() {
+                    spyOn(this.dataset, "isOracle").andReturn(true);
+                    this.view.render();
+                });
+
+                it("renders the 'Visualize' button", function() {
+                    expect(this.view.$("button.visualize")).toExist();
+                });
+
+                it("does not render the 'Derive' button", function() {
+                    expect(this.view.$("button.derive")).not.toExist();
+                });
+
+                context("with tableau configured", function () {
+                    beforeEach(function () {
+                        chorus.models.Config.instance().set({ tableauConfigured: true });
+                        this.view.render();
+                    });
+
+                    it("does not render the 'Publish to Tableau' button", function() {
+                        expect(this.view.$("button.publish")).not.toExist();
+                    });
+                });
+
+            });
+
+            context("when dataset is jdbc", function() {
+                beforeEach(function() {
+                    spyOn(this.dataset, "isJdbc").andReturn(true);
+                    this.view.render();
+                });
+
+                it("renders the 'Visualize' button", function() {
+                    expect(this.view.$("button.visualize")).toExist();
+                });
+
+                it("does not render the 'Derive' button", function() {
+                    expect(this.view.$("button.derive")).not.toExist();
+                });
+
+                context("with tableau configured", function () {
+                    beforeEach(function () {
+                        chorus.models.Config.instance().set({ tableauConfigured: true });
+                        this.view.render();
+                    });
+
+                    it("does not render the 'Publish to Tableau' button", function() {
+                        expect(this.view.$("button.publish")).not.toExist();
+                    });
+                });
+
+            });
+
+            context("when dataset is not oracle", function() {
+                it("renders the 'Visualize' button", function() {
+                    expect(this.view.$("button.visualize")).toExist();
+                    expect(this.view.$("button.visualize").text()).toMatchTranslation("dataset.content_details.visualize");
+                });
             });
 
             it("doesn't render the chorus view info bar", function() {
@@ -247,13 +304,14 @@ describe("chorus.views.DatasetContentDetails", function() {
                     var modal = this.modalSpy.lastModal();
                     expect(modal).toBeA(chorus.dialogs.PublishToTableau);
                     expect(modal.model).toBeA(chorus.models.TableauWorkbook);
-                })
+                });
             });
 
             context("and the visualize button is clicked", function() {
                 beforeEach(function() {
                     spyOn(this.view, 'showVisualizationConfig');
-                    spyOn(chorus.PageEvents, 'broadcast').andCallThrough();
+                    spyOn(this.view.resultsConsole, 'clickClose');
+                    spyOn(chorus.PageEvents, 'trigger').andCallThrough();
                     this.view.filterWizardView.resetFilters.reset();
                     this.view.$("button.visualize").click();
                 });
@@ -289,10 +347,13 @@ describe("chorus.views.DatasetContentDetails", function() {
                     expect(this.view.filterWizardView.resetFilters).toHaveBeenCalled();
                 });
 
-                it("broadcasts start:visualization", function() {
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("start:visualization");
-                })
+                it("triggers start:visualization", function() {
+                    expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("start:visualization");
+                });
 
+                it("closes the results console", function() {
+                    expect(this.view.resultsConsole.clickClose).toHaveBeenCalled();
+                });
 
                 context("and cancel is clicked", function() {
                     beforeEach(function() {
@@ -317,10 +378,10 @@ describe("chorus.views.DatasetContentDetails", function() {
                         expect(this.view.$(".chart_config")).toHaveClass("hidden");
                     });
 
-                    it("broadcasts cancel:visualization", function() {
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("cancel:visualization");
+                    it("triggers cancel:visualization", function() {
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("cancel:visualization");
                     });
-                })
+                });
 
                 context("and a chart type is clicked", function() {
                     beforeEach(function() {
@@ -337,8 +398,7 @@ describe("chorus.views.DatasetContentDetails", function() {
                     });
 
                     it("shows the title for that chart type", function() {
-                        var chartType =
-                            expect(this.view.$('.title.' + this.firstChartType)).not.toHaveClass('hidden');
+                        expect(this.view.$('.chart_type_title.' + this.firstChartType)).not.toHaveClass('hidden');
                     });
 
                     context("and a different chart type is hovered over", function() {
@@ -349,8 +409,8 @@ describe("chorus.views.DatasetContentDetails", function() {
                         });
 
                         it("shows the title for the hovered icon and hides the selected title", function() {
-                            expect(this.view.$('.title.' + this.hoverChartType)).not.toHaveClass('hidden');
-                            expect(this.view.$('.title.' + this.firstChartType)).toHaveClass('hidden');
+                            expect(this.view.$('.chart_type_title.' + this.hoverChartType)).not.toHaveClass('hidden');
+                            expect(this.view.$('.chart_type_title.' + this.firstChartType)).toHaveClass('hidden');
                         });
 
                         context("and we stop hovering", function() {
@@ -360,11 +420,11 @@ describe("chorus.views.DatasetContentDetails", function() {
                             });
 
                             it("shows the selected title for the hovered icon and hides the hovered title", function() {
-                                expect(this.view.$('.title.' + this.hoverChartType)).toHaveClass('hidden');
-                                expect(this.view.$('.title.' + this.firstChartType)).not.toHaveClass('hidden');
+                                expect(this.view.$('.chart_type_title.' + this.hoverChartType)).toHaveClass('hidden');
+                                expect(this.view.$('.chart_type_title.' + this.firstChartType)).not.toHaveClass('hidden');
                             });
-                        })
-                    })
+                        });
+                    });
 
                     context("and a different chart type is clicked", function() {
                         beforeEach(function() {
@@ -378,14 +438,14 @@ describe("chorus.views.DatasetContentDetails", function() {
                         });
 
                         it("shows that title and hides the other visible ones", function() {
-                            expect(this.view.$('.title.' + this.secondChartType)).not.toHaveClass('hidden');
-                            expect(this.view.$('.title.' + this.firstChartType)).toHaveClass('hidden');
+                            expect(this.view.$('.chart_type_title.' + this.secondChartType)).not.toHaveClass('hidden');
+                            expect(this.view.$('.chart_type_title.' + this.firstChartType)).toHaveClass('hidden');
                         });
                     });
                 });
             });
 
-            context("and the derive a chorus view button is clicked", function() {
+            context("and the 'derive a chorus view button' is clicked", function() {
                 beforeEach(function() {
                     this.view.filterWizardView.resetFilters.reset();
                     this.chorusViewSpy = spyOnEvent(this.view, "transform:sidebar");
@@ -420,7 +480,7 @@ describe("chorus.views.DatasetContentDetails", function() {
 
                     expect(searchInput).toExist();
                     expect(chorus.search).toHaveBeenCalled();
-                    var searchOptions = chorus.search.mostRecentCall.args[0];
+                    var searchOptions = chorus.search.lastCall().args[0];
 
                     expect(searchOptions.input).toBe(searchInput);
                     expect(searchOptions.list).toBe(this.$columnList);
@@ -431,12 +491,12 @@ describe("chorus.views.DatasetContentDetails", function() {
                 });
 
                 it("shows the filter section", function() {
-                    expect(this.view.$(".filters")).not.toHaveClass("hidden")
+                    expect(this.view.$(".filters")).not.toHaveClass("hidden");
                 });
 
                 it("triggers transform:sidebar", function() {
                     expect(this.chorusViewSpy).toHaveBeenCalled();
-                })
+                });
 
                 it("enables datasetNumbers on the filter wizard", function() {
                     expect(this.view.filterWizardView.options.showAliasedName).toBeTruthy();
@@ -448,29 +508,29 @@ describe("chorus.views.DatasetContentDetails", function() {
 
                 describe("clicking 'Select All'", function() {
                     beforeEach(function() {
-                        spyOn(chorus.PageEvents, "broadcast");
+                        spyOn(chorus.PageEvents, "trigger");
                         this.view.$(".select_all").click();
-                    })
+                    });
 
-                    it("broadcasts the column:select_all page event", function() {
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("column:select_all");
+                    it("triggers the column:select_all page event", function() {
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("column:select_all");
                     });
                 });
 
                 describe("clicking 'Select None'", function() {
                     beforeEach(function() {
-                        spyOn(chorus.PageEvents, "broadcast");
+                        spyOn(chorus.PageEvents, "trigger");
                         this.view.$(".select_none").click();
-                    })
+                    });
 
-                    it("broadcasts the column:select_none page event", function() {
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("column:select_none");
+                    it("triggers the column:select_none page event", function() {
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("column:select_none");
                     });
                 });
 
                 describe("and the cancel link is clicked", function() {
                     beforeEach(function() {
-                        spyOn(chorus.PageEvents, "broadcast").andCallThrough();
+                        spyOn(chorus.PageEvents, "trigger").andCallThrough();
                         jasmine.JQuery.events.cleanUp();
                         spyOnEvent(".column_count input.search", "textchange");
                         spyOnEvent(".chorus_view_info input.search", "textchange");
@@ -479,8 +539,8 @@ describe("chorus.views.DatasetContentDetails", function() {
                         this.view.$(".create_chorus_view .cancel").click();
                     });
 
-                    it("subscribes to the action:closePreview broadcast", function() {
-                        expect(chorus.PageEvents.hasSubscription("action:closePreview", this.view.closeDataPreview, this.view)).toBeTruthy();
+                    it("subscribes to the action:closePreview trigger", function() {
+                        expect(this.view).toHaveSubscription("action:closePreview", this.view.closeDataPreview);
                     });
 
                     it("swap the Create Bar to green definition bar", function() {
@@ -489,7 +549,7 @@ describe("chorus.views.DatasetContentDetails", function() {
                     });
 
                     it("hides the filters section", function() {
-                        expect(this.view.$(".filters")).toHaveClass("hidden")
+                        expect(this.view.$(".filters")).toHaveClass("hidden");
                     });
 
                     it("shows the chorus view info bar", function() {
@@ -503,11 +563,11 @@ describe("chorus.views.DatasetContentDetails", function() {
                     });
 
                     it("triggers 'cancel:sidebar'", function() {
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith('cancel:sidebar', 'chorus_view');
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith('cancel:sidebar', 'chorus_view');
                     });
 
-                    context("and click on data preview close button when data preview was opened", function () {
-                        it("shows the search column count bar", function () {
+                    context("and click on data preview close button when data preview was opened", function() {
+                        it("shows the search column count bar", function() {
                             this.view.$(".column_count .preview").click();
                             this.view.$(".data_preview .close").click();
                             expect(this.view.$(".column_count")).not.toHaveClass("hidden");
@@ -523,8 +583,8 @@ describe("chorus.views.DatasetContentDetails", function() {
 
                 context("when the workspace is archived", function() {
                     beforeEach(function() {
-                        var dataset = rspecFixtures.workspaceDataset.datasetTable();
-                        var workspace = rspecFixtures.workspace({ archivedAt: "2012-05-08 21:40:14"});
+                        var dataset = backboneFixtures.workspaceDataset.datasetTable();
+                        var workspace = backboneFixtures.workspace({ archivedAt: "2012-05-08 21:40:14"});
                         dataset.initialQuery = "select * from abc";
                         this.view = new chorus.views.DatasetContentDetails({dataset: dataset, collection: this.collection, workspace: workspace});
                         this.server.completeFetchFor(dataset.statistics());
@@ -546,7 +606,7 @@ describe("chorus.views.DatasetContentDetails", function() {
 
                 context("when the workspace is active", function() {
                     beforeEach(function() {
-                        var dataset = rspecFixtures.workspaceDataset.datasetTable();
+                        var dataset = backboneFixtures.workspaceDataset.datasetTable();
                         this.dataset = dataset;
                         var workspace = dataset.workspace();
                         dataset.initialQuery = "select * from abc";
@@ -598,8 +658,8 @@ describe("chorus.views.DatasetContentDetails", function() {
 
                 context("when the workspace is archived", function() {
                     beforeEach(function() {
-                        var dataset = rspecFixtures.workspaceDataset.chorusView();
-                        var workspace = rspecFixtures.workspace({ archivedAt: "2012-05-08 21:40:14" });
+                        var dataset = backboneFixtures.workspaceDataset.chorusView();
+                        var workspace = backboneFixtures.workspace({ archivedAt: "2012-05-08 21:40:14" });
                         dataset.initialQuery = "select * from abc";
                         this.view = new chorus.views.DatasetContentDetails({dataset: dataset, collection: this.collection, workspace: workspace});
                         this.server.completeFetchFor(dataset.statistics());
@@ -617,7 +677,7 @@ describe("chorus.views.DatasetContentDetails", function() {
 
                 context("when the workspace is not archived", function() {
                     beforeEach(function() {
-                        var dataset = rspecFixtures.workspaceDataset.chorusView();
+                        var dataset = backboneFixtures.workspaceDataset.chorusView();
                         dataset.initialQuery = "select * from abc";
                         var workspace = dataset.workspace();
                         this.view = new chorus.views.DatasetContentDetails({dataset: dataset, collection: this.collection, workspace: workspace});
@@ -663,37 +723,48 @@ describe("chorus.views.DatasetContentDetails", function() {
                             expect(this.chorusViewSpy).toHaveBeenCalledWith("edit_chorus_view");
                         });
                         context("and cancel is clicked", function() {
+                            var cancelButton;
                             beforeEach(function() {
-                                spyOn(chorus.PageEvents, 'broadcast').andCallThrough();
-                                this.view.$('.edit_chorus_view .cancel').click();
+                                spyOn(chorus.PageEvents, 'trigger').andCallThrough();
+                                cancelButton = this.view.$('.edit_chorus_view .cancel');
                             });
                             it("shows the definition bar and hides the create_chart bar", function() {
+                                cancelButton.click();
                                 expect(this.view.$('.definition')).not.toHaveClass('hidden');
                                 expect(this.view.$('.edit_chorus_view')).toHaveClass('hidden');
                             });
                             it("shows the column_count and hides info_bar", function() {
+                                cancelButton.click();
                                 expect(this.view.$('.column_count')).not.toHaveClass('hidden');
                                 expect(this.view.$('.edit_chorus_view_info')).toHaveClass('hidden');
                             });
                             it("triggers 'cancel:sidebar'", function() {
-                                expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith('cancel:sidebar', 'chorus_view');
+                                cancelButton.click();
+                                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith('cancel:sidebar', 'chorus_view');
                             });
-                            it("broadcasts dataset:cancelEdit", function() {
-                                expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("dataset:cancelEdit");
+                            it("triggers dataset:cancelEdit", function() {
+                                cancelButton.click();
+                                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("dataset:cancelEdit");
                             });
-                            it("resets the query to the initial query", function() {
-                                expect(this.view.dataset.get("query")).toBe("select * from abc")
-                            })
-                        })
+                            it("resets the query to the initial query before triggering events", function() {
+                                chorus.PageEvents.on("dataset:cancelEdit", function() {
+                                    expect(this.view.dataset.get("query")).toBe("select * from abc");
+                                }, this);
+                                chorus.PageEvents.on("cancel:sidebar", function() {
+                                    expect(this.view.dataset.get("query")).toBe("select * from abc");
+                                }, this);
+                                cancelButton.click();
+                            });
+                        });
                         context("and 'Save and Return' is clicked", function() {
                             beforeEach(function() {
-                                spyOn(chorus.PageEvents, "broadcast");
+                                spyOn(chorus.PageEvents, "trigger");
                                 this.view.$(".save").click();
                             });
-                            it("broadcasts dataset:saveEdit", function() {
-                                expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("dataset:saveEdit");
+                            it("triggers dataset:saveEdit", function() {
+                                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("dataset:saveEdit");
                             });
-                        })
+                        });
                     });
                 });
             });
@@ -701,40 +772,40 @@ describe("chorus.views.DatasetContentDetails", function() {
 
         describe("column count bar", function() {
             beforeEach(function() {
-                this.column = fixtures.databaseColumn();
+                this.column = backboneFixtures.databaseColumn();
             });
 
             it("renders", function() {
                 expect(this.view.$(".column_count")).toExist();
-            })
+            });
 
             it("renders the column count", function() {
-                expect(this.view.$(".column_count .count").text().trim()).toMatchTranslation("dataset.column_count", { count: this.collection.models.length })
-            })
+                expect(this.view.$(".column_count .count").text().trim()).toMatchTranslation("dataset.column_count", { count: this.collection.models.length });
+            });
 
             it("re-renders the column count when a column is added", function() {
                 var count = this.view.collection.length;
                 this.view.collection.add(this.column);
-                expect(this.view.$(".column_count .count").text().trim()).toMatchTranslation("dataset.column_count", { count: count + 1 })
+                expect(this.view.$(".column_count .count").text().trim()).toMatchTranslation("dataset.column_count", { count: count + 1 });
             });
 
             it("re-renders the column count when a column is removed", function() {
                 this.view.collection.add(this.column);
                 var count = this.view.collection.length;
                 this.view.collection.remove(this.column);
-                expect(this.view.$(".column_count .count").text().trim()).toMatchTranslation("dataset.column_count", { count: count - 1 })
+                expect(this.view.$(".column_count .count").text().trim()).toMatchTranslation("dataset.column_count", { count: count - 1 });
             });
         });
 
         describe("column errors", function() {
             beforeEach(function() {
-                spyOn(this.view, "showError");
+                spyOn(this.view, "showErrorWithDetailsLink");
                 this.collection.serverErrors = {fields: {a: {BLANK: {}}}};
                 this.view.render();
             });
 
             it("shows errors in the main content area", function() {
-                expect(this.view.showError).toHaveBeenCalledWith(this.collection, chorus.alerts.Error);
+                expect(this.view.showErrorWithDetailsLink).toHaveBeenCalledWith(this.collection, chorus.alerts.Error);
             });
         });
 
@@ -748,11 +819,11 @@ describe("chorus.views.DatasetContentDetails", function() {
                 expect(this.view.$(".sql_errors").html()).not.toBe("");
             });
 
-            describe("showError", function() {
+            describe("showErrorWithDetailsLink", function() {
                 beforeEach(function() {
-                    this.taskWithErrors = rspecFixtures.dataPreviewTaskResults();
+                    this.errorsource = backboneFixtures.dataPreviewTaskResults();
                     this.alertClass = chorus.alerts.VisualizationError;
-                    this.view.showError(this.taskWithErrors, this.alertClass);
+                    this.view.showErrorWithDetailsLink(this.errorsource, this.alertClass);
                 });
 
                 it("unhides .dataset_errors", function() {
@@ -764,25 +835,25 @@ describe("chorus.views.DatasetContentDetails", function() {
                 });
 
                 it("sets the task correctly", function() {
-                    expect(this.view.taskWithErrors).toBe(this.taskWithErrors);
+                    expect(this.view.errorSource).toBe(this.errorsource);
                 });
 
                 describe("clicking view_error_details", function() {
                     beforeEach(function() {
-                        this.modalSpy = stubModals()
+                        this.modalSpy = stubModals();
                         this.view.$('.view_error_details').click();
                     });
 
                     it("launches the alertClass with the task as the model", function() {
                         var modal = this.modalSpy.lastModal();
                         expect(modal).toBeA(this.alertClass);
-                        expect(modal.model).toBe(this.taskWithErrors);
+                        expect(modal.model).toBe(this.errorsource);
                     });
                 });
 
-                describe("closeError", function() {
+                describe("closeErrorWithDetailsLink", function() {
                     beforeEach(function() {
-                        this.view.closeError();
+                        this.view.closeErrorWithDetailsLink();
                     });
 
                     it("hides the .sql_errors", function() {
@@ -799,17 +870,17 @@ describe("chorus.views.DatasetContentDetails", function() {
                     chorus.views.ChartConfiguration.prototype, 'postRender'
                 ).andCallThrough();
                 this.view.chartConfig = stubView();
-                this.cleanupSpy = jasmine.createSpy("cleanup");
-                this.view.chartConfig.cleanup = this.cleanupSpy;
+
+                this.teardownSpy = spyOn(this.view.chartConfig, "teardown");
 
                 this.view.showVisualizationConfig(this.type);
 
                 expect(renderSpy).toHaveBeenCalled();
-                this.configView = renderSpy.mostRecentCall.object;
+                this.configView = renderSpy.lastCall().object;
             });
 
-            it("cleans up the old chartConfig", function() {
-                expect(this.cleanupSpy).toHaveBeenCalled();
+            it("tears down the old chartConfig, but keeps the container", function() {
+                expect(this.teardownSpy).toHaveBeenCalledWith(true);
             });
 
             it("renders a visualization configuration view for the given chart type", function() {
@@ -826,6 +897,85 @@ describe("chorus.views.DatasetContentDetails", function() {
             it("passes a reference to itself as the config view's 'error container'", function() {
                 expect(this.configView.options.errorContainer).toBe(this.view);
             });
+        });
+
+        describe("custom scrolling", function() {
+            it("handles scrolling (to anchor content details to the top of the window when scrolling down)", function() {
+                $(window).trigger("scroll");
+                expect(this.view.scrollHandler).toHaveBeenCalled();
+            });
+
+            it("only binds scroll handling once", function() {
+                this.view.render();
+                $(window).trigger("scroll");
+                expect(this.view.scrollHandler.calls.count()).toBe(1);
+            });
+        });
+    });
+
+    describe('when the statistics have not loaded', function() {
+        beforeEach(function() {
+            this.$columnList = $("<ul/>");
+            this.qtipMenu = stubQtip();
+            this.dataset = backboneFixtures.workspaceDataset.datasetTable();
+            this.collection = this.dataset.columns([backboneFixtures.databaseColumn(), backboneFixtures.databaseColumn()]);
+
+            this.view = new chorus.views.DatasetContentDetails({
+                dataset: this.dataset,
+                collection: this.collection,
+                $columnList: this.$columnList
+            });
+            this.view.render();
+        });
+
+        it('renders the page', function() {
+            expect(this.view.$el).toContainText('Explore'); // hella random text
+        });
+    });
+
+    describe('when the statistics have loaded', function() {
+        beforeEach(function() {
+            this.$columnList = $("<ul/>");
+            this.qtipMenu = stubQtip();
+            this.dataset = backboneFixtures.workspaceDataset.datasetTable();
+            this.collection = this.dataset.columns([backboneFixtures.databaseColumn(), backboneFixtures.databaseColumn()]);
+
+            this.view = new chorus.views.DatasetContentDetails({
+                dataset: this.dataset,
+                collection: this.collection,
+                $columnList: this.$columnList
+            });
+
+            this.statistics = backboneFixtures.datasetStatisticsView();
+            this.server.completeFetchFor(this.dataset.statistics(), this.statistics);
+        });
+
+        it("renders the page with the view's query", function() {
+            expect(this.view.$('.definition')).toContainText(this.statistics.get('definition'));
+        });
+    });
+
+    describe("when initialized with a dataset with errors", function() {
+        beforeEach(function() {
+            this.dataset = backboneFixtures.workspaceDataset.datasetTable();
+            this.dataset.serverErrors = {record: "MISSING_DB_OBJECT"};
+            this.collection = this.dataset.columns();
+            this.$columnList = $("<ul/>");
+
+            this.view = new chorus.views.DatasetContentDetails({
+                dataset: this.dataset,
+                collection: this.collection,
+                $columnList: this.$columnList
+            });
+            this.view.render();
+        });
+
+        it("displays the errors", function() {
+            expect(this.view.$(".errors")).toContainTranslation("record_error.MISSING_DB_OBJECT");
+        });
+
+        it("doesn't break the definition bar", function() {
+            expect(this.view.$(".definition")).toExist();
         });
     });
 });

@@ -4,11 +4,6 @@ chorus.collections.MemberSet = chorus.collections.Base.extend({
     urlTemplate:"workspaces/{{workspaceId}}/members",
 
     save: function() {
-        new chorus.models.BulkSaver({collection: this}).save();
-    },
-
-    urlParams: function() {
-        var ids = _.pluck(this.models, 'id');
-        return { 'memberIds[]': ids };
+        new chorus.models.BulkSaver({collection: this}).save({memberIds: _.pluck(this.models, 'id')});
     }
 });

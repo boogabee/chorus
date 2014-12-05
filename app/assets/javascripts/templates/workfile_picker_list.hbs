@@ -1,0 +1,22 @@
+{{#if pagination}}
+    <div class="pagination content_details"></div>
+{{/if}}
+
+{{#if models.length}}
+    <div>
+        <ul class="list">
+            {{#each models}}
+                <li data-id="{{id}}" class="{{selected}}">
+                    <span class="image icon"><img src="{{imageUrl}}"/></span>
+                    <div class="text">
+                        <div class="main">
+                            <span class="name" title="{{name}}">{{name}}</span>
+                        </div>
+                    </div>
+                </li>
+            {{/each}}
+        </ul>
+    </div>
+{{else}}
+    <div class="none">{{t emptyListTranslationKey}}</div>
+{{/if}}

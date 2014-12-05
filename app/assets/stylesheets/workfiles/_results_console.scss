@@ -1,11 +1,12 @@
 .results_console {
     .execution {
         height: 32px;
-        line-height: 32px;
+        clear: both;
+        line-height: 31px;
         vertical-align: middle;
         padding: 0 $padding-x;
-        background: $shaded-background-color;
-        border-bottom: 1px solid $guts-border-color;
+        background: white;
+        border-bottom: $border-canon;
 
         h1 {
             @include results-console;
@@ -38,16 +39,8 @@
         .right {
             float: right;
 
-            .message {
-                @include results-console-message;
-            }
-
             .execution_info {
                 display: none;
-
-                .elapsed_time {
-                    @include results-console-message;
-                }
 
                 .spinner {
                   display: inline-block;
@@ -60,7 +53,6 @@
                 }
 
                 .task_loading {
-                    @include results-console-message;
                     display: inline-block;
                 }
 
@@ -105,19 +97,19 @@
         height: 20px;
         text-align: center;
         vertical-align: top;
-        border-top: 1px solid $list-border-color;
+        border-top: $border-canon;
         line-height: 16px;
     }
 
     .expander_button {
         cursor: pointer;
-        background: $data-table-background-color;
+        background: $data-grid-background-color;
         width: 30px;
         height: 15px;
 
         display: inline-block;
 
-        border: 1px solid $list-border-color;
+        border: $border-canon;
         border-top: none;
         margin-top: -4px;
 
@@ -150,17 +142,23 @@
         }
     }
 
-    .minimized .data_table {
+    .minimized .data_grid {
         height: 200px;
-        width: 100%;
     }
 
-    .collapsed .data_table {
+    .collapsed .data_grid {
         display: none;
     }
 
-    .maximized .data_table {
-        height: 500px;
+    .data_grid {
         width: 100%;
     }
+
+    &.fixed_header {
+        top: $header-height + 30px + 3px;
+    }
+}
+
+.workspace .results_console.fixed_header {
+    top: $workspace-header-height + 30px + 3px;
 }

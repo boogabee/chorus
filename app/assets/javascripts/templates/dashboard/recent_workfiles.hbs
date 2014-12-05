@@ -1,0 +1,96 @@
+<div class="dashboard_widget">
+    <div id="recent_workfiles_main_content">
+    
+        <!-- part 1: header of widget -->
+        <div class="module_header">
+            <div class="title">{{t "dashboard.recent_workfiles.name"}}</div>
+            <div class="right">
+                <div class="button clear_list">
+                    {{t "dashboard.recent_workfiles.clear.button"}}
+                </div>
+                <div class="button configure configure_widget" title='{{t "dashboard.widget.configure.button.tip"}}'>
+                    <i class="oi" data-glyph="cog"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- part 2: main content of widget -->
+        {{#if modelLoaded}}
+            {{#if hasModels}}
+            <div class="module_content recent_workfiles_list">
+                <ul class="list selectable">
+                    {{#each models}}
+                        <li>
+                            <div class="image">
+                                <img src="{{iconUrl}}"/>
+                            </div>
+                            <div class="file_name">
+                                <div>
+                                    <a class="workfile_link" href='{{showUrl}}'>{{fileName}}</a>
+                                </div>
+                                <div>
+                                    <img class="workspace_image" src="{{workspaceIconUrl}}"/>
+                                    <span><a class="workspace_link" href='{{workspaceShowUrl}}'>{{workspace.name}}</a></span>
+                                </div>
+                            </div>
+                            <div class="time_edited">
+                                {{relativeTimestamp lastOpened}}
+                            </div>
+                        </li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{else}}
+                <div class="empty_state">
+                    <div class="empty_message">
+                        <p>{{t "dashboard.recent_workfiles.empty.message"}}</p>
+                    </div>
+                    <div class="text_tip">
+                        <p>{{t "dashboard.recent_workfiles.empty.tip"}}</p>
+                    </div>
+                </div>
+            {{/if}}
+        {{/if}}
+
+        <!-- ********** -->
+        <!-- BEGIN: general model for configuration panel of a widget -->
+        <div id="recent_workfiles_configuration" class="widget_configuration">
+        
+            <!-- dark transparent masking overlay, shades the main widget content -->
+            <div class="mask"></div>
+        
+            <!-- BEGIN: configuration panel -->
+            <div class="config_content">
+                
+                <!-- part 1: header of configuration -->
+                <div class="module_header">
+                    <div class="title">{{t "dashboard.recent_workfiles.name"}} {{t "dashboard.configuration"}}</div>
+                </div>
+                
+                <!-- part 2: content of configuration overlay -->
+                <div>{{t "dashboard.recent_workfiles.config.items.label"}}</div>
+                <div>
+                    <select class="recent_items_select">
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </div>
+                
+                <!-- part 3: button row for the configuration overlay -->
+                <div class="button_row">
+                   <span class="left">
+                       <button type="submit" class="submit modalish">{{t "users.button.save_changes"}}</button>
+                       <button type="button" class="cancel modalish">{{t "actions.cancel"}}</button>
+                   </span>
+                </div>
+            </div>
+            <!-- end: configuration panel -->
+        </div>
+        <!-- END: general model for configuration panel of a widget -->
+    
+    </div>
+</div>

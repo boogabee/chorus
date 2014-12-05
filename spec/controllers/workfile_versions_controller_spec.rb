@@ -19,53 +19,56 @@ describe WorkfileVersionsController do
     end
 
     it "changes the file content" do
-      post :update, params
+      put :update, params
 
       File.read(workfile.latest_workfile_version.contents.path).should == 'New content'
     end
 
     it "deletes any saved workfile drafts for this workfile and user" do
-      workfile_drafts(:default).update_attribute(:workfile_id, workfile.id)
-      draft_count(workfile, user).should == 1
+      any_instance_of(workfile.class) do |workfile|
+        mock(workfile).remove_draft(user)
+      end
 
-      post :update, params
-      draft_count(workfile, user).should == 0
+      put :update, params
+    end
+
+    context "when the workfile version does not exist" do
+      it "should return a 404 error" do
+        put :update, params.merge(:id => -1)
+        response.code.should == "404"
+      end
+    end
+
+    it "presents the workfile version with the content" do
+      mock_present do |model, ignored, options|
+        model.should == workfile_version
+        options[:contents].should be_true
+      end
+
+      put :update, params
+      response.code.should == "200"
     end
   end
 
   describe "#create" do
     let(:params) { {:workfile_id => workfile.id, :content => 'New content', :commit_message => 'A new version'} }
+
     before do
+      any_instance_of(workfile.class) do |workfile|
+        mock(workfile).create_new_version(user, hash_including(:content => 'New content', :commit_message => 'A new version'))
+      end
       workfile_version.contents = test_file('workfile.sql')
       workfile_version.save
     end
 
-    it "changes the file content" do
-      post :create, params
-      workfile.reload
-
-      File.read(workfile.latest_workfile_version.contents.path).should == 'New content'
-
-      decoded_response[:version_info][:commit_message].should == 'A new version'
-      decoded_response[:version_info][:version_num].should == 2
-      decoded_response[:version_info][:content].should == 'New content'
-    end
-
-    it "deletes any saved workfile drafts for this workfile and user" do
-      workfile_drafts(:default).update_attribute(:workfile_id, workfile.id)
-      draft_count(workfile, user).should == 1
+    it "presents the workfile version with the content" do
+      mock_present do |model, ignored, options|
+        model.should == workfile.reload.latest_workfile_version
+        options[:contents].should be_true
+      end
 
       post :create, params
-      draft_count(workfile, user).should == 0
-    end
-
-    it "creates the activity stream for upgrade" do
-      post :create, params.merge(:commit_message => 'A new version -1')
-      event = Events::WorkfileUpgradedVersion.by(user).last
-      event.workfile.should == workfile
-      event.workspace.to_param.should == workfile.workspace.id.to_s
-      event.additional_data["version_num"].should == "2"
-      event.additional_data["commit_message"].should == "A new version -1"
+      response.code.should == "201"
     end
   end
 
@@ -75,19 +78,32 @@ describe WorkfileVersionsController do
       workfile_version.save
     end
 
+    let(:params) { { :workfile_id => workfile.id, :id => workfile_version.id } }
+
     it "show the specific version for the workfile" do
       another_version = workfile.build_new_version(user, test_file('some.txt'), "commit message - 1")
       another_version.save
 
-      get :show, :workfile_id => workfile.id, :id => workfile_version.id
+      get :show, params
 
       decoded_response[:version_info][:version_num].should == 1
       decoded_response[:version_info][:version_num].should_not == another_version.version_num
       decoded_response[:version_info][:content].should_not be_nil
     end
 
+    it "presents the workfile version with the content" do
+      mock_present do |model, ignored, options|
+        model.should == workfile_version
+        options[:contents].should be_true
+      end
+
+      get :show, params
+
+      response.code.should == "200"
+    end
+
     generate_fixture "workfileVersion.json" do
-      get :show, :workfile_id => workfile.id, :id => workfile_version.id
+      get :show, params
     end
   end
 
@@ -107,6 +123,10 @@ describe WorkfileVersionsController do
       decoded_response.length.should == 3
       decoded_response[0].version_num = 3
       decoded_response[1].version_num = 2
+    end
+
+    generate_fixture "workfileVersionSet.json" do
+      get :index, :workfile_id => workfile.id
     end
 
     it_behaves_like "a paginated list" do
@@ -161,11 +181,6 @@ describe WorkfileVersionsController do
         response.code.should == "422"
         response.body.should include "ONLY_ONE_VERSION"
       end
-
     end
-  end
-
-  def draft_count(workfile, user)
-    workfile.drafts.where(:owner_id => user.id).count
   end
 end

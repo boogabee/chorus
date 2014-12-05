@@ -1,6 +1,4 @@
 (function() {
-    var imageRegex = /^image\//;
-    var textRegex = /^text\//;
     var extensionRegex = /\.([^\.]+)$/;
     var IMAGE = 'image';
     var SQL = 'sql';
@@ -8,9 +6,12 @@
     var TEXT = 'text';
     var ALPINE = 'alpine';
     var TABLEAU = 'tableau_workbook';
+    var XML_TYPE = 'xml';
     var OTHER = 'other';
 
-    chorus.models.Workfile = chorus.models.Base.extend({
+    chorus.models.Workfile = chorus.models.Base.include(
+        chorus.Mixins.Attachment
+    ).extend({
         constructorName: "Workfile",
         nameAttribute: 'fileName',
         entityType: "workfile",
@@ -20,8 +21,6 @@
         },
 
         urlTemplate: function(options) {
-            var method = options && options.method;
-
             if(this.isNew()) {
                 return "workspaces/{{workspace.id}}/workfiles";
             }
@@ -36,7 +35,7 @@
         showUrlTemplate: function(options) {
             options || (options = {});
             if ((this.isLatestVersion() && !options.version) || options.baseOnly) {
-                return "workspaces/{{workspace.id}}/workfiles/{{id}}"
+                return "workspaces/{{workspace.id}}/workfiles/{{id}}";
             } else {
                 var version = options.version || this.get('versionInfo').id;
                 return "workspaces/{{workspace.id}}/workfiles/{{id}}/versions/" + version;
@@ -58,21 +57,25 @@
             this.workspace().set({id: workspace.id});
         },
 
+        updateExecutionSchema:function(schema){
+            delete this._executionSchema;
+            return this.save({executionSchema: {id: schema.get("id")}}, {wait: true});
+        },
+
         sandbox: function() {
-            return this.workspace().sandbox()
+            return this.workspace().sandbox();
         },
 
         schema: function() {
-            return this.executionSchema()
+            return this.executionSchema();
         },
 
         executionSchema: function() {
-            var executionSchema = this.get("executionSchema");
-            if (executionSchema) {
-                return new chorus.models.Schema(executionSchema);
-            } else {
-                return this.sandbox() && this.sandbox().schema();
+            if(!this._executionSchema) {
+                var executionSchema = this.get("executionSchema");
+                this._executionSchema = executionSchema && new chorus.models.Schema(executionSchema);
             }
+            return this._executionSchema;
         },
 
         modifier: function() {
@@ -92,7 +95,7 @@
             var commentsJson = this.get("recentComments");
             if (commentsJson && commentsJson.length > 0) {
                 var comment = new chorus.models.Comment({
-                    body: commentsJson[0].text,
+                    body: commentsJson[0].body,
                     author: commentsJson[0].author,
                     commentCreatedStamp: commentsJson[0].timestamp
                 });
@@ -113,7 +116,6 @@
 
         allVersions: function() {
             return new chorus.collections.WorkfileVersionSet([], {
-                workspaceId: this.workspace().id,
                 workfileId: this.get("id")
             });
         },
@@ -127,11 +129,11 @@
         },
 
         isImage: function() {
-            return this.get("fileType") == IMAGE;
+            return this.get("fileType") === IMAGE;
         },
 
         isSql: function() {
-            return this.get("fileType") == SQL;
+            return this.get("fileType") === SQL;
         },
 
         isText: function() {
@@ -139,15 +141,23 @@
         },
 
         isAlpine: function() {
-            return this.get("fileType") == ALPINE;
+            return this.get("fileType") === ALPINE;
+        },
+
+        isPartialFile: function() {
+            return this.get('versionInfo') && !!this.get('versionInfo').partialFile;
         },
 
         isTableau: function() {
-            return this.get("fileType") == TABLEAU;
+            return this.get("fileType") === TABLEAU;
         },
 
         isBinary: function() {
-            return this.get("fileType") == OTHER;
+            return this.get("fileType") === OTHER;
+        },
+
+        isXml: function() {
+            return this.get("fileType") === XML_TYPE;
         },
 
         extension: function() {
@@ -174,7 +184,7 @@
 
         isLatestVersion: function() {
             var versionNum = this.get('versionInfo') && this.get('versionInfo').id;
-            return (!versionNum || versionNum === this.get("latestVersionId"))
+            return (!versionNum || versionNum === this.get("latestVersionId"));
         },
 
         save: function(attrs, options) {
@@ -183,28 +193,26 @@
                 attrs = attrs || {};
                 var overrides = {};
 
-                if (this.get("versionInfo") && this.get("versionInfo").id) {
+                if (options.updateWorkfileVersion) {
                     overrides.url = "/workfiles/" + this.get("id") + "/versions/" + this.get("versionInfo").id;
                     attrs['lastUpdatedStamp'] = this.get("versionInfo").lastUpdatedStamp;
                 }
+
+                if (options.newWorkfileVersion) {
+                    overrides = {
+                        method: 'create',
+                        url: "/workfiles/" + this.get("id") + "/versions"
+                    };
+                }
+
+                options = _.omit(options, "updateWorkfileVersion", "newWorkfileVersion");
 
                 return this._super("save", [attrs, _.extend(options, overrides)]);
             }
         },
 
-        saveAsNewVersion: function(attrs, options) {
-            options = options || {};
-
-            var overrides = {
-                method: 'create',
-                url: "/workfiles/" + this.get("id") + "/versions"
-            };
-
-            return this._super("save", [attrs, _.extend(options, overrides)])
-        },
-
         iconUrl: function(options) {
-            if (this.isImage()) {
+            if (this.isImage() && this.get("versionInfo")) {
                 return this.get("versionInfo").iconUrl;
             } else {
                 return chorus.urlHelpers.fileIconUrl(this.extension(), options && options.size);

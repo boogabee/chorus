@@ -6,7 +6,7 @@ describe("chorus.dialogs.WorkspaceEditMembers", function() {
             "ownerFullName": "President Henderson"
         });
         spyOn(chorus.collections.UserSet.prototype, 'fetchAllIfNotLoaded').andCallThrough();
-        spyOn(this.workspace.members(), 'fetchIfNotLoaded').andCallThrough();
+        spyOn(this.workspace.members(), 'fetchAllIfNotLoaded').andCallThrough();
         this.dialog = new chorus.dialogs.WorkspaceEditMembers({ pageModel: this.workspace });
     });
 
@@ -16,7 +16,7 @@ describe("chorus.dialogs.WorkspaceEditMembers", function() {
         });
 
         it("fetches all members", function() {
-            expect(this.workspace.members().fetchIfNotLoaded).toHaveBeenCalled();
+            expect(this.workspace.members().fetchAllIfNotLoaded).toHaveBeenCalled();
         });
     });
 
@@ -54,11 +54,17 @@ describe("chorus.dialogs.WorkspaceEditMembers", function() {
                 this.dialog.collection.add([ this.user1, this.user2, this.user3 ]);
 
                 spyOn(this.dialog.shuttle, "getSelectedIDs").andReturn(["2", "3"]);
-            })
+            });
 
             it("adds the selected models from the shuttle to the 'members' collection", function() {
                 this.dialog.$("button.submit").click();
                 expect(this.dialog.members.models).toEqual([this.user2, this.user3]);
+            });
+
+            it("starts the loading spinner", function() {
+                this.dialog.$("button.submit").click();
+                expect(this.dialog.$("button.submit").isLoading()).toBeTruthy();
+                expect(this.dialog.$("button.submit")).toContainTranslation("actions.saving");
             });
 
             it("saves the members collection", function() {
@@ -72,7 +78,7 @@ describe("chorus.dialogs.WorkspaceEditMembers", function() {
                     spyOnEvent(this.dialog.pageModel, "invalidated");
                     spyOn(this.dialog, 'closeModal');
                     this.dialog.members.trigger("saved");
-                })
+                });
 
                 it("closes the dialog", function() {
                     expect(this.dialog.closeModal).toHaveBeenCalled();
@@ -80,8 +86,8 @@ describe("chorus.dialogs.WorkspaceEditMembers", function() {
 
                 it("triggers the 'invalidated' event on the model", function() {
                     expect("invalidated").toHaveBeenTriggeredOn(this.dialog.pageModel);
-                })
-            })
+                });
+            });
 
             context("when some of the selected users are already members", function() {
                 beforeEach(function() {
@@ -96,5 +102,5 @@ describe("chorus.dialogs.WorkspaceEditMembers", function() {
                 });
             });
         });
-    })
+    });
 });

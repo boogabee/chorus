@@ -1,23 +1,22 @@
 describe("chorus.dialogs.VerifyChorusView", function() {
     beforeEach(function() {
         stubModals();
-        stubDefer();
         spyOn(CodeMirror, "fromTextArea").andCallThrough();
-        this.chorusView = newFixtures.workspaceDataset.chorusView({ query: "select name, quantity from shipments;" });
+        this.chorusView = backboneFixtures.workspaceDataset.chorusView({ query: "select name, quantity from shipments;" });
         this.dialog = new chorus.dialogs.VerifyChorusView({ model: this.chorusView });
         this.dialog.launchModal();
     });
 
     it("has an non-editable CodeMirror", function() {
         expect(this.dialog.editor.getOption("readOnly")).toBeTruthy();
-        expect(this.dialog.$(".CodeMirror")).not.toHaveClass("editable");
+        expect(this.dialog.$(".CodeMirror")).not.toHaveClass("cm-s-editable");
         expect(this.dialog.$("button.edit")).not.toHaveClass("disabled");
     });
 
     it("can make CodeMirror editable", function() {
         this.dialog.$("button.edit").click();
         expect(this.dialog.editor.getOption("readOnly")).toBeFalsy();
-        expect(this.dialog.$(".CodeMirror")).toHaveClass("editable");
+        expect(this.dialog.$(".CodeMirror")).toHaveClass("cm-s-editable");
         expect(this.dialog.$("button.edit")).toHaveClass("disabled");
     });
 
@@ -38,11 +37,11 @@ describe("chorus.dialogs.VerifyChorusView", function() {
 
         it("opens a NameChorusView sub-modal", function() {
             expect(this.dialog.launchSubModal).toHaveBeenCalled();
-            expect(this.dialog.launchSubModal.mostRecentCall.args[0]).toBeA(chorus.dialogs.NameChorusView);
+            expect(this.dialog.launchSubModal.lastCall().args[0]).toBeA(chorus.dialogs.NameChorusView);
         });
 
         it("copies SQL from editor to model before launching submodal", function() {
-            var namingDialog = this.dialog.launchSubModal.mostRecentCall.args[0];
+            var namingDialog = this.dialog.launchSubModal.lastCall().args[0];
             expect(namingDialog.model.get("query")).toBe("newquery");
         });
     });
@@ -55,7 +54,7 @@ describe("chorus.dialogs.VerifyChorusView", function() {
         it("uses the changed SQL for the Data Preview", function() {
             this.dialog.$("button.preview").click();
 
-            expect(this.server.lastCreate().requestBody).toContain("task%5Bquery%5D=newquery");
+            expect(this.server.lastCreate().json()["task"]["query"]).toEqual("newquery");
         });
     });
 });

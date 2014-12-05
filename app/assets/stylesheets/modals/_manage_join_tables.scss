@@ -1,15 +1,17 @@
-.pick_dataset_with_action, .preview_columns, .join_configuration {
-    max-height: 600px;
-}
-
-.pick_dataset_with_action {
-    width: 480px;
-}
-
 .pick_dataset_with_action, .import_datasets_picker_list {
+    .list {
+        .text {
+            .main {
+                width: 350px;
+            }
+        }
+    }
+}
+
+.pick_dataset_with_action, .import_datasets_picker_list, .workfile_picker_list {
     .search {
         padding: 5px 10px;
-        border-bottom: 1px solid $menu-border-color;
+        border-bottom: $border-canon;
     }
 
     .list_content_details {
@@ -38,9 +40,8 @@
 
             .text {
                 .main {
-                    width: 210px;
-                    @include ellipsis;
                     .name {
+                        @include ellipsis;
                         @include font-normal-alpha;
                     }
                 }
@@ -86,8 +87,6 @@
 }
 
 .join_configuration {
-    width: 480px;
-
     .join_tables_content {
         padding: 20px;
         padding-top: 10px;
@@ -107,8 +106,6 @@
 }
 
 .preview_columns {
-    width: 480px;
-
     .list_container {
         max-height: 10 * 36px;
         overflow-y: auto;
@@ -116,7 +113,7 @@
 
     .list {
         margin-right: 20px;
-        border-right: 1px solid $subheader-border-color-dark;
+        border-right: 1px solid $border-color-dark;
     }
 
     .sub_header {
@@ -131,7 +128,6 @@
             display: inline-block;
             max-width: 165px;
             @include ellipsis;
-            @include font-content-details;
         }
     }
 
@@ -149,7 +145,7 @@
         }
     }
 
-    .modal_controls {
+    .form_controls {
         button.cancel {
             float: left;
         }

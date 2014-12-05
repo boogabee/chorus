@@ -1,4 +1,4 @@
-chorus.alerts.PublishInsight = chorus.alerts.Base.extend({
+chorus.alerts.PublishInsight = chorus.alerts.Confirm.extend({
     constructorName: "PublishInsight",
 
     setup: function(options){
@@ -6,10 +6,11 @@ chorus.alerts.PublishInsight = chorus.alerts.Base.extend({
         this.text = this.publish ? t("insight.publish.alert.body") : t("insight.unpublish.alert.body");
         this.title = this.publish ? t("insight.publish.alert.title") : t("insight.unpublish.alert.title");
         this.ok = this.publish ? t("insight.publish.alert.button") : t("insight.unpublish.alert.button");
+        this.body = "";
     },
 
     confirmAlert:function () {
         this.publish ? this.model.publish() : this.model.unpublish();
-        $(document).trigger("close.facebox");
+        this.closeModal();
     }
 });

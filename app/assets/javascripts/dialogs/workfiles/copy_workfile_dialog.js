@@ -17,7 +17,6 @@ chorus.dialogs.CopyWorkfile = chorus.dialogs.PickWorkspace.extend({
     },
 
     resourcesLoaded: function() {
-        this.collection.remove(this.collection.get(this.workfile.workspace().id));
         this.render();
     },
 
@@ -27,7 +26,7 @@ chorus.dialogs.CopyWorkfile = chorus.dialogs.PickWorkspace.extend({
 
         var params = {
             workspace_id: this.selectedItem().get("id")
-        }
+        };
 
         var description = workfile.get("description");
         if (description) {
@@ -39,15 +38,15 @@ chorus.dialogs.CopyWorkfile = chorus.dialogs.PickWorkspace.extend({
             dataType: "json",
             data: params,
             success: function(data) {
-                self.closeModal();
+                self.closeModal(true);
                 var copiedWorkfile = new chorus.models.Workfile(workfile.parse(data));
                 chorus.toast("workfile.copy_dialog.toast", {workfileTitle: copiedWorkfile.get("fileName"), workspaceNameTarget: self.selectedItem().get("name")});
             },
 
             error: function(xhr) {
                 var data = JSON.parse(xhr.responseText);
-                self.serverErrors = data.errors;
-                self.render();
+                self.resource.serverErrors = data.errors;
+                self.showErrors();
             }
         });
     }

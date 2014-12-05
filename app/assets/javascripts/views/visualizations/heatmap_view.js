@@ -42,10 +42,10 @@ chorus.views.visualizations.Heatmap = chorus.views.Base.extend({
         content.selectAll(".bin").data(data).enter()
             .append("svg:rect")
             .attr("class", "bin")
-            .attr("x", function(row) { return scales.x(row.xLabel[0])+1 })
-            .attr("y", function(row) { return scales.y(row.yLabel[1])-1 })
-            .attr("height", function(row) {return Math.abs(scales.y(row.yLabel[1])-scales.y(row.yLabel[0])) })
-            .attr("width", function(row) {return Math.abs(scales.x(row.xLabel[1])-scales.x(row.xLabel[0])) })
+            .attr("x", function(row) { return scales.x(row.xLabel[0])+1; })
+            .attr("y", function(row) { return scales.y(row.yLabel[1])-1; })
+            .attr("height", function(row) { return Math.abs(scales.y(row.yLabel[1])-scales.y(row.yLabel[0])); })
+            .attr("width", function(row) { return Math.abs(scales.x(row.xLabel[1])-scales.x(row.xLabel[0])); })
             .style("fill", function(row, i) {
                 return fillScale(row.value);
             });

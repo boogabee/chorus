@@ -1,8 +1,6 @@
 require 'spec_helper'
 
 describe MembersController do
-  ignore_authorization!
-
   let(:member) { users(:no_collaborators) }
   let(:non_member) { users(:owner) }
   let(:admin) { users(:admin) }
@@ -15,11 +13,10 @@ describe MembersController do
         log_in non_member
       end
 
-      it "does not show all members for the workspace" do
+      it "fails" do
         get :index, :workspace_id => private_workspace.id
 
-        response.code.should == "200"
-        decoded_response.should have(0).items
+        response.should be_forbidden
       end
     end
 
@@ -77,11 +74,20 @@ describe MembersController do
 
     before :each do
       log_in workspace.owner
+      @reindexed = false
+      any_instance_of(Workspace) do |wk|
+        stub(wk).solr_reindex_later { @reindexed = true }
+      end
     end
 
     it "uses authorization" do
       mock(subject).authorize!(:owner, workspace)
       post :create, parameters
+    end
+
+    it "should reindex the workspace" do
+      post :create, parameters
+      @reindexed.should be_true
     end
 
     it "should respond with a 200" do
@@ -108,10 +114,10 @@ describe MembersController do
           post :create, parameters
         }.to change(Events::MembersAdded, :count).by(1)
 
-        Events::MembersAdded.last.num_added.should == "2"
+        Events::MembersAdded.last.num_added.should == 2
       end
 
-      it "creates a notification for each member of the workspace" do
+      it "creates a notification for each new member of the workspace" do
         parameters = {:workspace_id => workspace.id, :member_ids => [member1.id, member2.id, member3.id, member4.id]}
 
         expect {
@@ -124,6 +130,7 @@ describe MembersController do
 
     context "change some of the members for the workspace" do
       let(:parameters) { {:workspace_id => workspace.id, :member_ids => [member2.id]} }
+      let(:import_schedule) { FactoryGirl.create(:import_schedule, :user => member3, :workspace => workspace) }
 
       it "should remove members for the workspace" do
         lambda {
@@ -172,6 +179,18 @@ describe MembersController do
 
         decoded = JSON.parse(response.body)
         decoded['errors']['fields']['owner'].should have_key('OWNER MUST BE A MEMBER')
+      end
+    end
+
+    context 'removing users who own jobs in the workspace' do
+      let!(:job) { FactoryGirl.create(:job, :workspace => workspace, :owner => member3) }
+      let(:parameters) { {:workspace_id => workspace.id, :member_ids => [workspace.owner.id]} }
+
+      it 'transfers job ownership to the workspace owner' do
+        expect {
+          post :create, parameters
+          job.reload
+        }.to change(job, :owner).from(member3).to(workspace.owner)
       end
     end
   end

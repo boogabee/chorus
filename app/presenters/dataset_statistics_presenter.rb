@@ -9,7 +9,8 @@ class DatasetStatisticsPresenter < Presenter
         :last_analyzed_time => model.last_analyzed,
         :on_disk_size => model.disk_size,
         :partitions => model.partition_count,
-        :definition => model.definition
+        :definition => model.definition,
+        :entity_type => model.entity_type_name
     }
   end
 

@@ -11,6 +11,11 @@ describe("chorus.dialogs.ChangePassword", function() {
         this.view.render();
     });
 
+    it("does not autocomplete password inputs", function(){
+        var passwordField = this.view.$("input[type=password]");
+        expect(passwordField).toHaveAttr("autocomplete", "off");
+    });
+
     describe("when the user clicks submit with mis-matched passwords", function() {
         beforeEach(function() {
             this.user.set({password: "abc", passwordConfirmation: "abc"});
@@ -37,7 +42,7 @@ describe("chorus.dialogs.ChangePassword", function() {
 
         it("makes the correct API request", function() {
             expect(this.server.lastUpdate().url).toBe("/users/12");
-            expect(this.server.lastUpdate().params()["user[password]"]).toBe("newpass");
+            expect(this.server.lastUpdate().json()["user"]["password"]).toBe("newpass");
         });
 
         describe("when the save request completes", function() {
@@ -47,8 +52,8 @@ describe("chorus.dialogs.ChangePassword", function() {
             });
 
             it("closes the dialog box", function() {
-                expect("close.facebox").toHaveBeenTriggeredOn($(document))
+                expect("close.facebox").toHaveBeenTriggeredOn($(document));
             });
         });
-    })
+    });
 });

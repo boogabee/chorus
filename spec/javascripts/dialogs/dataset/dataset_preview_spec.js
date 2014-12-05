@@ -1,6 +1,6 @@
 describe("chorus.dialogs.DatasetPreview", function() {
     beforeEach(function() {
-        this.dataset = newFixtures.workspaceDataset.sandboxTable();
+        this.dataset = backboneFixtures.workspaceDataset.datasetTable();
         spyOn(chorus.views.ResultsConsole.prototype, 'execute').andCallThrough();
         spyOn(chorus.dialogs.DatasetPreview.prototype, "closeModal");
         this.view = new chorus.dialogs.DatasetPreview({
@@ -11,7 +11,7 @@ describe("chorus.dialogs.DatasetPreview", function() {
     });
 
     it('should have a close link', function() {
-        expect(this.view.$('.modal_controls .cancel')).toContainTranslation("actions.close_window");
+        expect(this.view.$('.form_controls .cancel')).toContainTranslation("actions.close_window");
     });
 
     it("should pass the dataset to execute on the results console", function() {
@@ -39,7 +39,6 @@ describe("chorus.dialogs.DatasetPreview", function() {
     describe("event handling", function() {
         beforeEach(function() {
             spyOn(this.view.task, "cancel");
-            spyOn(chorus.PageEvents, "unsubscribe");
         });
 
         describe("action:closePreview", function() {
@@ -52,7 +51,7 @@ describe("chorus.dialogs.DatasetPreview", function() {
             });
 
             it("cancels the task", function() {
-                expect(this.view.task.cancel).toHaveBeenCalled()
+                expect(this.view.task.cancel).toHaveBeenCalled();
             });
         });
 
@@ -63,10 +62,6 @@ describe("chorus.dialogs.DatasetPreview", function() {
 
             it("cancels the task", function() {
                 expect(this.view.task.cancel).toHaveBeenCalled();
-            });
-
-            it("unsubscribes from the modal:closed event", function() {
-                expect(chorus.PageEvents.unsubscribe).toHaveBeenCalledWith(this.view.modalClosedHandle);
             });
         });
     });

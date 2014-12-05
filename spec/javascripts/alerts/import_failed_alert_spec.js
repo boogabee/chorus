@@ -19,15 +19,30 @@ describe("chorus.alerts.ImportFailed", function() {
             expect(this.alert.requiredResources.at(0).id).toBe(123);
         });
 
-        describe("when the task is fetched", function() {
-            beforeEach(function() {
-                this.server.lastFetch().succeed(new chorus.models.Activity({
-                    errorMessage: "some error message"
-                }));
-            });
+        context("when the error is an errors object", function() {
+            describe("when the task is fetched", function() {
+                beforeEach(function() {
+                    this.server.lastFetch().succeed(backboneFixtures.activity.datasetImportFailedWithModelErrors());
+                });
 
-            it("renders the error details", function() {
-                expect(this.alert.$(".body p")).toHaveText("some error message");
+                it("renders the error details", function() {
+                    var errorText = chorus.Mixins.ServerErrors.serverErrorMessages.call({serverErrors: {fields: this.alert.model.get("errorObjects")}});
+                    expect(this.alert.$(".body").text()).toMatch(errorText);
+                });
+            });
+        });
+
+        context("when the error is a string", function() {
+            describe("when the task is fetched", function() {
+                beforeEach(function() {
+                    this.server.lastFetch().succeed(new chorus.models.Activity({
+                        errorMessage: "some error message"
+                    }));
+                });
+
+                it("renders the error details", function() {
+                    expect(this.alert.$(".body").text()).toMatch("some error message");
+                });
             });
         });
     });

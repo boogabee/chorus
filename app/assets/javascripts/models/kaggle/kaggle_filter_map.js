@@ -27,7 +27,7 @@
             "equal": { usesSelect: true, condition: "=" }
         },
         declareValidations: function(attrs) {
-            return this.require('value', attrs)
+            return this.require('value', attrs);
         }
     });
 

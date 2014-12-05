@@ -1,123 +1,277 @@
-// Do not put any css rules into this file.  This file is only for declaration of variables and mixins
-//
+// Do not put any css rules into this file. This file is only for declaration of variables and mixins
+@import "_browser_support";
+
+// Grand Old Colors
+/* basic color rules - DO NOT use these in component files, they should only be used in config sections! */
+$light-green: #B3D988;
+$light-blue: #c4dceb;
+$blue: #2c95dd;
+$green: #98B675;
+$gray-blue: #B2C7D6;
+$gray: #7D7D7D;
+$fiji-green: #4E7225;
+$fire-engine-red: #B5121B;
+$pumpkin: #f7771b;
+
+// Brand New Colors
+// These colors were mapped to names via www.color-blindness.com/color-name-hue
+$pacific-blue:      rgb(0, 160, 229);
+$bright-turquoise:  rgb(21, 214, 203);
+$pattens-blue:      rgb(240, 245, 250);
+$alice-blue:        rgb(240, 247, 254);
+$greyish-blue:      rgb(221, 236, 250);
+$greyish-blue-v2:   rgb(248, 251, 253);
+$light-sky-blue:    rgb(148, 215, 244);
+$bluer-lavender:    rgb(225,237,250);
+
+$bright-grey:       rgb(88, 89, 95);
+$greyish-yellow:    rgb(204, 204, 200);
+$light-grey-yellow: rgb(243, 243, 241);
+$light-gray:        rgb(234, 238, 241);
+$shadow-gray:		darken($light-gray, 11%);
+$charcoal:          #464646;
+
+//transparent variants
+$shadow-color:		rgba($shadow-gray, .7);
+
+
+// Tints & Shades of Brand Colors
+// Brand
+$brand: $pacific-blue;
+$brand-light: lighten($brand, 14%);
+$brand-tint: lighten($brand, 7%);
+$brand-shade: darken($brand, 7%);
+$brand-dark: darken($brand, 14%);
+
+$accent: $alice-blue;
+//$accent-light: unused;
+$accent-tint: rgb(250, 252, 253);
+$accent-shade: rgb(231, 243, 253);
+//$accent-dark: unused;
+
+// Semantic Colors
+$ok: $fiji-green;
+$alert: $fire-engine-red;
+$needs-attention: $pumpkin;
+
+
+// Background colors
+$list-hover-color: $accent;
+$list-checked-color: $accent-shade;
+$list-striping-color: $accent-tint;
+$body-background-color: white;
+$shaded-background-color: $light-gray;
+$subheader-background-color: $pattens-blue;
+$dialog-header-background: $greyish-blue;
+$login-background: $bluer-lavender;
+
+// Border colors
+$border-color: $light-gray;
+$border-color-dark: darken($border-color, 5%);
+$border-color-darkest: darken($border-color, 15%);
+
+// Text colors
+$color-text1: darken($charcoal, 10%);
+$color-text2: $charcoal;
+$color-text3: lighten($charcoal, 10%);
+$color-text4: lighten($bright-grey, 20%);
+$link-color: $brand;
+$disabled-text: rgb(147, 154, 159);
+$caret-color: $light-sky-blue;
+
+// Font weights
+$semibold: 600;
+$light: 300;
+// "normal" defaults to 400
+
+//Dimensions
+$header-height: 50px;
+$subheader-height: 60px;
+$subnav-height: 45px;
+$workspace-header-height: $subnav-height + $subheader-height + $header-height;
+$summary-line-height: 19px;
+$default-border-width: 1px;
+$default-border-radius: 3px;
+
+/* global margin for left and right sides of all pages */
+$page-margin-left: 25px;
+$page-margin-right: 25px;
+/* global margin for bottom of all pages */
+$page-margin-bottom: 60px;
+
+//Specials
+$border-canon: $default-border-width solid $border-color;
+$dark-border-canon: $default-border-width solid $border-color-dark;
+$strong-border-canon: 5px solid $color-text3;
+
+$shadow-canon: 2px 2px 3px 0px $shadow-color;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* applied color rules - USE these in component files! */
+// Background colors
+$data-grid-background-color: #EAEEF2;
+$progress-bar-background-color : #D8DEE6;
+$selected-row-hover-background-color: #DCE2E8;
+$ie-header-color: #c7c7c7;
+$tab-gradient-color : #D5E0EB;
+$activity-stream-comment-background-color: #DFE5EB;
+$progress-bar-full-background-color : #AE0020;
+$error-background-color: #B61B1D;
+$search-highlight-color: #FFFF00;
+$content-details-create-background-color: #49A942;
+$content-details-chart-icon-selected-background-color: #42AA3D;
+$content-details-action-background-color: #B3D988;
+$content-details-chart-icon-hover-background-color: #C3ECA0;
+$picklist-selected-background-color: #3795DD;
+$chart-fill-color: #4A83C3;
+$dataset-number-background-color: #788DA5;
+
+// standard app lightbox background color and opacity
+$lightbox-overlay-opacity: 0.49;
+$lightbox-overlay-color: rgba(0,0,0,$lightbox-overlay-opacity);
+
+// Border colors
+$content-details-action-link-border-color: #98B675;
+$results-console-border-color: #88A8D3;
+$type-ahead-result-border-color: #A5A6A8;
+
+// Text colors
+$error-text-color: white;
+$error-color: white;
+$content-header-link-color: $color-text4;
+
+// Notification colors
+$notification-error-dark: #d43a0b;
+$notification-error-light: #ffd6d6;
+$notification: $bright-turquoise;
 
 // Dimensions
 $sidebar-width : 266px;
 $sidebar-padding-x : 16px;
-$page-min-width : 750px;
+$sidebar-padding-left : 15px;
+$sidebar-padding-top : 10px;
+$page-min-width : 1024px;
 $padding-x : 10px;
 $padding-y : 8px;
+
+$default-padding-vertical: 10px;
+$default-padding-horizontal: 5px;
 $margin-x : 10px;
 $guts-padding: 7px;
+$guts-padding-bottom: 15px;
 $user-detail-image-width: 150px;
-$header-height : 49px;
-$icon-image-width : 32px;
-$icon-image-height : 32px;
-$activity-gutter: 8px;
+$icon-image-width : 35px;
+$icon-image-height : 35px;
+$large-image-width : 45px;
+$large-image-height : 45px;
+$activity-gutter: 15px;
 $dialog-padding : 15px;
-$button-height : 26px;
 $breadcrumbs-height: 32px;
 $help-pill-width: 34px;
-
-// Colors
-//
-$body-background-color: #EAEFF6;
-$body-glow-color : #C8DCED;
-$shaded-background-color: #E1E5E9;
-$data-table-background-color: #EAEEF2;
-
-$color-text1 : black;
-$color-text2 : #5f5f5f;
-$color-text3 : #7D7D7D;
-$color-text4 : #959595;
-$color-text5 : #464646;
-$error-text-color: white;
-
-$link-color : #2c95dd;
-$content-header-link-color: $color-text4;
-$content-details-action-link-color: #4E7225;
-
-$element-background: white;
-$button-background-color : white;
-
-$list-hover-color: #dde3e9;
-$border-color : #D0D0D0;
-$weak-header-border-color : #bebfc9;
-$subheader-border-color : #D1D4D7;
-$subheader-border-color-dark : #A4A6A8;
-$guts-border-color : #CCD2D7;
-$pagination-border-color: #A4A6A8;
-$menu-border-color: #B0B0B0;
-$header-border-color: #8A97A2;
-$list-border-color: #B9BBBD;
-$content-details-action-link-border-color: #98B675;
-$dotted-list-item-border: 1px dotted $subheader-border-color;
-$tab-gradient-color : #D5E0EB;
-$results-console-border-color: #88A8D3;
-$type-ahead-result-border-color: #A5A6A8;
-
-$progress-bar-background-color : #D8DEE6;
-$progress-bar-full-background-color : #AE0020;
-
-$administrator-background-color: #5f5f5f;
-
-$search-highlight-color: #FFFF00;
-
-$error-background-color: #B61B1D;
-$error-color: white;
-$alert-background-color: #B5121B;
-$content-details-action-background-color: #B3D988;
-$content-details-create-background-color: #49A942;
-$content-details-create-bar-link-color: #608437;
-$content-details-chart-icon-hover-background-color: #C3ECA0;
-$content-details-chart-icon-selected-background-color: #42AA3D;
-$content-details-info-bar-background-color: #C4DCEB;
-
-$picklist-selected-background-color: #3795DD;
-
-$activity-stream-comment-background-color: #DFE5EB;
-$selected-row-hover-background-color: #DCE2E8;
-$chart-fill-color: #4A83C3;
-
-$dataset-number-background-color: #788DA5;
+$texteditor-min-height: 300px;
+$default-dialog-width: 500px;
 
 // z-indices
 $guts-z-index: 0;
 $link-menu-z-index: $guts-z-index + 1;
 $editor-top-z-index: 10;
 
-$data-table-body-z-index: 20;
-$data-table-head-z-index: $data-table-body-z-index + 1;
+$data-grid-column-header-z-index: 2;
+$data-grid-body-z-index: 20;
+$data-grid-head-z-index: $data-grid-body-z-index + 1;
 
-// qTip2 assigns z-index values starting from 15000, but we want them to flow under the header.
-// It seems that when you navigate between pages, qTip's z-index resets to 15000, so this would work wrong if a single page
-// rendered 1000 qTip tooltips.  That will probably never be the case.
-$header-z-index: 16000;
+$header-z-index: 15000;
 $menu-z-index: $header-z-index + 1;
 
 $dialog-overlay-z-index: $menu-z-index + 1;
 $dialog-z-index: $dialog-overlay-z-index + 1;
 
-$modal-tooltip-z-index: $dialog-z-index + 1;
+$tooltip-z-index: $dialog-z-index + 1;
 
-$toast-closing-z-index: $modal-tooltip-z-index + 1;
+$toast-closing-z-index: $tooltip-z-index + 1;
 $toast-z-index: $toast-closing-z-index + 1;
 $hidden-z-index: -100;
 $select-menu-z-index: 1000000;
-
-//ie colors
-$ie-header-color: #c7c7c7;
-
-// Font weights
-$semibold: 600;
+$drag-z-index: 9999;
 
 // Font size
 $medium-font: 14px;
+$small-font: 12px;
+$smallest-font: 10px;
 
-$summary-font-size: 14px;
-$summary-line-height: 19px;
+// fontsize for the page header element. eg. name of item
+$page_header-fontsize: 20.5px;
+// fontsize for the primary item name in lists. e.g. workspace, workfile, datasource, etc.
+$listitem_name-fontsize: 16px;
+
+///////////////////////////////////////////////////////
+// TODO: Reconcile these with above values
+/* Typography */
+
+$default-font-color: $color-text3;
+$default-font-size: 14px;
+$font-family: "Source Sans Pro",Helvetica,Arial,Verdana,sans-serif;
+$low-light-type: $gray;
+$mid-light-type: #5f5f5f;
+
+$action-bar-highlighted-font-color: $fiji-green;
+
+/* Link */
+
+$default-link-color: $blue;
+$low-light-link-color: $gray;
+
+/* Lists */
+
+$list-horizontal-divider: 1px solid $border-color;
+$list-vertical-divider: 1px solid $border-color;
+$list-selectable-hover-color: rgba(0,0,0,0.1);
+$list-selectable-selected-color: white;
+$list-breadcrumb-divider: "\e02f";
+$list-breadcrumb-spacing: 5px;
+$list-breadcrumb-size: 10px;
+$list-border-color-highlighted: $green;
+
+
+/* whitespace */
+
+$baseLineHeight: 1.5em !default; //must be in em
+$baseFontSize: 15px !default; // must be px
+
+/*
+ * em-ratio converts between em and px
+ * to em    divide by this ratio
+ * to px    mulitply by this ratio
+ */
+$emRatio: $baseFontSize/$baseLineHeight;
+
+
+$guttersH: 15px;
+$guttersV: $baseLineHeight/2em*1rem; // set top and bottom margins to half the base line height so that the total takes up one row of vertical rhythm.
+$spacingHelpers: ($emRatio*$baseLineHeight/3, $emRatio*$baseLineHeight/2, $emRatio*$baseLineHeight); //TODO: convert to px;
+
+/* buttons */
+$button-height : 26px;
+$button-border-color: $border-color;
+$button-background-color : white;
+
+$button-border-color-highlighted: $green;
+
+$button-border-color-secondary: $gray-blue;
+
+$button-border-color-limited: #A0A0A0;
+
+/* action bars */
+$action-bar-highlighted-background-color: $light-green;
+$action-bar-hovered-item-background-color: #C3ECA0;
+$action-bar-secondary-background-color: $light-blue;
+
+///////////////////////////////////////////////////////
 
 // Mixins
+
+
 
 // Un-comment these lines to find text that isn't styled with a mixin
 // * { text-shadow: red 0 0 2px !important; }
@@ -125,11 +279,32 @@ $summary-line-height: 19px;
     // text-shadow: none !important;
 }
 
+@mixin placeholder {
+  @include debugging-mixin;
+  &::-webkit-input-placeholder {@content}
+  &:-moz-placeholder           {@content}
+  &::-moz-placeholder          {@content}
+  &:-ms-input-placeholder      {@content}
+}
+
 @mixin heading-normal {
     @include debugging-mixin;
     font-size: 24px;
     font-weight: $semibold;
-    color: black;
+    color: $color-text1;
+}
+
+@mixin subheading-normal {
+    font-size: 20px;
+    font-weight: normal;
+    color: $color-text3;
+}
+
+@mixin section-heading {
+    @include debugging-mixin;
+    font-size: 18px;
+    font-weight: $semibold;
+    color: $bright-grey;
 }
 
 @mixin heading-sidebar {
@@ -159,28 +334,50 @@ $summary-line-height: 19px;
     @include debugging-mixin;
     font-size: 13px;
     font-weight: normal;
-    color: black;
-}
-
-@mixin font-normal-gamma {
-    @include debugging-mixin;
-    font-size: 12px;
-    font-weight: $semibold;
-    color: black;
+    color: #000000;
 }
 
 @mixin font-normal-delta {
     @include debugging-mixin;
     font-size: 14px;
     font-weight: normal;
-    color: black;
+    color: #000000;
 }
 
-@mixin font-content-details {
+@mixin font-normal-gamma {
+    @include debugging-mixin;
+    font-size: 14px;
+    font-weight: $semibold;
+	color: $color-text1;
+}
+
+
+@mixin font-secondary-content {
     @include debugging-mixin;
     font-size: 12px;
-    font-weight: $semibold;
+    font-weight: normal;
     color: $color-text2;
+}
+
+/* primary link */
+/* used for the name of items in list */
+/* workspaces, files, etc. */
+
+@mixin font-primary-link {
+    color: $brand;
+    font-size: 18px;
+    font-weight: normal;
+}
+
+@mixin font-action-link {
+    color: $brand;
+    font-size: 14px;
+}
+
+@mixin font-secondary-link {
+    color: $brand-dark;
+    font-size: 12px;
+    font-weight: $semibold;
 }
 
 @mixin font-menu {
@@ -199,18 +396,17 @@ $summary-line-height: 19px;
     color: $color-text1;
 }
 
-@mixin results-console-message {
-    @include debugging-mixin;
-    font-size: 12px;
-    font-weight: normal;
-    color: $color-text2;
+@mixin uppercase {
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 @mixin list-section-heading {
     @include debugging-mixin;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: $semibold;
-    color: $color-text2;
+    color: $disabled-text;
+    @include uppercase;
 }
 
 @mixin list-item-details-area {
@@ -233,6 +429,13 @@ $summary-line-height: 19px;
     color: $color-text3;
 }
 
+@mixin tertiary-text-normal {
+    @include debugging-mixin;
+    font-size: 14px;
+    font-weight: normal;
+    color: $color-text4;
+}
+
 @mixin secondary-text-semibold {
     @include debugging-mixin;
     font-size: 14px;
@@ -244,7 +447,13 @@ $summary-line-height: 19px;
     @include debugging-mixin;
     font-size: 12px;
     font-weight: normal;
-    color: $color-text3;
+    color: $color-text4;
+}
+
+@mixin secondary-text ($color) {
+    font-size: 12px;
+    font-weight: normal;
+    color: $color;
 }
 
 @mixin secondary-text-small-semibold {
@@ -254,22 +463,31 @@ $summary-line-height: 19px;
     color: $color-text3;
 }
 
-@mixin summary-text {
+@mixin dashboard-huge {
     @include debugging-mixin;
-    font-size: $summary-font-size;
-    line-height: $summary-line-height;
+    font-size: 56px;
+    line-height: 56px;
+    color: $color-text2;
 }
 
-@mixin create-bar-text {
+@mixin dashboard-snapshot-model {
+    @include debugging-mixin;
     font-size: 14px;
-    font-weight: $semibold;
-    color: white;
 }
 
-@mixin link-with-dotted-underline {
+@mixin dashboard-module-title {
+    @include debugging-mixin;
+    font-size: 14px;
+    color: $color-text2;
+    @include uppercase;
+}
+
+@mixin dnd-list-header {
+    @include debugging-mixin;
     font-size: 12px;
+    color: $color-text2;
     font-weight: $semibold;
-    border-bottom: 1px dotted $link-color;
+    @include uppercase;
 }
 
 @mixin after-clearfix($which: both) {
@@ -301,40 +519,6 @@ $summary-line-height: 19px;
     text-overflow: inherit;
 }
 
-@mixin content-details-button($border-color) {
-    border: 1px solid $border-color;
-    @include border-radius(30px);
-    background: none;
-    margin-bottom: 2px;
-
-    &[disabled=disabled] {
-        @include opacity(0.5);
-    }
-    @include debugging-mixin;
-}
-
-@mixin tab-gradient {
-    @include background-image(linear-gradient($body-background-color, $tab-gradient-color));
-}
-
-@mixin recent-comment {
-    .comment {
-        .body {
-            @include font-normal-alpha;
-        }
-
-        .user {
-            font-size: 13px;
-            font-weight: $semibold;
-        }
-
-        .comment_info {
-            font-size: 13px;
-            color: $color-text4;
-        }
-    }
-}
-
 @mixin menu-triangle {
     padding-right: 10px;
     background-image: url("/images/blue-menu-triangle.png");
@@ -362,6 +546,114 @@ $summary-line-height: 19px;
 		border-top: $height/2 solid transparent;
 		border-bottom: $height/2 solid transparent;
 	}
+}
+
+@mixin pill-tab($min-width) {
+    &:hover .lozenge { background: $shaded-background-color; }
+    .lozenge {
+        @include lozenge(0, $min-width, 21px);
+        font-size: 12px;
+        color: $color-text2;
+        padding: 0 10px;
+    }
+
+    &.selected {
+        &:hover .lozenge { background: $brand-dark; }
+
+        .lozenge {
+            background: $brand-dark;
+            color: white;
+        }
+    }
+}
+
+@mixin lozenge($padding, $min-width, $height) {
+    @include uppercase;
+    height: $height;
+    line-height: $height;
+    font-weight: $semibold;
+    display: inline-block;
+    padding: $padding;
+    text-align: center;
+
+    @include border-radius($height);
+    min-width: $min-width;
+}
+
+@mixin grab_cursor {
+    cursor: -moz-grab;
+    cursor: -o-grab;
+    cursor: -ms-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
+}
+
+@mixin sidebar-panel {
+
+    $border-radius: $default-border-radius;
+    margin-top: $sidebar-padding-top;
+
+    $sidebar-panel-width: $sidebar-width - 16px;
+    width: $sidebar-panel-width;
+    border: $border-canon;
+    @include border-radius($border-radius);
+    .disabled { color: $color-text4; }
+
+    li {
+        padding-top: 10px;
+        padding-left: 10px;
+    }
+
+    a { @include font-action-link; }
+
+    label {
+        @include border-top-radius($border-radius);
+        border-bottom: $border-canon;
+        display: block;
+        @include secondary-text-small-semibold;
+        @include uppercase;
+        padding: 10px;
+    }
+
+    ul {
+        padding-bottom: 10px;
+    }
+
+}
+@mixin dark-sidebar-panel {
+    @include sidebar-panel;
+
+    background: $accent;
+
+    label {
+        background: $accent-shade;
+        border-bottom: $dark-border-canon;
+    }
+}
+
+@mixin toggle-menus {
+    .menus {
+        float: right;
+        margin-right: 10px;
+
+        a {
+            &.active {
+                color: black;
+                border-bottom: none;
+            }
+        }
+
+        .separator {
+            padding: 0 5px;
+            position: relative;
+            top: 2px;
+            color: $link-color;
+        }
+
+        .badge {
+            display: inline-block;
+        }
+    }
 }
 
 // Do not put any css rules into this file.  This file is only for declaration of variables and mixins

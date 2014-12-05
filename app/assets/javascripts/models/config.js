@@ -6,32 +6,34 @@ chorus.models.Config = chorus.models.Base.extend({
         return this.get("externalAuthEnabled");
     },
 
-    timezoneOffset: function() {
-        if (this.has("timezoneOffset")) {
-            var hours = parseInt(this.get("timezoneOffset"));
-            return hours * 100;
-        }
-    },
-
     fileSizeMbWorkfiles: function() {
         return this.get("fileSizesMbWorkfiles");
     },
 
     fileSizeMbCsvImports: function() {
         return this.get("fileSizesMbCsvImports");
-    }
- }, {
-    instance:function () {
-        if (!this._instance) {
-            this._instance = new chorus.models.Config();
+    },
+
+    restrictDataSourceCreation: function() {
+        return this.get("restrictDataSourceCreation");
+    },
+
+    license: function() {
+        if (!this._license) {
+            this._license = new chorus.models.License(this.get("license"));
         }
 
-        // Decoupling the creation of new instances from the fetching action
-        // because when the user isn't logged in, the server responds with
-        // 200 (OK), but no config information returns. If so, we need
-        // to reload its information at another time.
-        if(!this._instance.loaded && !this._instance.fetching) {
-            this._instance.fetch();
+        return this._license;
+    },
+
+    clear: function() {
+        this._super("clear", arguments);
+        delete this._license;
+    }
+}, {
+    instance: function () {
+        if (!this._instance) {
+            this._instance = new chorus.models.Config();
         }
 
         return this._instance;

@@ -5,7 +5,7 @@ chorus.dialogs.VisualizationWorkspacePicker = chorus.dialogs.PickWorkspace.exten
     submitButtonTranslationKey: "visualization.workspace_picker.button",
 
     makeModel: function() {
-        this.options = this.options || {}
+        this.options = this.options || {};
         this.options.activeOnly = true;
         this._super("makeModel", arguments);
     },

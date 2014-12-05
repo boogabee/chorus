@@ -44,7 +44,7 @@ describe("FakeFileUpload", function() {
             });
 
             it("passes an object containing an array of file objects", function() {
-                var data = addSpy.mostRecentCall.args[1];
+                var data = addSpy.lastCall().args[1];
                 var fileList = data.files;
                 expect(fileList.length).toBe(3);
                 expect(fileList[0].name).toBe("file1.txt");
@@ -53,14 +53,14 @@ describe("FakeFileUpload", function() {
             });
 
             it("includes a 'submit' method", function() {
-                var data = addSpy.mostRecentCall.args[1];
+                var data = addSpy.lastCall().args[1];
                 expect(data.submit).toBeDefined();
             });
 
             describe("when file sizes are given", function() {
                 it("uses them", function() {
                     fakeUpload.add([{ name: "file1.txt", size: 4321, type: "malware/virus" }]);
-                    var data = addSpy.mostRecentCall.args[1];
+                    var data = addSpy.lastCall().args[1];
                     var fileList = data.files;
                     expect(fileList.length).toBe(1);
                     expect(fileList[0].name).toBe("file1.txt");
@@ -73,7 +73,7 @@ describe("FakeFileUpload", function() {
                 var request;
 
                 beforeEach(function() {
-                    var data = addSpy.mostRecentCall.args[1];
+                    var data = addSpy.lastCall().args[1];
                     request = data.submit();
                 });
 
@@ -95,8 +95,8 @@ describe("FakeFileUpload", function() {
                     });
 
                     it("passes the given data in a format mimicking the upload plugin", function() {
-                        var data = doneSpy.mostRecentCall.args[1]
-                        expect(data.result).toBe('{"response":{"foo":"bar"}}')
+                        var data = doneSpy.lastCall().args[1];
+                        expect(data.result).toBe('{"response":{"foo":"bar"}}');
                     });
                 });
 
@@ -110,12 +110,12 @@ describe("FakeFileUpload", function() {
                     });
 
                     it("passes a fake jquery event object", function() {
-                        var event = failSpy.mostRecentCall.args[0];
+                        var event = failSpy.lastCall().args[0];
                         expect(_.isFunction(event.preventDefault)).toBeTruthy();
                     });
 
                     it("passes an error in a format mimicking the upload plugin", function() {
-                        var data = failSpy.mostRecentCall.args[1];
+                        var data = failSpy.lastCall().args[1];
                         expect(data.jqXHR.responseText).toBe('{"errors":{"fields":{"email":{"BLANK":{}}}}}');
                     });
                 });
@@ -130,12 +130,12 @@ describe("FakeFileUpload", function() {
                     });
 
                     it("passes a fake jquery event object", function() {
-                        var event = failSpy.mostRecentCall.args[0];
+                        var event = failSpy.lastCall().args[0];
                         expect(_.isFunction(event.preventDefault)).toBeTruthy();
                     });
 
                     it("passes an error in a format mimicking nginx errors", function() {
-                        var data = failSpy.mostRecentCall.args[1];
+                        var data = failSpy.lastCall().args[1];
                         expect(data.jqXHR.responseText).toBe('<html>Hello World</html>');
                         expect(data.jqXHR.status).toBe(404);
                         expect(data.jqXHR.statusText).toBe('Page could not be found at all');

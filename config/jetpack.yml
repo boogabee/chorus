@@ -1,10 +1,10 @@
-jruby: http://jruby.org.s3.amazonaws.com/downloads/1.6.8/jruby-complete-1.6.8.jar
-jetty: http://dist.codehaus.org/jetty/jetty-hightide-7.4.5/jetty-hightide-7.4.5.v20110725.zip
-jruby-rack: http://repository.codehaus.org/org/jruby/rack/jruby-rack/1.0.10/jruby-rack-1.0.10.jar
+jruby: http://jruby.org.s3.amazonaws.com/downloads/1.7.13/jruby-complete-1.7.13.jar
+jetty: http://dist.codehaus.org/jetty/jetty-hightide-8.1.9/jetty-hightide-8.1.9.v20130131.zip
+jruby-rack: http://repository.codehaus.org/org/jruby/rack/jruby-rack/1.1.14/jruby-rack-1.1.14.jar
 app_root: $CHORUS_HOME
-java_options: -Djava.library.path=$CHORUS_HOME/vendor/hadoop/lib/ -server -Xmx1024m -Xms512m -XX:MaxPermSize=128m
+java_options: $CHORUS_JAVA_OPTIONS
 ruby_version: 1.9
 app_type: rack
 http_port: 3000
-bundle_without: [integration, development, test, packaging]
+bundle_without: [integration, development, test, packaging, ci_jasmine, ci_legacy, ci_next]
 max_concurrent_connections: 20

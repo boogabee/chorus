@@ -1,22 +1,22 @@
 describe("chorus.views.NotificationList", function() {
     beforeEach(function() {
-        this.collection = rspecFixtures.notificationSet();
-        var brokenNotification = new chorus.models.Notification();
-        brokenNotification.set({ action: "IMPORT_SUCCESS" });
-        this.collection.add(brokenNotification);
+        this.collection = backboneFixtures.notificationSet();
+        this.collection.comparator = function(notification) {
+            notification.get("id");
+        };
+        this.collection.sort();
         this.view = new chorus.views.NotificationList({ collection: this.collection });
     });
 
     describe("#render", function() {
         beforeEach(function() {
             this.collection.loaded = true;
-            spyOn(chorus, 'log');
             spyOn(chorus.views.Activity.prototype, 'initialize').andCallThrough();
             this.view.render();
         });
 
         it("renders an li for each notification in the collection", function() {
-            expect(this.view.$("li.activity").length).toBe(4);
+            expect(this.view.$("li.activity").length).toBe(backboneFixtures.notificationSet().length);
         });
 
         it("does not render the links section in the handlebars template", function() {
@@ -25,30 +25,33 @@ describe("chorus.views.NotificationList", function() {
         });
 
         it("highlights the unread notifications", function() {
-            expect(this.view.$("li:eq(0)")).toHaveClass("unread");
-            expect(this.view.$("li:eq(1)")).toHaveClass("unread");
-            expect(this.view.$("li:eq(2)")).toHaveClass("unread");
-            expect(this.view.$("li:eq(3)")).not.toHaveClass("unread");
+            this.collection.each(function(model, i) {
+                if (model.get("unread")) {
+                    expect(this.view.$("li.activity:eq("+i+")")).toHaveClass("unread");
+                } else {
+                    expect(this.view.$("li.activity:eq("+i+")")).not.toHaveClass("unread");
+                }
+            }, this);
         });
 
         it("passes the 'isNotification' option to the activity views", function() {
-            var viewOptions = chorus.views.Activity.prototype.initialize.mostRecentCall.args[0];
+            var viewOptions = chorus.views.Activity.prototype.initialize.lastCall().args[0];
             expect(viewOptions.isNotification).toBeTruthy();
         });
 
         it("passes the 'isReadOnly' option to the activity views", function() {
-            var viewOptions = chorus.views.Activity.prototype.initialize.mostRecentCall.args[0];
+            var viewOptions = chorus.views.Activity.prototype.initialize.lastCall().args[0];
             expect(viewOptions.isReadOnly).toBeTruthy();
-        });
-
-        it("skips broken notifications", function() {
-            expect(chorus.log).toHaveBeenCalled();
-            expect(chorus.log.mostRecentCall.args[3]).toBe(this.collection.at(4));
         });
     });
 
     describe("error handling bad notifications", function() {
         beforeEach(function() {
+            spyOn(chorus, 'log');
+            var brokenNotification = new chorus.models.Notification();
+            brokenNotification.set({ action: "IMPORT_SUCCESS" });
+            this.collection.add(brokenNotification);
+            this.collection.sort();
             this.collection.loaded = true;
             spyOn(chorus.views.Activity.prototype, 'initialize').andCallThrough();
         });
@@ -65,7 +68,12 @@ describe("chorus.views.NotificationList", function() {
             chorus.isDevMode.andReturn(false);
             this.view.render();
             expect(chorus.toast).not.toHaveBeenCalled();
-        })
+        });
+
+        it("logs stuff about the broken notification", function() {
+            expect(chorus.log).toHaveBeenCalled();
+            expect(chorus.log.lastCall().args[3]).toBe(this.collection.at(this.collection.length-1));
+        });
     });
 
     describe("more link", function() {
@@ -83,7 +91,7 @@ describe("chorus.views.NotificationList", function() {
             });
 
             it("hides the more link", function() {
-                expect(this.view.$(".more_notifications a")).not.toExist();
+                expect(this.view.$(".more_items a")).not.toExist();
             });
         });
 
@@ -95,12 +103,12 @@ describe("chorus.views.NotificationList", function() {
 
             context("when more results are available", function() {
                 it("shows the more link", function() {
-                    expect(this.view.$(".more_notifications a")).toExist();
+                    expect(this.view.$(".more_items a")).toExist();
                 });
 
                 context("clicking the more link", function() {
                     beforeEach(function() {
-                        this.view.$(".more_notifications a").click();
+                        this.view.$(".more_items a").click();
                     });
 
                     it("loads more results", function() {
@@ -109,15 +117,16 @@ describe("chorus.views.NotificationList", function() {
 
                     context("when the fetch completes", function() {
                         beforeEach(function() {
-                            var newNotifications = this.collection.models;
+                            this.newModel = backboneFixtures.notificationSet().at(3);
+                            this.newModel.set('id', _.uniqueId('xx'));
+                            this.newModel.set('cid', _.uniqueId('rr'));
 
                             spyOn(chorus.collections.NotificationSet.prototype, "markAllRead").andCallThrough();
-                            this.server.completeFetchFor(this.collection, newNotifications,
-                                {page:2}, {page: "2", total: "9999999"});
+                            this.server.completeFetchFor(this.collection, [this.newModel], {page:2}, {page: "2", total: "9999999"});
                         });
 
                         it("renders the new notifications", function() {
-                            expect(this.view.$("li.activity").length).toBe(8);
+                            expect(this.view.$("li.activity").length).toBe(backboneFixtures.notificationSet().length + 1);
                         });
 
                         it("marks all notification read again", function() {
@@ -126,13 +135,14 @@ describe("chorus.views.NotificationList", function() {
 
                         context("clicking the more link again", function() {
                             beforeEach(function() {
-                                expect(this.view.$(".more_notifications a")).toExist();
-                                this.view.$(".more_notifications a").click();
+                                expect(this.view.$(".more_items a")).toExist();
+                                this.view.$(".more_items a").click();
                             });
 
                             it("marks everything read again", function() {
                                 expect(this.server.lastFetch().params().page).toBe("3");
-                                this.server.completeFetchFor(this.collection, this.collection, {page:3}, {page: "3", total: "9999999"});
+
+                                this.server.completeFetchFor(this.collection, [], {page:3}, {page: "3", total: "9999999"});
                                 expect(chorus.collections.NotificationSet.prototype.markAllRead).toHaveBeenCalled();
                             });
                         });
@@ -147,7 +157,7 @@ describe("chorus.views.NotificationList", function() {
                 });
 
                 it("doesn't show the more link", function() {
-                    expect(this.view.$(".more_notifications a")).not.toExist();
+                    expect(this.view.$(".more_items a")).not.toExist();
                 });
             });
         });
@@ -156,7 +166,7 @@ describe("chorus.views.NotificationList", function() {
     describe("#show", function() {
         beforeEach(function() {
             this.view.render();
-            expect(this.view.activities.length).toBe(4);
+            expect(this.view.activities.length).toBe(backboneFixtures.notificationSet().length);
             _.each(this.view.activities, function(activity) {
                 spyOn(activity, "show");
             });

@@ -4,7 +4,7 @@ require 'timecop'
 describe ApplicationController do
 
   it "has a uuid for every web request" do
-    Chorus::Application.config.log_tags.should == [:uuid]
+    Chorus::Application.config.log_tags.first.should == :uuid
   end
 
   describe "rescuing from errors" do
@@ -22,7 +22,15 @@ describe ApplicationController do
       stub(controller).index { raise ActiveRecord::RecordNotFound }
       get :index
 
-      response.code.should == "404"
+      response.should be_not_found
+      decoded_errors.record.should == "NOT_FOUND"
+    end
+
+    it "renders 'not found' JSON when HDFS directory is not found" do
+      stub(controller).index { raise Hdfs::DirectoryNotFoundError }
+      get :index
+
+      response.should be_not_found
       decoded_errors.record.should == "NOT_FOUND"
     end
 
@@ -32,7 +40,7 @@ describe ApplicationController do
       invalid_record.valid?
       stub(controller).index { raise ActiveRecord::RecordInvalid.new(invalid_record) }
       get :index
-      response.code.should == "422"
+      response.should be_unprocessable
       decoded_errors.fields.username.BLANK.should == {}
     end
 
@@ -42,38 +50,113 @@ describe ApplicationController do
       stub(controller).index { raise ActiveRecord::RecordInvalid.new(invalid_record) }
       get :index
 
-      response.code.should == "422"
+      response.should be_unprocessable
       decoded_errors.fields.username.GENERIC.message.should == "some error"
     end
 
-    it "returns error 422 when a Postgres error occurs" do
-      stub(controller).index { raise ActiveRecord::JDBCError.new }
+    it "returns error 422 when a Greenplum Connection error occurs" do
+      error = PostgresLikeConnection::DatabaseError.new(StandardError.new('oops'))
+      stub(error).error_type { :SOME_ERROR_TYPE }
+      stub(controller).index { raise error }
 
       get :index
 
-      response.code.should == "422"
+      response.should be_unprocessable
+      decoded_errors.record.should == "SOME_ERROR_TYPE"
+      decoded_errors.message.should == 'oops'
+    end
+
+    it "returns error 404 when a Hdfs Connection error occurs" do
+      error = HdfsDataset::HdfsContentsError.new(StandardError.new('oops'))
+      stub(controller).index { raise error }
+
+      get :index
+
+      response.should be_not_found
+      decoded_errors.record.should == "HDFS_QUERY_ERROR"
+      decoded_errors.message.should == 'oops'
+    end
+
+    it "returns error 422 when a data source driver error occurs" do
+      error = DataSourceConnection::DriverNotConfigured.new('Oracle')
+      stub(controller).index { raise error }
+
+      get :index
+
+      response.should be_unprocessable
+      decoded_errors.record.should == "DATA_SOURCE_DRIVER_NOT_CONFIGURED"
+      decoded_errors.data_source.should == 'Oracle'
+    end
+
+    it "returns error 422 when a Postgres error occurs" do
+      stub(controller).index { raise ActiveRecord::JDBCError.new("oops") }
+
+      get :index
+
+      response.should be_unprocessable
+      decoded_errors.fields.general.GENERIC.message.should == 'oops'
     end
 
     it "returns error 422 when a QueryError occurs" do
-      stub(controller).index { raise MultipleResultsetQuery::QueryError.new("broken!") }
+      stub(controller).index { raise DataSourceConnection::QueryError.new("broken!") }
 
       get :index
 
-      response.code.should == "422"
+      response.should be_unprocessable
       decoded_errors.fields.query.INVALID.message.should == "broken!"
     end
 
-    it "returns error 422 when an Gpdb::InstanceStillProvisioning error is raised" do
-      stub(controller).index { raise Gpdb::InstanceStillProvisioning }
+    it "returns error 503 when an SearchExtensions::SolrUnreachable error is raised" do
+      stub(controller).index { raise SearchExtensions::SolrUnreachable }
 
       get :index
 
-      response.code.should == "422"
-      decoded_errors.record.should == "INSTANCE_STILL_PROVISIONING"
+      response.code.should == "503"
+      decoded_errors.service.should == "SOLR_UNREACHABLE"
+    end
+
+    it "returns error 422 when a SunspotError occurs" do
+      stub(controller).index { raise SunspotError.new("sunspot error") }
+
+      get :index
+
+      response.should be_unprocessable
+      decoded_errors.fields.general.GENERIC.message.should == "sunspot error"
+    end
+
+    it "returns error 422 when a SunspotError occurs" do
+      stub(controller).index { raise ModelMap::UnknownEntityType.new("Invalid entity type") }
+
+      get :index
+
+      response.should be_unprocessable
+      decoded_errors.fields.general.GENERIC.message.should == "Invalid entity type"
+    end
+
+    it "returns error 403 when a PostgresLikeConnection::SqlPermissionDenied occurs" do
+      stub(controller).index { raise PostgresLikeConnection::SqlPermissionDenied.new("SqlPermissionDenied error") }
+
+      get :index
+
+      response.should be_forbidden
+      decoded_errors.message.should == "SqlPermissionDenied error"
+      decoded_errors.type.should == "PostgresLikeConnection::SqlPermissionDenied"
+    end
+
+    it "returns error 403 when a DataSourceConnection::InvalidCredentials occurs" do
+      data_source = data_sources(:default)
+      stub(controller).index { raise DataSourceConnection::InvalidCredentials.new(data_source) }
+
+      get :index
+
+      response.code.should == "403"
+      decoded_errors.model_data["id"].should == data_source.id
+      decoded_errors.model_data["entity_type"].should == data_source.class.name.underscore
+      decoded_errors.record.should == "INVALID_CREDENTIALS"
     end
 
     describe "when an access denied error is raised" do
-      let(:object_to_present) { gpdb_instances(:default) }
+      let(:object_to_present) { data_sources(:default) }
       let(:exception) { Allowy::AccessDenied.new('', 'action', object_to_present) }
 
       before do
@@ -86,9 +169,9 @@ describe ApplicationController do
         response.should be_forbidden
       end
 
-      it "includes the given model's id" do
+      it "presents the forbidden variant of the model" do
+        mock(Presenter).present(anything, anything, hash_including(:forbidden => true))
         get :index
-        decoded_response.gpdb_instance.id.should == object_to_present.id
       end
     end
   end
@@ -132,25 +215,51 @@ describe ApplicationController do
       end
     end
 
-    before do
-      @user = users(:no_collaborators)
-      log_in @user
+    let(:user) { users(:no_collaborators) }
+
+    context 'the user is logged in' do
+      before do
+        log_in user
+      end
+
+      it "returns the user based on the session's user id" do
+        get :index
+        response.body.should == user.id.to_s
+      end
+
+      it 'returns nil when sent an invalid session_id param (csrf bypass attempt)' do
+        get :index, :session_id => 'invalid'
+        response.body.should == ' '
+      end
+
+      it 'returns nil when sent an empty session_id param (csrf bypass attempt)' do
+        get :index, :session_id => ''
+        response.body.should == ' '
+      end
     end
 
-    it "returns the user based on the session's user id" do
-      get :index
-      response.body.should == @user.id.to_s
-    end
-
-    it "returns nil when there is no user_id stored in the session" do
-      session[:user_id] = nil
+    it "returns nil when there is no session_id stored in the session" do
+      session[:chorus_session_id] = nil
       get :index
       response.body.should == ' '
     end
 
-    it "returns nil when there is no user with the id stored in the session" do
-      session[:user_id] = -1
+    it "returns nil when there is no session with the session_id" do
+      session[:chorus_session_id] = -1
       get :index
+      response.body.should == ' '
+    end
+
+    it "sets the user when session_id is sent" do
+      session_object = Session.new
+      session_object.user = user
+      session_object.save(:validate => false)
+      get :index, :session_id => session_object.session_id
+      response.body.should == user.id.to_s
+    end
+
+    it "does not set the user when session_id is blank" do
+      get :index, :session_id => ''
       response.body.should == ' '
     end
   end
@@ -220,44 +329,27 @@ describe ApplicationController do
     end
 
     before do
-      log_in users(:no_collaborators)
-      session[:expires_at] = 1.hour.from_now
+      log_in users(:default)
     end
 
-    context "with and unexpired session" do
-      it "allows API requests" do
+    context "with a fresh session" do
+      it "tells the session to update its expiration" do
+        any_instance_of(Session) do |s|
+          mock(s).update_expiration!
+        end
         get :index
         response.should be_success
-      end
-
-      it "resets the expires_at" do
-        get :index
-        session[:expires_at].should > 1.hour.from_now
-      end
-
-      it "uses the configured session timeout" do
-        stub(Chorus::Application.config.chorus).[]('session_timeout_minutes') { 60 * 4 }
-        Timecop.freeze(2012, 4, 17, 10, 30) do
-          get :index
-          session[:expires_at].should == 4.hours.from_now
-        end
       end
     end
 
     context "with an expired session" do
       before do
-        session[:expires_at] = 2.hours.ago
+        any_instance_of(Session) do |s|
+          stub(s).expired? { true }
+        end
       end
 
       it "returns 'unauthorized'" do
-        get :index
-        response.code.should == "401"
-      end
-    end
-
-    context "without session expiration" do
-      it "returns 'unauthorized'" do
-        session.delete(:expires_at)
         get :index
         response.code.should == "401"
       end

@@ -1,4 +1,6 @@
 chorus.views.SqlWorkfileContent = chorus.views.Base.extend({
+    constructorName: "SqlWorkfileContent",
+
     templateName: "sql_workfile_content",
 
     subviews: {
@@ -14,17 +16,17 @@ chorus.views.SqlWorkfileContent = chorus.views.Base.extend({
     setup: function() {
         this._super("setup");
 
-        this.textContent = new chorus.views.TextWorkfileContent({ model: this.model, hotkeys: this.hotkeys })
+        this.textContent = new chorus.views.TextWorkfileContent({ model: this.model, hotkeys: this.hotkeys });
         this.resultsConsole = new chorus.views.ResultsConsole({
             enableResize: true,
             enableExpander: true
         });
-        chorus.PageEvents.subscribe("file:runCurrent", this.runInDefault, this);
-        chorus.PageEvents.subscribe("file:runSelected", this.runSelected, this);
-        chorus.PageEvents.subscribe("file:runInSchema", this.runInSchema, this);
-        chorus.PageEvents.subscribe("file:newChorusView", this.newChorusView, this);
-        chorus.PageEvents.subscribe("file:newSelectionChorusView", this.newSelectionChorusView, this);
-        chorus.PageEvents.subscribe("file:runAndDownload", this.runAndDownload, this);
+        this.subscribePageEvent("file:runCurrent", this.runInDefault);
+        this.subscribePageEvent("file:runSelected", this.runSelected);
+        this.subscribePageEvent("file:runInSchema", this.runInSchema);
+        this.subscribePageEvent("file:newChorusView", this.newChorusView);
+        this.subscribePageEvent("file:newSelectionChorusView", this.newSelectionChorusView);
+        this.subscribePageEvent("file:runAndDownload", this.runAndDownload);
     },
 
     runInSchema: function(options) {
@@ -50,7 +52,9 @@ chorus.views.SqlWorkfileContent = chorus.views.Base.extend({
     },
 
     runAndDownload: function(options) {
-        this.runInDefault(_.extend({taskClass: chorus.models.SqlExecutionAndDownloadTask}, options));
+        this.runInDefault(_.extend({
+            taskClass: chorus.models.SqlExecutionAndDownloadTask
+        }, options));
     },
 
     run: function(options) {
@@ -74,15 +78,17 @@ chorus.views.SqlWorkfileContent = chorus.views.Base.extend({
         }, { silent: true });
 
         this.task.save({}, { method: "create" });
-        chorus.PageEvents.broadcast("file:executionStarted", this.task);
+        chorus.PageEvents.trigger("file:executionStarted", this.task);
     },
 
     createTask: function(taskClass) {
+        if (this.task) {
+            this.stopListening(this.task, 'saved', this.executionSucceeded);
+            this.stopListening(this.task, 'saveFailed', this.executionFailed);
+        }
         this.task = new taskClass({ });
-        this.bindings.remove(undefined, 'saved', this.executionSucceeded);
-        this.bindings.remove(undefined, 'saveFailed', this.executionFailed);
-        this.bindings.add(this.task, "saved", this.executionSucceeded);
-        this.bindings.add(this.task, "saveFailed", this.executionFailed);
+        this.listenTo(this.task, 'saved', this.executionSucceeded);
+        this.listenTo(this.task, 'saveFailed', this.executionFailed);
         this.resultsConsole.setModel(this.task);
     },
 
@@ -100,10 +106,11 @@ chorus.views.SqlWorkfileContent = chorus.views.Base.extend({
         this.chorusView = new chorus.models.ChorusView({
             sourceObjectId: this.model.id,
             sourceObjectType: "workfile",
-            schemaId: executionSchema.id,
+            workspace: this.model.get("workspace"),
             query: content
         });
         this.chorusView.sourceObject = this.model;
+        this.chorusView.setSchema(executionSchema);
 
         var dialog = new chorus.dialogs.VerifyChorusView({model: this.chorusView});
         dialog.launchModal();
@@ -113,18 +120,14 @@ chorus.views.SqlWorkfileContent = chorus.views.Base.extend({
         return this.textContent.editor.getSelection();
     },
 
-        executionSucceeded: function(task) {
+    executionSucceeded: function(task) {
         this.executing = false;
-        chorus.PageEvents.broadcast("file:executionSucceeded", task);
-        chorus.PageEvents.broadcast("workfile:executed", this.model, task.executionSchema())
+        chorus.PageEvents.trigger("file:executionSucceeded", task);
+        chorus.PageEvents.trigger("workfile:changed", this.model);
     },
 
     executionFailed: function(task) {
         this.executing = false;
-        chorus.PageEvents.broadcast("file:executionFailed", task);
-        var executionInfo = task.errorData && task.errorData.executionInfo;
-        if (executionInfo) {
-            chorus.PageEvents.broadcast("workfile:executed", this.model, executionInfo);
-        }
+        chorus.PageEvents.trigger("file:executionFailed", task);
     }
 });

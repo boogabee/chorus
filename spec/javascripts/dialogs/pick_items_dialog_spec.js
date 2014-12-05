@@ -1,13 +1,12 @@
 describe("chorus.dialogs.PickItems", function() {
     beforeEach(function() {
-        stubDefer();
-        spyOn(chorus.dialogs.PickItems.prototype, "selectItem").andCallThrough();
+        spyOn(chorus.views.PickItemsList.prototype, "itemClicked").andCallThrough();
         spyOn(chorus.dialogs.PickItems.prototype, "submit").andCallThrough();
         spyOn(chorus.dialogs.PickItems.prototype, "selectionFinished").andCallThrough();
 
-        this.user1 = rspecFixtures.user({ firstName: "A", lastName: "User" });
-        this.user2 = rspecFixtures.user({ firstName: "B", lastName: "User" });
-        this.user3 = rspecFixtures.user({ firstName: "C", lastName: "User" });
+        this.user1 = backboneFixtures.user({ firstName: "A", lastName: "User" });
+        this.user2 = backboneFixtures.user({ firstName: "B", lastName: "User" });
+        this.user3 = backboneFixtures.user({ firstName: "C", lastName: "User" });
 
         this.users = new chorus.collections.UserSet([this.user1, this.user2, this.user3]);
         var Subclass = chorus.dialogs.PickItems.extend({ modelClass: "User" });
@@ -61,11 +60,11 @@ describe("chorus.dialogs.PickItems", function() {
 
             context("when pagination is enabled", function() {
                 beforeEach(function() {
-                    var subclass = chorus.dialogs.PickItems.extend({
+                    var Subclass = chorus.dialogs.PickItems.extend({
                         modelClass: "User",
                         pagination: true
                     });
-                    this.dialog = new subclass({ workspaceId: "33", collection: this.users });
+                    this.dialog = new Subclass({ workspaceId: "33", collection: this.users });
                     this.dialog.render();
                 });
 
@@ -111,13 +110,18 @@ describe("chorus.dialogs.PickItems", function() {
                 context("when a collection is selected", function() {
                     beforeEach(function() {
                         this.selected = new chorus.collections.UserSet([this.user1, this.user2]);
-                        this.dialog = new chorus.dialogs.PickItems({
+
+                        var Subclass = chorus.dialogs.PickItems.extend({
+                            multiSelection: true
+                        });
+                        this.dialog = new Subclass({
                             workspaceId: "33",
                             collection: this.users,
                             defaultSelection: this.selected
                         });
                         this.dialog.render();
                     });
+
                     it("selects the supplied users by default", function() {
                         expect(this.dialog.$("li").length).toBe(3);
                         expect(this.dialog.$("li.selected").length).toBe(2);
@@ -128,7 +132,16 @@ describe("chorus.dialogs.PickItems", function() {
                     it("enables the submit button", function() {
                         expect(this.dialog.$('button.submit')).not.toBeDisabled();
                     });
+
+                    it("keeps the defaults selected after filtering", function() {
+                        this.dialog.collection.trigger('searched');
+                        expect(this.dialog.$("li").length).toBe(3);
+                        expect(this.dialog.$("li.selected").length).toBe(2);
+                        expect(this.dialog.$("li:eq(0).selected")).toContainText(this.user1.name());
+                        expect(this.dialog.$("li:eq(1).selected")).toContainText(this.user2.name());
+                    });
                 });
+
                 context("when a single model is selected", function() {
                     beforeEach(function() {
                         this.selected = this.user2;
@@ -139,6 +152,7 @@ describe("chorus.dialogs.PickItems", function() {
                         });
                         this.dialog.render();
                     });
+
                     it("selects the supplied users by default", function() {
                         expect(this.dialog.$("li").length).toBe(3);
                         expect(this.dialog.$("li.selected").length).toBe(1);
@@ -148,6 +162,13 @@ describe("chorus.dialogs.PickItems", function() {
                     it("enables the submit button", function() {
                         expect(this.dialog.$('button.submit')).not.toBeDisabled();
                     });
+
+                    it("keeps the defaults selected after filtering", function() {
+                        this.dialog.collection.trigger('searched');
+                        expect(this.dialog.$("li").length).toBe(3);
+                        expect(this.dialog.$("li.selected").length).toBe(1);
+                        expect(this.dialog.$("li.selected").eq(0)).toContainText(this.user2.name());
+                    });
                 });
             });
 
@@ -156,10 +177,10 @@ describe("chorus.dialogs.PickItems", function() {
                     this.users = new chorus.collections.UserSet([this.user1, this.user2, this.user3]);
                     this.users.loaded = true;
 
-                    var subclass = chorus.dialogs.PickItems.extend({
+                    var Subclass = chorus.dialogs.PickItems.extend({
                         multiSelection: true
                     });
-                    this.dialog = new subclass({ workspaceId: "33", collection: this.users });
+                    this.dialog = new Subclass({ workspaceId: "33", collection: this.users });
                     this.dialog.render();
 
                     this.dialog.$("li:eq(0)").click();
@@ -188,7 +209,7 @@ describe("chorus.dialogs.PickItems", function() {
 
             describe("single selection", function() {
                 beforeEach(function() {
-                    this.itemSelectedSpy = jasmine.createSpy();
+                    this.itemSelectedSpy = jasmine.createSpy('itemSelected');
                     this.dialog.bind("item:selected", this.itemSelectedSpy);
                     this.dialog.$("li:first").click();
                 });
@@ -208,6 +229,7 @@ describe("chorus.dialogs.PickItems", function() {
                 describe("clicking on another list item", function() {
                     beforeEach(function() {
                         this.itemSelectedSpy.reset();
+
                         this.dialog.$("li:last").click();
                     });
 
@@ -234,8 +256,8 @@ describe("chorus.dialogs.PickItems", function() {
                     this.dialog.$("li:eq(1)").dblclick();
                 });
 
-                it("calls selectItem", function() {
-                    expect(this.dialog.selectItem).toHaveBeenCalled();
+                it("clicks the item in the list", function() {
+                    expect(this.dialog.pickItemsList.itemClicked).toHaveBeenCalled();
                 });
 
                 it("calls submit", function() {
@@ -245,7 +267,7 @@ describe("chorus.dialogs.PickItems", function() {
                 it("calls #selectionFinished", function() {
                     expect(this.dialog.selectionFinished).toHaveBeenCalled();
                 });
-            })
+            });
         });
     });
 
@@ -293,9 +315,9 @@ describe("chorus.dialogs.PickItems", function() {
         var dataset1, dataset2, dataset3;
 
         beforeEach(function() {
-            dataset1 = newFixtures.workspaceDataset.sandboxTable();
-            dataset2 = newFixtures.workspaceDataset.sandboxTable();
-            dataset3 = newFixtures.workspaceDataset.sandboxTable();
+            dataset1 = backboneFixtures.workspaceDataset.datasetTable();
+            dataset2 = backboneFixtures.workspaceDataset.datasetTable();
+            dataset3 = backboneFixtures.workspaceDataset.datasetTable();
 
             this.datasets = new chorus.collections.WorkspaceDatasetSet([
                 dataset1,
@@ -314,6 +336,10 @@ describe("chorus.dialogs.PickItems", function() {
             expect(this.dialog.$("input").attr("placeholder")).toMatchTranslation("pickitem.dialog.search.placeholder");
         });
 
+        it("renders a search input", function() {
+            expect(this.dialog.$(".sub_header input")).toExist();
+        });
+
         context("when the search placeholder text is supplied", function() {
             it("uses the supplied text", function() {
                 var Subclass = chorus.dialogs.PickItems.extend({ searchPlaceholderKey: "test.mouse" });
@@ -323,70 +349,34 @@ describe("chorus.dialogs.PickItems", function() {
             });
         });
 
-        describe("client side", function() {
-            describe("when the filter text matches the selected item", function() {
-                it("retains the selection", function() {
-                    this.dialog.$("input").val("e").trigger("textchange");
-                    expect(this.dialog.$("li:eq(2)")).toHaveClass("selected");
-                });
-            });
-
-            describe("when the filter text does not match the selected item", function() {
-                beforeEach(function() {
-                    this.dialog.$("input").val("z").trigger("textchange");
-                });
-
-                it("clears the selection", function() {
-                    expect(this.dialog.$("li.selected")).not.toExist();
-                });
-
-                it("should disable the submit button", function() {
-                    expect(this.dialog.$("button.submit")).toBeDisabled();
-                });
-            });
-        });
-
-        describe("server side", function() {
+        describe("entering a search term", function() {
             beforeEach(function() {
-                var Subclass = chorus.dialogs.PickItems.extend({ modelClass: "WorkspaceDataset", serverSideSearch: true });
-                this.dialog = new Subclass({ collection: this.datasets });
-                this.dialog.render();
-
-                this.dialog.$("li:eq(2)").click();
+                this.dialog.$(".sub_header input").val("a query").trigger("textchange");
             });
 
-            it("renders a search input", function() {
-                expect(this.dialog.$(".sub_header input")).toExist();
+            it("fetches filtered database objects", function() {
+                expect(this.server.lastFetch().url).toMatchUrl(
+                    "/workspaces/1/datasets?name_pattern=a+query",
+                    { paramsToIgnore: ["page", "per_page", "dataset_ids[]"] }
+                );
             });
 
-            describe("entering a seach term", function() {
+            context("after the results come back", function() {
                 beforeEach(function() {
-                    this.dialog.$(".sub_header input").val("a query").trigger("textchange");
+                    this.datasets.reset([dataset1], {silent: true});
+                    this.datasets.trigger('searched');
                 });
 
-                it("fetches filtered database objects", function() {
-                    expect(this.server.lastFetch().url).toMatchUrl(
-                        "/workspaces/1/datasets?name_pattern=a+query",
-                        { paramsToIgnore: ["page", "per_page", "dataset_ids[]"] }
-                    );
+                it("updates the list items", function() {
+                    expect(this.dialog.$(".name").length).toBe(1);
                 });
 
-                context("after the results come back", function() {
-                    beforeEach(function() {
-                        this.server.completeFetchFor(this.datasets, [ dataset1 ]);
-                    });
+                it("keeps the search term around", function() {
+                    expect(this.dialog.$(".sub_header input").val()).toBe("a query");
+                });
 
-                    it("updates the list items", function() {
-                        expect(this.dialog.$(".name").length).toBe(1);
-                    });
-
-                    it("keeps the search term around", function() {
-                        expect(this.dialog.$(".sub_header input").val()).toBe("a query")
-                    });
-
-                    it("disables the submit button", function() {
-                        expect(this.dialog.$("button.submit")).toBeDisabled();
-                    });
+                it("disables the submit button", function() {
+                    expect(this.dialog.$("button.submit")).toBeDisabled();
                 });
             });
         });

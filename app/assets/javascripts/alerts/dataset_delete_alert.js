@@ -2,19 +2,19 @@ chorus.alerts.DatasetDelete = chorus.alerts.ModelDelete.extend({
     constructorName: "DatasetDelete",
 
     setup: function() {
-        this._super("setup")
+        this._super("setup");
 
         var keyPrefix = this.options.keyPrefix;
-        this.text = t("dataset." + keyPrefix + ".text");
-        this.title = t("dataset." + keyPrefix + ".title");
-        this.ok = t("dataset." + keyPrefix + ".button");
-        this.deleteMessage = "dataset." + keyPrefix + ".toast";
+        this.text = t("dataset_delete." + keyPrefix + ".text");
+        this.title = t("dataset_delete." + keyPrefix + ".title");
+        this.ok = t("dataset_delete." + keyPrefix + ".button");
+        this.deleteMessage = "dataset_delete." + keyPrefix + ".toast";
     },
 
     deleteMessageParams:function () {
         return {
             datasetName:this.datasetName
-        }
+        };
     },
 
     makeModel:function () {
@@ -24,4 +24,3 @@ chorus.alerts.DatasetDelete = chorus.alerts.ModelDelete.extend({
         this.redirectUrl = this.model.workspace().datasets().showUrl();
     }
 });
-

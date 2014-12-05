@@ -9,7 +9,7 @@ chorus.views.ImageUpload = chorus.views.Base.extend({
             addImageKey: this.addImageKey,
             changeImageKey: this.changeImageKey,
             editable: this.editable
-        }
+        };
     },
 
     setup: function(options) {
@@ -23,19 +23,13 @@ chorus.views.ImageUpload = chorus.views.Base.extend({
     postRender: function() {
         var self = this;
 
-        var multipart = !window.jasmine;
-        this.$("input[type=file]").fileupload({
-            url: this.model.createImageUrl(),
-            type: 'POST',
-            add: fileSelected,
-            done: uploadFinished,
-            fail: uploadFailed,
-            multipart: multipart,
-            dataType: "text"
-        });
+        function reEnableUpload() {
+            self.spinner.stop();
+            self.$("img").removeClass("disabled");
+            self.$("input[type=file]").prop("disabled", false);
+            self.$("a.action").removeClass("disabled");
 
-        if (this.model.hasImage()) {
-            this.$('img').removeClass('hidden')
+            chorus.updateCachebuster();
         }
 
         function fileSelected(e, data) {
@@ -75,21 +69,12 @@ chorus.views.ImageUpload = chorus.views.Base.extend({
             }
         }
 
-        function reEnableUpload() {
-            self.spinner.stop();
-            self.$("img").removeClass("disabled");
-            self.$("input[type=file]").prop("disabled", false);
-            self.$("a.action").removeClass("disabled");
-
-            chorus.updateCachebuster();
-        }
-
         function uploadFinished(e, data) {
             reEnableUpload();
             var json = JSON.parse(data.result).response;
             delete self.resource.serverErrors;
             self.resource.trigger("validated");
-            self.model.set({"image": json}, {silent: true})
+            self.model.set({"image": json}, { silent: true });
             self.model.trigger("image:change");
             self.$("img").attr('src', self.model.fetchImageUrl());
             self.$("img").removeClass("hidden");
@@ -107,6 +92,22 @@ chorus.views.ImageUpload = chorus.views.Base.extend({
             }
             self.resource.trigger("saveFailed");
         }
+
+        var multipart = !window.jasmine;
+        this.$("input[type=file]").fileupload({
+            url: this.model.createImageUrl(),
+            type: 'POST',
+            add: fileSelected,
+            done: uploadFinished,
+            fail: uploadFailed,
+            multipart: multipart,
+            dataType: "text",
+            pasteZone: null
+        });
+
+        if (this.model.hasImage()) {
+            this.$('img').removeClass('hidden');
+        }
     },
 
     validFileSize: function() {
@@ -118,7 +119,7 @@ chorus.views.ImageUpload = chorus.views.Base.extend({
         var valid = true;
         _.each( this.uploadObj.files, function(file) {
             if (file.size > (maxImageSize * 1024 * 1024) ) {
-                this.model.serverErrors = {"fields":{"base":{"FILE_SIZE_EXCEEDED":{"count": maxImageSize }}}}
+                this.model.serverErrors = {"fields":{"base":{"FILE_SIZE_EXCEEDED":{"count": maxImageSize }}}};
                 this.showErrors(this.model);
                 valid = false;
             }

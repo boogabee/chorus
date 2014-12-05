@@ -31,17 +31,27 @@ describe WorkspaceSearch do
 
         it "scopes the search to the workspace" do
           search.results
-          Sunspot.session.should have_search_params(:with, Proc.new{
+          Sunspot.session.should have_search_params(:with) {
             any_of do
               with :workspace_id, 7
               with :found_in_workspace_id, 7
             end
-          })
+          }
         end
 
         it "should not facet by type_name" do
           search.results
           Sunspot.session.should_not have_search_params(:facet, :type_name)
+        end
+
+        context "when scoped to a invalid entity type" do
+          let(:search) { WorkspaceSearch.new(owner, :query => 'bob', :workspace_id => 7, :entity_type => 'user') }
+
+          it "raises validation error" do
+            expect {
+              search.results
+            }.to raise_error(ApiValidationError)
+          end
         end
       end
 
@@ -65,16 +75,17 @@ describe WorkspaceSearch do
     let(:workfile) { workfiles(:search_public) }
     let(:matching_table) { datasets(:searchquery_table) }
     let(:matching_view) { datasets(:searchquery_chorus_view) }
-    let(:typeahead_dataset) { datasets(:typeahead) }
+    let(:typeahead_dataset) { datasets(:typeahead_gpdb_table) }
+    let(:hdfs_dataset) { datasets(:searchquery_hadoop) }
     before do
-      reindex_solr_fixtures
+      index_solr_fixtures_once
     end
 
     describe "num_found" do
       it "returns the total number of results found" do
         VCR.use_cassette('workspace_search_solr_query_as_owner') do
           search = WorkspaceSearch.new(owner, :query => 'searchquery', :workspace_id => workspace.id)
-          search.num_found.should == 6
+          search.num_found.should == 9
         end
       end
     end
@@ -83,7 +94,10 @@ describe WorkspaceSearch do
       it "returns the founds results" do
         VCR.use_cassette('workspace_search_solr_query_as_owner') do
           search = WorkspaceSearch.new(owner, :query => 'searchquery', :workspace_id => workspace.id)
-          search.results.should =~ [workfile, matching_table, matching_view, workspace, typeahead_dataset, datasets(:typeahead_chorus_view)]
+          search.results.should =~ [
+            workfile, matching_table, matching_view, workspace, typeahead_dataset, hdfs_dataset,
+            datasets(:typeahead_chorus_view), datasets(:searchquery_chorus_view_private), datasets(:searchable_tag)
+          ]
         end
       end
 

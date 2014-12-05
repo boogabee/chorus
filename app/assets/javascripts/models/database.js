@@ -1,16 +1,27 @@
-chorus.models.Database = chorus.models.Base.extend({
+chorus.models.Database = chorus.models.Base.include(
+    chorus.Mixins.DataSourceCredentials.model
+).extend({
     constructorName: "Database",
     showUrlTemplate: "databases/{{id}}",
     urlTemplate: "databases/{{id}}",
 
-    instance: function() {
-        return new chorus.models.GpdbInstance(this.get("instance"))
+    dataSource: function() {
+        var dataSource = this._dataSource || new chorus.models.DynamicDataSource(this.get("dataSource"));
+        if(this.loaded) {
+            this._dataSource = dataSource;
+        }
+        return dataSource;
     },
 
     schemas: function() {
-        if (!this._schemas) {
-            this._schemas = new chorus.collections.SchemaSet([], { databaseId: this.get('id') })
+        var schema = this._schemas || new chorus.collections.SchemaSet([], { databaseId: this.get('id') });
+        if(this.loaded) {
+            this._schemas = schema;
         }
-        return this._schemas;
+        return schema;
+    },
+
+    parent: function() {
+        return this.dataSource();
     }
 });

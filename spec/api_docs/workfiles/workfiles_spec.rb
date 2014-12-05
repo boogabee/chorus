@@ -7,11 +7,15 @@ resource "Workfiles" do
   let!(:file) { test_file("workfile.sql", "text/sql") }
   let!(:workfile_id) { workfile.to_param }
   let(:result) { }
+  let(:workflow) { workfiles(:alpine_flow) }
+
 
   before do
     log_in owner
-    stub(SqlExecutor).execute_sql.with_any_args { result }
-    stub(SqlExecutor).cancel_query.with_any_args { }
+    any_instance_of(CancelableQuery) do |query|
+      stub(query).execute.with_any_args { result }
+    end
+    stub(CancelableQuery).cancel.with_any_args { true }
   end
 
   get "/workfiles/:id" do
@@ -22,6 +26,22 @@ resource "Workfiles" do
     let(:id) { workfile.to_param }
 
     example_request "Get workfile details" do
+      status.should == 200
+    end
+  end
+
+  put "/workfiles/:id" do
+    parameter :id, "Id of a workfile"
+    parameter :"execution_schema[id]", "Id of the execution schema"
+    parameter :file_name, "Filename"
+
+    required_parameters :id
+
+    let(:id) { workfile.to_param }
+    let(:"execution_schema[id]") { schemas(:default).to_param }
+    let(:file_name) { "newname.sql" }
+
+    example_request "Update a workfile" do
       status.should == 200
     end
   end
@@ -49,12 +69,27 @@ resource "Workfiles" do
 
     parameter :workfile_id, "Id of a workfile to copy"
     parameter :workspace_id, "Id of workspace to copy to"
+    parameter :file_name, "The name of the new copy"
 
-    required_parameters :workfile_id, :workspace_id
+    required_parameters :workfile_id
 
     let(:workspace_id) { workspace.to_param }
+    let(:file_name) { "copy.sql" }
 
     example_request "Copy a workfile to a workspace" do
+      status.should == 201
+    end
+  end
+
+  post "/workfiles/:workfile_id/results" do
+    parameter :workfile_id, "Id of workfile to add result"
+    parameter :result_id, "Id of workfile result on alpine"
+
+    required_parameters :workfile_id
+
+    let(:result_id) { "0.1274758" }
+
+    example_request "Add a workfile result to a workfile" do
       status.should == 201
     end
   end
@@ -84,36 +119,50 @@ resource "Workfiles" do
 
   post "/workspaces/:workspace_id/workfiles" do
     let(:workspace_id) { workspace.to_param }
+    let(:database_id) { databases(:default).id }
 
+    parameter :entity_subtype, ""
+    parameter :database_id, "GPDB Database Id"
+    parameter :hdfs_data_source_id, "HDFS Data Source Id"
     parameter :workspace_id, "Workspace Id"
-    parameter :owner_id, "Id of workfile owner"
     parameter :description, "Workfile description"
     parameter :file_name, "Filename"
 
     required_parameters :file_name, :workspace_id
 
-    let(:owner_id) { owner.to_param }
     let(:description) { "Get off my lawn, you darn kids!" }
-    let(:file_name) { workfile.file_name }
+    let(:file_name) { "new_file.sql" }
 
     example_request "Create a new workfile in a workspace" do
+      status.should == 201
+    end
+  end
+
+  delete '/workspaces/:workspace_id/workfiles' do
+    parameter :workspace_id, 'Id of the workspace from which the workfiles will be deleted'
+    parameter :'workfile_ids[]', 'Workfile Id to delete, can be specified multiple times'
+
+    required_parameters :workspace_id, :'workfile_ids[]'
+
+    let(:workspace_id) { workspace.to_param }
+    let(:'workfile_ids[]') { workspace.workfiles.limit(2).pluck(:id) }
+
+    example_request 'Disassociate a list of non-sandbox datasets with the workspace' do
       status.should == 200
     end
   end
 
   post "/workfiles/:workfile_id/executions" do
-    parameter :schema_id, "Schema Id"
     parameter :workfile_id, "Workfile Id"
     parameter :check_id, "A client-generated identifier which can be used to cancel this execution later"
     parameter :sql, "SQL to execute"
 
-    required_parameters :workfile_id, :schema_id, :check_id
+    required_parameters :workfile_id, :check_id
 
-    let(:schema_id) { gpdb_schemas(:default).id }
     let(:check_id) { "12345" }
 
     let(:result) do
-      SqlResult.new.tap do |r|
+      GreenplumSqlResult.new.tap do |r|
         r.add_column("results_of", "your_sql")
       end
     end
@@ -124,17 +173,47 @@ resource "Workfiles" do
   end
 
   delete "/workfiles/:workfile_id/executions/:id" do
-    parameter :schema_id, "Schema ID"
     parameter :workfile_id, "Workfile Id"
     parameter :id, "A client-generated identifier, previously passed as 'check_id' to workfile execution method to identify a query"
 
-    required_parameters :id, :workfile_id, :schema_id
+    required_parameters :id, :workfile_id
 
     let(:id) { 0 }
-    let(:schema_id) { gpdb_schemas(:default).id }
 
     example_request "Cancel execution of a workfile" do
       status.should == 200
+    end
+  end
+
+  post '/workfiles/:id/run' do
+    before do
+      stub(Alpine::API).run_work_flow.with_any_args { 'fakeprocessid' }
+    end
+
+    parameter :id, 'Id of a workflow'
+
+    required_parameters :id
+
+    let(:id) { workflow.to_param }
+
+    example_request 'Run a workflow' do
+      status.should == 202
+    end
+  end
+
+  post '/workfiles/:id/stop' do
+    before do
+      stub(Alpine::API).stop_work_flow.with_any_args { OpenStruct.new({code: '200'}) }
+    end
+
+    parameter :id, 'Id of a workflow'
+
+    required_parameters :id
+
+    let(:id) { workflow.to_param }
+
+    example_request 'Stop a running workflow' do
+      status.should == 202
     end
   end
 end

@@ -18,7 +18,7 @@ _.extend(sinon.fakeServer, {
 
     updates: function() {
         return _.filter(this.requests, function(request) {
-            return request.method === "PUT"
+            return request.method === "PUT";
         });
     },
 
@@ -51,7 +51,7 @@ _.extend(sinon.fakeServer, {
     lastUpdateFor: function(model) {
         return _.last(_.filter(this.updates(), function(potentialRequest) {
             var uri = new URI(potentialRequest.url);
-            var modelUri = new URI(model.url());
+            var modelUri = new URI(model.url({method: "update"}));
             return uri.equals(modelUri);
         }));
     },
@@ -59,7 +59,7 @@ _.extend(sinon.fakeServer, {
     lastDestroyFor: function(model) {
         return _.last(_.filter(this.destroys(), function(potentialRequest) {
             var uri = new URI(potentialRequest.url);
-            var modelUri = new URI(model.url());
+            var modelUri = new URI(model.url({method: "destroy"}));
             return uri.equals(modelUri);
         }));
     },
@@ -67,7 +67,7 @@ _.extend(sinon.fakeServer, {
     lastCreateFor: function(model) {
         return _.last(_.filter(this.creates(), function(potentialRequest) {
             var uri = new URI(potentialRequest.url);
-            var modelUri = new URI(model.url());
+            var modelUri = new URI(model.url({method: "create"}));
             return uri.equals(modelUri);
         }));
     },
@@ -92,20 +92,31 @@ _.extend(sinon.fakeServer, {
     },
 
     makeFakeResponse: function(modelOrCollection, response) {
+        function normalizeId(attributes) {
+            if(attributes.id) {
+                attributes.id = parseInt(attributes.id, 10) || attributes.id;
+            }
+            return attributes;
+        }
+
         if (response) {
             return response.attributes ? response.attributes : response;
         } else if (modelOrCollection instanceof Backbone.Model) {
-            return modelOrCollection.attributes;
+            return normalizeId(modelOrCollection.attributes);
+        } else if (modelOrCollection instanceof Backbone.Collection) {
+            return _.map(modelOrCollection.models, function(model) { return normalizeId(model.attributes); });
         } else {
             return [];
         }
     },
 
     completeFetchFor: function(model, response, options, pagination) {
+        var triggerChangeManually = !response;
         response = this.makeFakeResponse(model, response);
-        var fetch = this.lastFetchFor(model, options)
+        var fetch = this.lastFetchFor(model, options);
         if (fetch) {
             fetch.succeed(response, pagination);
+            if(triggerChangeManually) { model.trigger("change");}
         } else {
             throw "No fetch found for " + model.url() + ". Found fetches for: [" + _.pluck(this.fetches(), 'url').join(', ') + "]";
         }
@@ -121,7 +132,7 @@ _.extend(sinon.fakeServer, {
         }
     },
 
-    completeSaveFor: function(model, response) {
+    completeCreateFor: function(model, response) {
         response = this.makeFakeResponse(model, response);
         var create = this.lastCreateFor(model);
         if (create) {
@@ -141,8 +152,10 @@ _.extend(sinon.fakeServer, {
     },
 
     completeFetchAllFor: function(model, results, options, pagination) {
-        options = options || {page: 1, per_page: 1000};
-        pagination = pagination || {page: 1, total: 1, records: results ? results.length : 1};
+        options = options || {};
+        options = _.extend({page: 1, per_page: 1000}, options);
+        pagination = pagination || {};
+        pagination = _.extend({page: 1, total: 1, records: results ? results.length : 1}, pagination);
         this.completeFetchFor(model, results, options, pagination);
     },
 
@@ -183,44 +196,39 @@ _.extend(sinon.FakeXMLHttpRequest.prototype, {
     },
 
     fail: function fail(message, resource) {
-        return this.respondJson(200, {
+        return this.respondJson(400, {
             status: "fail",
             resource: resource || [],
             message: message || "something went wrong!"
         });
     },
 
-    failNotFound: function(errors, response) {
+    failNotFound: function(errors) {
         return this.respondJson(404, {
-            response: response,
             errors: errors || {}
         });
     },
 
-    failForbidden: function(errors, response) {
+    failForbidden: function(errors) {
         return this.respondJson(403, {
-            response: response,
             errors: errors || {}
         });
     },
 
-    failUnprocessableEntity: function(errors, response) {
+    failUnprocessableEntity: function(errors) {
         return this.respondJson(422, {
-            response: response,
             errors: errors || {}
         });
     },
 
-    failUnauthorized: function(errors, response) {
+    failUnauthorized: function(errors) {
         return this.respondJson(401, {
-            response: response || [],
             errors: errors || {}
         });
     },
 
-    failServerError: function(errors, response) {
+    failServerError: function(errors) {
         return this.respondJson(500, {
-            response: response || [],
             errors: errors || {}
         });
     },
@@ -228,7 +236,7 @@ _.extend(sinon.FakeXMLHttpRequest.prototype, {
     params: function() {
         var uri;
         if (this.requestBody) {
-            uri = new URI("?" + this.requestBody)
+            uri = new URI("?" + this.requestBody);
         } else {
             uri = new URI(this.url);
         }
@@ -236,11 +244,15 @@ _.extend(sinon.FakeXMLHttpRequest.prototype, {
         return uri.search(true);
     },
 
+    json: function () {
+        return JSON.parse(this.requestBody);
+    },
+
     error: function(message) {
         return this.respond(
             404,
             {},
             ''
-        )
+        );
     }
 });

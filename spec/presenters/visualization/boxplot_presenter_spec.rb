@@ -19,7 +19,7 @@ describe Visualization::BoxplotPresenter, :type => :view do
 
     it "includes base attributes" do
       @hash[:type].should == @visualization_data.type
-      @hash[:bins].should == @visualization_data.bins
+      @hash[:bins].should == @visualization_data.buckets
       @hash[:x_axis].should == @visualization_data.category
       @hash[:y_axis].should == @visualization_data.values
       @hash[:filters].should == @visualization_data.filters

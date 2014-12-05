@@ -3,7 +3,7 @@ describe("chorus.models.FrequencyTask", function() {
         this.model = new chorus.models.FrequencyTask({
             bins: 23,
             yAxis: "height",
-            dataset: newFixtures.workspaceDataset.sandboxTable({objectName: "users"})
+            dataset: backboneFixtures.workspaceDataset.datasetTable({objectName: "users"})
         });
     });
 
@@ -33,12 +33,12 @@ describe("chorus.models.FrequencyTask", function() {
 
         it("renames the 'yAxis' field required by the api", function() {
             var request = this.server.lastCreate();
-            expect(request.params()['chart_task[y_axis]']).toBe("height");
+            expect(request.json()['chart_task']['y_axis']).toBe("height");
         });
 
         it("renames the 'bins' field as required by the api", function() {
             var request = this.server.lastCreate();
-            expect(request.params()['chart_task[bins]']).toBe("23");
-        })
+            expect(request.json()['chart_task']['bins']).toBe(23);
+        });
     });
-})
+});

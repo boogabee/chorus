@@ -5,13 +5,47 @@ module SearchExtensions
     class_attribute :shared_search_fields
   end
 
+  class SolrUnreachable < StandardError;
+  end
+
   module ClassMethods
     def type_name
       name
     end
 
     def security_type_name
-      type_name
+      types = [type_name]
+      klass = self.superclass
+      while klass != ActiveRecord::Base
+        types << klass.type_name
+        klass = klass.superclass
+      end
+      types
+    end
+
+    def searchable_model options = {}, &block
+      model_context = self
+
+      if include? SoftDelete
+        options[:if] = Array.wrap(options[:if]) << lambda { |model| !model.deleted? }
+      end
+
+      searchable(options, &block) if block_given?
+      searchable(options) do
+        if model_context.taggable?
+          integer(:tag_ids, :multiple => true)
+          text :tag_names, :stored => true, :boost => SOLR_SECONDARY_FIELD_BOOST do
+            tags.map { |tag| tag.name }
+          end
+        end
+        string :grouping_id
+        string :type_name
+        string :security_type_name, :multiple => true
+        name_for_sort = options[:name_for_sort] || :name
+        string :sort_name do
+          send(name_for_sort).downcase if respond_to?(name_for_sort)
+        end
+      end
     end
 
     def has_shared_search_fields(field_definitions)
@@ -50,11 +84,7 @@ module SearchExtensions
   end
 
   def security_type_name
-    type_name
-  end
-
-  def entity_type_name
-    self.class.name.underscore
+    self.class.security_type_name
   end
 end
 
@@ -88,8 +118,16 @@ module SunspotSearchExtensions
     group_response.groups.each do |group|
       docs << {'id' => group.value}
       group.hits.each do |group_hit|
-        if group_hit.class_name =~ /^Event/
-          notes_for_object[group.value] << {:highlighted_attributes => group_hit.highlights_hash}
+        if group_hit.class_name =~ /^(Event|Comment)/
+          notes = {:highlighted_attributes => group_hit.highlights_hash}
+
+          if group_hit.class_name =~ /^Event/
+            notes[:is_insight] = true if group_hit.result.try(:insight)
+          else
+            notes[:is_comment] = true
+          end
+
+          notes_for_object[group.value] << notes
         end
       end
     end
@@ -110,10 +148,12 @@ end
 
 module Sunspot
   module Search
+    # reopen sunspot standard search class
     class StandardSearch
       include SunspotSearchExtensions
     end
 
+    # reopen sunspot hit class
     class Hit
       attr_accessor :notes
 
@@ -122,18 +162,54 @@ module Sunspot
       end
 
       def highlights_hash
-        highlights.inject({}) do |hsh, highlight|
-          hsh[highlight.field_name] ||= []
-          hsh[highlight.field_name] << highlight.format
+        hash = highlights.inject({}) do |hsh, highlight|
+          field_name = highlight.field_name.to_s.sub(/_stemmed$/, '').to_sym
+          hsh[field_name] ||= []
+          hsh[field_name] << highlight.format
           hsh
         end
+        hash.each do |key, highlights|
+          highlights.uniq!
+        end
+        hash
       end
 
+      # intercept the result load in sunspot and attach search result notes
       def result=(new_result)
         if (notes && new_result)
           new_result.search_result_notes = notes
         end
         @result = new_result
+      end
+    end
+  end
+
+  class Indexer
+    def add(model)
+      documents = Util.Array(model).map { |m| prepare(m) }.compact
+      if batcher.batching?
+        batcher.concat(documents)
+      else
+        add_documents(documents)
+      end
+    rescue Errno::ECONNREFUSED => e
+      raise SearchExtensions::SolrUnreachable
+    end
+  end
+
+  module Rails
+    module Searchable
+      module ClassMethods
+
+        protected
+        
+        def solr_benchmark(batch_size, counter,  &block)
+          start = Time.now
+          logger.info("[#{Time.current}] Start Indexing")
+          yield
+          elapsed = Time.now-start
+          logger.info("[#{Time.current}] Completed Indexing. Rows indexed #{counter * batch_size}. Rows/sec: #{batch_size/elapsed.to_f} (Elapsed: #{elapsed} sec.)")
+        end
       end
     end
   end

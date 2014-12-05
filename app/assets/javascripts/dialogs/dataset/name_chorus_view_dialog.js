@@ -1,22 +1,19 @@
-chorus.dialogs.NameChorusView = chorus.dialogs.Base.extend({
-    constructorName: "AssignChorusViewName",
-
+chorus.dialogs.NameChorusView = chorus.dialogs.Base.include(chorus.Mixins.DialogFormHelpers).extend({
+    constructorName: "NameChorusViewDialog",
     templateName: "name_chorus_view",
     title: t("dataset.name_chorus_view.title"),
 
-    events: {
-        "keyup input[name=objectName]": "checkInput",
-        "paste input[name=objectName]": "checkInput",
-        "submit form": "nameChorusView"
-    },
-
     setup: function() {
-        this.bindings.add(this.model, "saved", this.chorusViewCreated);
-        this.bindings.add(this.model, "saveFailed", this.chorusViewFailed);
-        this.bindings.add(this.model, "validationFailed", this.chorusViewFailed);
+        this.listenTo(this.model, "saved", this.chorusViewCreated);
+        this.listenTo(this.model, "validationFailed", this.saveFailed);
+        this.listenTo(this.model, "saveFailed", this.saveFailed);
+        this.disableFormUnlessValid({
+            formSelector: "form",
+            inputSelector: "input[name=objectName]"
+        });
     },
 
-    nameChorusView: function(e) {
+    create: function(e) {
         e.preventDefault();
 
         this.model.set({ objectName: this.$("input[name=objectName]").val().trim() });
@@ -25,16 +22,7 @@ chorus.dialogs.NameChorusView = chorus.dialogs.Base.extend({
     },
 
     chorusViewCreated: function() {
-        $(document).trigger("close.facebox");
+        this.closeModal();
         chorus.router.navigate(this.model.showUrl());
-    },
-
-    chorusViewFailed: function() {
-        this.$("button.submit").stopLoading();
-    },
-
-    checkInput: function() {
-        var hasText = this.$("input[name=objectName]").val().trim().length > 0;
-        this.$("button.submit").prop("disabled", !hasText);
     }
 });

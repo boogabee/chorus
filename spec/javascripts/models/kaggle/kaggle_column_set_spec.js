@@ -1,9 +1,9 @@
 describe("KaggleColumnSet", function() {
-   beforeEach(function() {
+    beforeEach(function() {
         this.collection = new chorus.collections.KaggleColumnSet();
-   });
+    });
 
-   describe("#initialize", function() {
+    describe("#initialize", function() {
         it("should populate the collection with the correct columns", function() {
             var models = this.collection.models;
             expect(models[0].get("name")).toBe("Rank");
@@ -13,5 +13,5 @@ describe("KaggleColumnSet", function() {
             expect(models[4].get('name')).toBe("Favorite Software");
             expect(models[5].get('name')).toBe("Location");
         });
-   });
+    });
 });

@@ -6,7 +6,7 @@ resource "Visualizations" do
 
   before do
     log_in owner
-    stub(SqlExecutor).cancel_query.with_any_args { status }
+    stub(CancelableQuery).cancel.with_any_args { status }
     any_instance_of("Visualization::#{type.to_s.capitalize}".constantize) { |visualization|
       stub(visualization).rows { rows }
       stub(visualization).fetch!.with_any_args {}

@@ -8,21 +8,21 @@ class VersionDetector
     @destination_path = destination_path
   end
 
-  def can_upgrade_legacy?
+  def check_for_legacy!
     case legacy_version
       when nil
         false
       when '2.1'
-        true
+        raise InstallerErrors::InstallAborted, "Chorus must be upgraded to 2.2 before it can be upgraded to 2.3 or newer"
       when '2.0'
-        raise InstallerErrors::InstallAborted, "Chorus must be upgraded to 2.1 before it can be upgraded to 2.2"
+        raise InstallerErrors::InstallAborted, "Chorus must be upgraded to 2.1 before it can be upgraded to 2.3 or newer"
       else
         raise InstallerErrors::InstallAborted, "Chorus cannot upgrade from existing installation"
     end
   end
 
-  def can_upgrade_2_2?(version)
-    return false unless has_2_2_installed?
+  def can_upgrade?(version)
+    return false unless has_new_version_installed?
 
     version_comparison = compare_versions most_recent_version, version
     if version_comparison > 0
@@ -36,12 +36,12 @@ class VersionDetector
 
   private
 
-  def has_2_2_installed?
-    !installed_2_2_versions.empty?
+  def has_new_version_installed?
+    !installed_versions.empty?
   end
 
   def most_recent_version
-    installed_2_2_versions.map { |path| File.basename(path) }.max do |a, b|
+    installed_versions.map { |path| File.basename(path) }.max do |a, b|
       compare_versions a, b
     end
   end
@@ -50,7 +50,7 @@ class VersionDetector
     version_a.split('.').map(&:to_i) <=> version_b.split('.').map(&:to_i)
   end
 
-  def installed_2_2_versions
+  def installed_versions
     Dir[File.join(@destination_path, "releases", "*")]
   end
 

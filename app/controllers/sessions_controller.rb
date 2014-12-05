@@ -1,22 +1,29 @@
 class SessionsController < ApplicationController
   skip_before_filter :require_login, :except => :show
   skip_before_filter :extend_expiration
+  before_filter :require_not_expired, :only => :create
 
   def create
-    user = CredentialsValidator.user(params[:session][:username], params[:session][:password])
-    session[:user_id] = user.id
-    force_extend_expiration
-    present user, :status => :created
-  rescue CredentialsValidator::Invalid => e
+    session_object = Session.create!(params[:session])
+    session[:chorus_session_id] = session_object.session_id
+    present session_object, :status => :created
+  rescue ActiveRecord::RecordInvalid => e
     present_validation_errors e.record.errors, :status => :unauthorized
   end
 
   def destroy
+    current_session.try(:destroy)
     session.clear
-    head :no_content
+    render :json => {:csrf_token => form_authenticity_token}, :status => :ok
   end
 
   def show
-    present current_user
+    present current_session
+  end
+
+  private
+
+  def require_not_expired
+    present_errors({:service => :LICENSE_EXPIRED}, :status => :service_unavailable) if SystemStatusService.latest.expired?
   end
 end

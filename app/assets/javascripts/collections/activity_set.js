@@ -1,6 +1,7 @@
 chorus.collections.ActivitySet = chorus.collections.Base.extend({
     constructorName: "ActivitySet",
     model: chorus.models.Activity,
+    per_page: 20,
 
     setup: function() {
         this.bind("reset", this.reindexErrors);
@@ -9,37 +10,18 @@ chorus.collections.ActivitySet = chorus.collections.Base.extend({
     reindexErrors: function() {
         _.each(this.models, function(activity) {
             activity.reindexError();
-        })
+        });
     },
 
-    url: function(options) {
-        if (this.attributes.insights) {
-            return this.getInsightUrl();
+    urlTemplate: function() {
+        return this.attributes.insights ? 'insights' : 'activities';
+    },
+
+    urlParams: function() {
+        if(this.attributes.entity) {
+            return { entityType: this.attributes.entity.entityType, entityId: this.attributes.entity.get('id') };
         } else {
-            var page = (options && options.page)|| 1;
-            return this.attributes.url + "&page=" + page;
+            return { entityType: 'dashboard' };
         }
-    },
-
-    getInsightUrl: function() {
-        var workspace = this.attributes.workspace
-        var url_base = "/insights";
-        if (workspace) {
-            return (url_base + "?entity_type=workspace&workspace_id=" + workspace.id);
-        }
-        return (url_base + "?entity_type=dashboard");
-    }
-}, {
-    forDashboard: function() {
-        return new this([], { url: "/activities?entity_type=dashboard" });
-    },
-
-    forModel: function(model) {
-        return new this([], { url: this.urlForModel(model) });
-    },
-
-    urlForModel: function(model) {
-        var entityId = model.id;
-        return "/activities?entity_type=" + model.entityType + "&entity_id=" + entityId;
     }
 });

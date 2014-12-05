@@ -1,9 +1,9 @@
 describe("chorus.dialogs.WorkfilesImport", function() {
     beforeEach(function() {
-        this.model = rspecFixtures.workfile.sql({ workspace: { id: 4 } });
-        var workfileSet = new chorus.collections.WorkfileSet([this.model], { workspaceId: 4 });
-        this.dialog = new chorus.dialogs.WorkfilesImport({ workspaceId: 4, pageModel: this.model, pageCollection: workfileSet });
-        this.server.completeFetchFor(chorus.models.Config.instance(), rspecFixtures.config());
+        chorus.models.Config.instance().set({fileSizesMbWorkfiles: 10});
+        this.workspace = backboneFixtures.workspace();
+        this.dialog = new chorus.dialogs.WorkfilesImport({pageModel: this.workspace});
+        spyOn(this.dialog, 'centerHorizontally');
     });
 
     it("does not re-render when the model changes", function() {
@@ -17,7 +17,7 @@ describe("chorus.dialogs.WorkfilesImport", function() {
         });
 
         it("has the right action url", function() {
-            expect(this.dialog.$("form").attr("action")).toBe("/workspaces/4/workfiles");
+            expect(this.dialog.$("form").attr("action")).toBe("/workspaces/" + this.workspace.id + "/workfiles");
         });
 
         it("disables the upload button", function() {
@@ -32,11 +32,11 @@ describe("chorus.dialogs.WorkfilesImport", function() {
         });
 
         it("does not have the 'chosen' class on the form", function() {
-            expect(this.dialog.$("form")).not.toHaveClass("chosen")
+            expect(this.dialog.$("form")).not.toHaveClass("chosen");
         });
 
         it("shows no file selected text", function() {
-            expect(this.dialog.$(".file .defaultText")).not.toHaveClass("hidden")
+            expect(this.dialog.$(".file .empty_selection")).not.toHaveClass("hidden");
         });
     });
 
@@ -53,13 +53,13 @@ describe("chorus.dialogs.WorkfilesImport", function() {
                     id: "9",
                     file_name: "new_file.txt",
                     mime_type: "text/plain",
-                    workspace: { id: "4" }
+                    workspace: { id: this.workspace.id.toString() }
                 }
             });
         });
 
         it("navigates to the show page of the workfile", function() {
-            expect(chorus.router.navigate).toHaveBeenCalledWith("#/workspaces/4/workfiles/9");
+            expect(chorus.router.navigate).toHaveBeenCalledWith("#/workspaces/" + this.workspace.id + "/workfiles/9");
         });
 
         it ("enables the choosefile button again", function() {
@@ -68,7 +68,7 @@ describe("chorus.dialogs.WorkfilesImport", function() {
         });
     });
 
-    context("when clicking upload a file button", function() {
+    context("when clicking the 'upload a file' button", function() {
         beforeEach(function() {
             spyOn(this.dialog, 'chooseFile').andCallThrough();
             this.dialog.render();
@@ -85,7 +85,7 @@ describe("chorus.dialogs.WorkfilesImport", function() {
         });
     });
 
-    context("when a file has been chosen", function() {
+    context("when a non-Alpine file has been chosen", function() {
         beforeEach(function() {
             this.fakeUpload = stubFileUpload();
             spyOn(this.dialog, "closeModal").andCallThrough();
@@ -104,19 +104,19 @@ describe("chorus.dialogs.WorkfilesImport", function() {
         });
 
         it("displays the chosen filename", function() {
-            expect(this.dialog.$(".fileName").text()).toBe("foo.bar");
+            expect(this.dialog.$(".file_name").text()).toBe("foo.bar");
         });
 
         it("displays the appropriate file icon", function() {
-            expect(this.dialog.$("img").attr("src")).toBe(chorus.urlHelpers.fileIconUrl("bar", "medium"));
+            expect(this.dialog.$("img").attr("src")).toBe(chorus.urlHelpers.fileIconUrl("bar", "icon"));
         });
 
-        it("adds the 'chosen' class to the form", function() {
-            expect(this.dialog.$("form")).toHaveClass("chosen")
-        })
+        it("makes the comment field visible", function() {
+            expect(this.dialog.$(".comment")).not.toHaveClass("hidden");
+        });
 
         it("hides the 'no file selected' text", function() {
-            expect(this.dialog.$(".file .defaultText")).toHaveClass("hidden")
+            expect(this.dialog.$(".file .empty_selection")).toHaveClass("hidden");
         });
 
         describe("validating file size", function(){
@@ -169,7 +169,7 @@ describe("chorus.dialogs.WorkfilesImport", function() {
             context("when nginx returns a 413 (body too large) error", function() {
                 it("shows the file too large error message", function() {
                     this.fakeUpload.add([{ name: "invalid.bar", size: 10 * 1024 * 1024 - 1 }]);
-                    html_response = '<html>\n<head><title>413 Request Entity Too Large</title></head>\n<body bgcolor="white">\n<center><h1>413 Request Entity Too Large</h1></center> <hr><center>nginx/1.2.2</center>\n </body>\n </html>\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n';
+                    var html_response = '<html>\n<head><title>413 Request Entity Too Large</title></head>\n<body bgcolor="white">\n<center><h1>413 Request Entity Too Large</h1></center> <hr><center>nginx/1.2.2</center>\n </body>\n </html>\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n <!-- a padding to disable MSIE and Chrome friendly error page -->\n';
                     this.fakeUpload.HTTPResponseFail(html_response, 413, "Request Entity Too Large", {});
                     expect(this.dialog.$(".errors")).toContainText("file exceeds");
                     expect(this.dialog.$("button.submit").prop("disabled")).toBeTruthy();
@@ -248,7 +248,7 @@ describe("chorus.dialogs.WorkfilesImport", function() {
                 });
 
                 it("displays the correct error", function() {
-                    expect(this.dialog.$(".errors ul").text()).toBe("A can't be blank")
+                    expect(this.dialog.$(".errors ul").text()).toBe("A can't be blank");
                 });
 
                 it("sets the button text back to 'Upload File'", function() {
@@ -280,5 +280,80 @@ describe("chorus.dialogs.WorkfilesImport", function() {
                 expect(this.fakeUpload.wasSubmitted).toBeTruthy();
             });
         });
+
+        it("shrinks and centers the modal", function () {
+            expect(this.dialog.centerHorizontally).toHaveBeenCalled();
+            expect(this.dialog.$el).not.toHaveClass('dialog_wide');
+        });
     });
-})
+
+    context("when a .afm file has been chosen", function () {
+        beforeEach(function () {
+            this.fakeUpload = stubFileUpload();
+            this.dialog.render();
+            this.fakeUpload.add([ "foo.afm" ]);
+        });
+
+        it("shows an execution_location_picker_list", function () {
+            expect(this.dialog.$(".execution_location_picker_list")).toExist();
+        });
+
+        it("should only enable the submit button when the execution location picker is ready", function () {
+            this.dialog.executionLocationPickerList.trigger('change');
+            expect(this.dialog.$("button.submit")).toBeDisabled();
+
+            spyOn(this.dialog.executionLocationPickerList, 'ready').andReturn(true);
+
+            this.dialog.executionLocationPickerList.trigger('change');
+            expect(this.dialog.$("button.submit")).toBeEnabled();
+        });
+
+        it("sets entitySubtype to 'alpine'", function () {
+            expect(this.dialog.$('input#entity_subtype')).toHaveValue('alpine');
+        });
+
+        describe("changing the execution location", function() {
+            beforeEach(function () {
+                this.hdfs = backboneFixtures.hdfsDataSource();
+
+                var hdfsDataSources = this.dialog.executionLocationPickerList.pickers[0].dataSourceView.hdfsDataSources;
+                this.server.completeFetchAllFor(hdfsDataSources, [this.hdfs]);
+
+                var dataSources = this.dialog.executionLocationPickerList.pickers[0].dataSourceView.databaseDataSources;
+                this.server.completeFetchAllFor(dataSources, []);
+            });
+
+            it("sets values on the form", function () {
+                expect(this.dialog.$('form .execution_locations input').length).toEqual(0);
+
+                this.dialog.$(".data_source select").prop("selectedIndex", 1).change();
+
+                var execution_location_fields = {};
+                _.each(this.dialog.$('form .execution_locations input'), function (field) {
+                    execution_location_fields[$(field).attr('name')] = $(field).attr('value');
+                });
+
+                expect(execution_location_fields['workfile[execution_locations][0][entity_type]']).toEqual('hdfs_data_source');
+                expect(execution_location_fields['workfile[execution_locations][0][id]']).toEqual(this.hdfs.id);
+            });
+        });
+
+        describe("uploading", function() {
+            describe("when the work flow is not created due to an alpine connection error", function() {
+                beforeEach(function() {
+                    this.dialog.model.serverErrors = { fields: { base: { ALPINE_CONNECTION_ERROR: {} } } };
+                    this.dialog.resource.trigger('saveFailed');
+                });
+
+                it("should display the correct error message", function() {
+                    expect(this.dialog.$(".errors")).toContainTranslation("field_error.ALPINE_CONNECTION_ERROR");
+                });
+            });
+        });
+
+        it("widens and centers the modal", function () {
+            expect(this.dialog.centerHorizontally).toHaveBeenCalled();
+            expect(this.dialog.$el).toHaveClass('dialog_wide');
+        });
+    });
+});

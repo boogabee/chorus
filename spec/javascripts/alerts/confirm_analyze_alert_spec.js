@@ -1,7 +1,7 @@
 describe("chorus.alerts.Analyze", function() {
     beforeEach(function() {
         stubModals();
-        this.model = rspecFixtures.dataset({objectName: "Foo"});
+        this.model = backboneFixtures.dataset({objectName: "Foo"});
         this.alert = new chorus.alerts.Analyze({model: this.model});
         this.alert.launchModal();
     });
@@ -36,7 +36,7 @@ describe("chorus.alerts.Analyze", function() {
         context("when the post completes", function() {
             beforeEach(function() {
                 spyOn(this.alert, "closeModal");
-                spyOn(chorus.PageEvents, "broadcast");
+                spyOn(chorus.PageEvents, "trigger");
                 this.server.lastCreateFor(this.model.analyze()).succeed();
             });
 
@@ -48,8 +48,8 @@ describe("chorus.alerts.Analyze", function() {
                 expect(this.alert.closeModal).toHaveBeenCalled();
             });
 
-            it("broadcasts analyze:running", function() {
-                expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("analyze:running");
+            it("triggers analyze:running", function() {
+                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("analyze:running");
             });
         });
 

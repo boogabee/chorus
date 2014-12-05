@@ -14,7 +14,7 @@ describe("handlebars_localizer", function() {
         context("when called from handlebars with just a key", function() {
             it("doesn't blow up", function() {
                 Handlebars.compile('{{t "translation_key"}}')();
-                expect(window.t.mostRecentCall.args[0]).toBe('translation_key');
+                expect(window.t.lastCall().args[0]).toBe('translation_key');
             });
         });
     });

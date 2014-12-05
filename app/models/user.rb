@@ -3,6 +3,7 @@ require 'soft_delete'
 
 class User < ActiveRecord::Base
   include SoftDelete
+  include TaggableBehavior
 
   VALID_SORT_ORDERS = HashWithIndifferentAccess.new(
     :first_name => "LOWER(users.first_name)",
@@ -11,47 +12,52 @@ class User < ActiveRecord::Base
 
   DEFAULT_SORT_ORDER = VALID_SORT_ORDERS[:first_name]
 
-  attr_accessible :username, :password, :first_name, :last_name, :email, :title, :dept, :notes
+  attr_accessible :username, :password, :first_name, :last_name, :email, :title, :dept, :notes, :subscribed_to_emails
   attr_accessor :password
 
-  has_many :gnip_instances, :foreign_key => :owner_id
-  has_many :gpdb_instances, :foreign_key => :owner_id
+  has_many :gpdb_data_sources, :foreign_key => :owner_id
+  has_many :oracle_data_sources, :foreign_key => :owner_id
+  has_many :jdbc_data_sources, :foreign_key => :owner_id
+  has_many :pg_data_sources, :foreign_key => :owner_id
+  has_many :hdfs_data_sources, :foreign_key => :owner_id
+  has_many :gnip_data_sources, :foreign_key => :owner_id
+  has_many :data_source_accounts, :foreign_key => :owner_id, :dependent => :destroy
+  has_many :dashboard_items, :dependent => :destroy
+
   has_many :owned_workspaces, :foreign_key => :owner_id, :class_name => 'Workspace'
-  has_many :memberships
+  has_many :memberships, :dependent => :destroy
   has_many :workspaces, :through => :memberships
+  has_many :owned_jobs, :foreign_key => :owner_id, :class_name => 'Job'
+
   has_many :activities, :as => :entity
   has_many :events, :through => :activities
   has_many :notifications, :foreign_key => 'recipient_id'
 
   has_many :comments
 
-  has_many :instance_accounts, :foreign_key => :owner_id
-  has_many :hadoop_instances, :foreign_key => :owner_id
-  has_many :gnip_instances, :foreign_key => :owner_id
-
-  has_attached_file :image, :path => Chorus::Application.config.chorus['assets_storage_path'] + ":class/:id/:style/:basename.:extension",
+  has_attached_file :image, :path => ":rails_root/system/:class/:id/:style/:basename.:extension",
                     :url => "/:class/:id/image?style=:style",
                     :default_url => '/images/default-user-icon.png', :styles => {:icon => "50x50>"}
 
   validates_presence_of :username, :first_name, :last_name, :email
   validates_uniqueness_of :username, :case_sensitive => false, :allow_blank => true, :scope => :deleted_at
   validates_format_of :email, :with => /[\w\.-]+(\+[\w-]*)?@([\w-]+\.)+[\w-]+/
-  validates_format_of :username, :with => /^\S+$/
+  validates_format_of :username, :with => /^\S+$/, :unless => lambda { LdapClient.enabled? }
   validates_presence_of :password, :unless => lambda { password_digest? || LdapClient.enabled? || legacy_password_digest? }
   validates_length_of :password, :minimum => 6, :maximum => 256, :if => :password
   validates_length_of :username, :first_name, :last_name, :email, :title, :dept, :maximum => 256
   validates_length_of :notes, :maximum => 4096
-  validates_attachment_size :image, :less_than => Chorus::Application.config.chorus['file_sizes_mb']['user_icon'].megabytes, :message => :file_size_exceeded
+  validates_attachment_size :image, :less_than => ChorusConfig.instance['file_sizes_mb']['user_icon'].megabytes, :message => :file_size_exceeded
+
+  validates_with UserCountValidator, :on => :create
+  validates_with DeveloperCountValidator, AdminCountValidator
 
   attr_accessor :highlighted_attributes, :search_result_notes
-  searchable do
+  searchable_model do
     text :first_name, :stored => true, :boost => SOLR_PRIMARY_FIELD_BOOST
     text :last_name, :stored => true, :boost => SOLR_PRIMARY_FIELD_BOOST
     text :username, :stored => true, :boost => SOLR_SECONDARY_FIELD_BOOST
     text :email, :stored => true, :boost => SOLR_SECONDARY_FIELD_BOOST
-    string :grouping_id
-    string :type_name
-    string :security_type_name
   end
 
   before_save :update_password_digest, :unless => lambda { password.blank? }
@@ -68,7 +74,7 @@ class User < ActiveRecord::Base
 
   def self.order(field)
     sort_by = VALID_SORT_ORDERS[field] || DEFAULT_SORT_ORDER
-    super(sort_by)
+    super(sort_by, :id)
   end
 
   def self.authenticate(username, password)
@@ -89,25 +95,34 @@ class User < ActiveRecord::Base
     write_attribute(:admin, value) unless admin? && self.class.admin_count == 1 # don't unset last admin
   end
 
+  scope :developer, where(:developer => true)
+
+  def self.developer_count
+    developer.size
+  end
+
   def authenticate(unencrypted_password)
     migrate_password_digest(unencrypted_password) if legacy_password_digest?
     authenticate_password_digest(unencrypted_password) && self
   end
 
   def destroy
-    if gpdb_instances.count > 0
-      errors.add(:user, :nonempty_instance_list)
+    if gpdb_data_sources.count > 0
+      errors.add(:user, :nonempty_data_source_list)
       raise ActiveRecord::RecordInvalid.new(self)
     elsif owned_workspaces.count > 0
       errors.add(:workspace_count, :equal_to, {:count => 0})
       raise ActiveRecord::RecordInvalid.new(self)
     end
+
+    owned_jobs.each(&:reset_ownership!)
+
     super
   end
 
   def accessible_account_ids
-    shared_account_ids = InstanceAccount.joins(:gpdb_instance).where("gpdb_instances.shared = true").collect(&:id)
-    (shared_account_ids + instance_account_ids).uniq
+    shared_account_ids = DataSourceAccount.joins(:data_source).where("data_sources.shared = true").collect(&:id)
+    (shared_account_ids + data_source_account_ids).uniq
   end
 
   def full_name

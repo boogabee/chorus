@@ -1,0 +1,59 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:8981/solr/select?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: fq=type%3A%28User+OR+DataSource+OR+HdfsDataSource+OR+GnipDataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment+OR+Events%5C%3A%5C%3ANote+OR+Comment%29&fq=type_name_s%3A%28User+OR+DataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000016+OR+1000017+OR+1000018+OR+1000019+OR+1000024+OR+1000026+OR+1000027+OR+1000028%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000016+OR+1000017+OR+1000018+OR+1000019+OR+1000024+OR+1000026+OR+1000027+OR+1000028%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&q=searchquery_data_source&fl=%2A+score&qf=first_name_texts+last_name_texts+username_texts+email_texts+tag_names_texts+name_texts+description_texts+summary_texts+file_name_texts+version_comments_texts+database_name_texts+table_description_texts+schema_name_texts+column_name_texts+column_description_texts+query_texts+parent_name_texts+body_texts+first_name_stemmed_texts+last_name_stemmed_texts+username_stemmed_texts+email_stemmed_texts+tag_names_stemmed_texts+name_stemmed_texts+description_stemmed_texts+summary_stemmed_texts+file_name_stemmed_texts+version_comments_stemmed_texts+database_name_stemmed_texts+table_description_stemmed_texts+schema_name_stemmed_texts+column_name_stemmed_texts+column_description_stemmed_texts+query_stemmed_texts+parent_name_stemmed_texts+body_stemmed_texts&defType=edismax&hl=on&hl.simple.pre=%40%40%40hl%40%40%40&hl.simple.post=%40%40%40endhl%40%40%40&hl.snippets=100&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true&facet=true&f.type_name_s.facet.mincount=1&facet.field=type_name_s
+    headers:
+      content-type:
+      - application/x-www-form-urlencoded; charset=UTF-8
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>15,'params'=>{'facet'=>'true','group.ngroups'=>'true','group.limit'=>'3','qf'=>'first_name_texts\
+        \ last_name_texts username_texts email_texts tag_names_texts name_texts description_texts\
+        \ summary_texts file_name_texts version_comments_texts database_name_texts\
+        \ table_description_texts schema_name_texts column_name_texts column_description_texts\
+        \ query_texts parent_name_texts body_texts first_name_stemmed_texts last_name_stemmed_texts\
+        \ username_stemmed_texts email_stemmed_texts tag_names_stemmed_texts name_stemmed_texts\
+        \ description_stemmed_texts summary_stemmed_texts file_name_stemmed_texts\
+        \ version_comments_stemmed_texts database_name_stemmed_texts table_description_stemmed_texts\
+        \ schema_name_stemmed_texts column_name_stemmed_texts column_description_stemmed_texts\
+        \ query_stemmed_texts parent_name_stemmed_texts body_stemmed_texts','hl.simple.pre'=>'@@@hl@@@','wt'=>'ruby','hl'=>'on','rows'=>'50','defType'=>'edismax','fl'=>'*\
+        \ score','hl.snippets'=>'100','start'=>'0','q'=>'searchquery_data_source','group.truncate'=>'true','f.type_name_s.facet.mincount'=>'1','group.field'=>'grouping_id_s','hl.simple.post'=>'@@@endhl@@@','group'=>'true','facet.field'=>'type_name_s','fq'=>['type:(User\
+        \ OR DataSource OR HdfsDataSource OR GnipDataSource OR Workspace OR Workfile\
+        \ OR Dataset OR HdfsEntry OR Attachment OR Events\\\\:\\\\:Note OR Comment)','type_name_s:(User\
+        \ OR DataSource OR Workspace OR Workfile OR Dataset OR HdfsEntry OR Attachment)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:RelationalDataset\
+        \ AND -data_source_account_ids_im:(1000001 OR 1000004 OR 1000002 OR 1000006\
+        \ OR 1000007 OR 1000008 OR 1000010 OR 1000011 OR 1000012 OR 1000013 OR 1000014\
+        \ OR 1000016 OR 1000017 OR 1000018 OR 1000019 OR 1000024 OR 1000026 OR 1000027\
+        \ OR 1000028))','-(security_type_name_sm:ChorusView AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:HdfsDataset AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:RelationalDataset AND -data_source_account_ids_im:(1000001\
+        \ OR 1000004 OR 1000002 OR 1000006 OR 1000007 OR 1000008 OR 1000010 OR 1000011\
+        \ OR 1000012 OR 1000013 OR 1000014 OR 1000016 OR 1000017 OR 1000018 OR 1000019\
+        \ OR 1000024 OR 1000026 OR 1000027 OR 1000028))','-(security_type_name_sm:ChorusView\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:HdfsDataset\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)']}},'grouped'=>{'grouping_id_s'=>{'matches'=>1,'ngroups'=>1,'groups'=>[{'groupValue'=>'Attachment\
+        \ 1000003','doclist'=>{'numFound'=>1,'start'=>0,'maxScore'=>7594828.0,'docs'=>[{'id'=>'Attachment\
+        \ 1000003','name_texts'=>['searchquery_data_source'],'name_stemmed_texts'=>['searchquery_data_source'],'score'=>7594828.0}]}}]}},'facet_counts'=>{'facet_queries'=>{},'facet_fields'=>{'type_name_s'=>['Attachment',1]},'facet_dates'=>{},'facet_ranges'=>{}},'highlighting'=>{'Attachment\
+        \ 1000003'=>{'name_texts'=>['@@@hl@@@searchquery@@@endhl@@@_@@@hl@@@data@@@endhl@@@_@@@hl@@@source@@@endhl@@@'],'name_stemmed_texts'=>['@@@hl@@@searchquery@@@endhl@@@_@@@hl@@@data@@@endhl@@@_@@@hl@@@source@@@endhl@@@']}}}"
+    http_version: '1.1'
+  recorded_at: Thu, 15 May 2014 00:03:13 GMT
+recorded_with: VCR 2.3.0

@@ -1,0 +1,52 @@
+<div class="item_information">
+
+    <div class="item_name">
+        {{#if url}}
+            <a title="{{name}}" class="name" href="{{url}}">{{name}}</a>
+        {{else}}
+            <span class="name">{{name}}</span>
+        {{/if}}
+        {{> adminBadge }}
+    </div>
+
+    <div class="item_metadata">
+        {{#if title}}
+            <div class="title" title="{{title}}">{{title}}</div>
+        {{/if}}
+        {{#if lastComment}}
+            {{> itemLastComment}}
+        {{/if}}
+        {{#if datasetCountMessage}}
+            <div class="description">
+                {{ datasetCountMessage }}
+            </div>
+        {{/if}}
+        {{#if fileInfo}}
+            <div class="description">
+                {{ fileInfo }}
+            </div>
+        {{/if}}
+        {{#if description}}
+            <div class="description">
+                {{ description }}
+            </div>
+        {{/if}}
+        {{#if isWorkspace}}
+            {{> workspaceItemDetails}}
+        {{/if}}
+        {{#if tableauWorkbook}}
+            <div class="tableau">
+                {{fromTableau model}}
+            </div>
+        {{/if}}
+        {{#if isDataset}}
+            {{usedInWorkspaces workspaces dataset}}
+            <div class="location">
+                {{datasetLocation resource}}
+            </div>
+        {{/if}}
+        {{> developerBadge }}
+
+        {{> itemTags}}
+    </div>
+</div>

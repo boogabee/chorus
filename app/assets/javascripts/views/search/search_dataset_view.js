@@ -1,16 +1,14 @@
 chorus.views.SearchDataset = chorus.views.SearchItemBase.extend({
     constructorName: "SearchDatasetView",
     templateName: "search_dataset",
-    eventType: 'dataset',
 
     additionalContext: function() {
-        var context = {
+        var context = _.extend(this._super("additionalContext"), {
             dataset: this.model.asWorkspaceDataset(),
             showUrl: this.model.showUrl(),
             iconUrl: this.model.iconUrl()
-        };
+        });
 
-        var workspaces;
         if (this.model.get("workspaces")) {
             context.workspaces = this.model.get("workspaces");
         } else if (this.model.get("workspace")) {
@@ -23,8 +21,8 @@ chorus.views.SearchDataset = chorus.views.SearchItemBase.extend({
     postRender: function() {
         this._super("postRender");
 
-        this.$("a.instance, a.database").data("instance", this.model.get("instance"));
-        chorus.menu(this.$(".location .found_in a.open_other_menu"), {
+        this.$("a.data_source, a.database").data("data_source", this.model.get("data_source"));
+        this.menu(this.$(".location .found_in a.open_other_menu"), {
             content: this.$(".other_menu"),
             classes: "found_in_other_workspaces_menu"
         });

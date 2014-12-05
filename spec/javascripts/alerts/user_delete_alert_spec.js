@@ -4,7 +4,7 @@ describe("chorus.alerts.UserDelete", function() {
     });
 
     it("finds the user from the data attributes on the link", function(){
-        expect(this.alert.model.get("id")).toBe(42)
+        expect(this.alert.model.get("id")).toBe(42);
     });
 
     describe("successful deletion", function() {
@@ -17,5 +17,5 @@ describe("chorus.alerts.UserDelete", function() {
         it("navigates to the user list page", function() {
             expect(chorus.router.navigate).toHaveBeenCalledWith("/users");
         });
-    })
-})
+    });
+});

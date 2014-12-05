@@ -8,88 +8,63 @@ describe Kaggle::UsersController do
   end
 
   describe "#index" do
-    it_behaves_like "an action that requires authentication", :get, :index
+    include KaggleSpecHelpers
+
+    before do
+      stub(Kaggle::API).users(anything) do
+        kaggle_users_api_result
+      end
+    end
+
+    it_behaves_like "an action that requires authentication", :get, :index, :workspace_id => '-1'
 
     it "succeeds" do
-      get :index
+      get :index, :workspace_id => '-1'
       response.code.should == "200"
     end
 
     it "shows list of users" do
-      get :index
+      get :index, :workspace_id => '-1'
       decoded_response.length.should > 0
     end
 
-    it "shows attributes for the users" do
-      get :index
-      user = decoded_response.first
-      user.should have_key('id')
-      user.should have_key('username')
-      user.should have_key('location')
-      user.should have_key('rank')
-      user.should have_key('points')
-      user.should have_key('number_of_entered_competitions')
-      user.should have_key('gravatar_url')
-      user.should have_key('full_name')
-      user.should have_key('favorite_technique')
-      user.should have_key('favorite_software')
+    it "presents the kaggle users" do
+      mock_present { |kaggle_users|
+        kaggle_users.first.should be_a Kaggle::User
+      }
+
+      get :index, :workspace_id => '-1'
+      response.should be_success
     end
 
     it "sorts by rank" do
-      get :index
-      decoded_response.first.rank.should <= decoded_response.second.rank
+      mock_present { | kaggle_users|
+        kaggle_users.first.rank.should <= kaggle_users.second.rank
+      }
+
+      get :index, :workspace_id => '-1'
     end
 
-    it "filters the list" do
-      get :index, :kaggle_user => ["rank|greater|10"]
-      decoded_response.length.should == 1
-      user = decoded_response.first
-      user['rank'].should > 10
+    it "sends the filters to the KaggleApi.users method" do
+      filters = ['i am a filter']
+      mock(Kaggle::API).users(:filters => filters) { [] }
+      get :index, :workspace_id => '-1', :filters => filters
     end
 
-    it "filters the list for competition types" do
-      get :index, :kaggle_user => ["past_competition_types|equal|Life Sciences"]
-      decoded_response.length.should == 2
-      user = decoded_response.first
-      user['past_competition_types'].map(&:downcase).should include(("Life Sciences").downcase)
-    end
+    context "when user fetching fails" do
+      before do
+        mock(Kaggle::API).users(anything) { raise Kaggle::API::NotReachable }
+      end
 
-    it "handles blank filter values" do
-      get :index, :kaggle_user => ["rank:greater:|", "past_competition_types|equal|Life Sciences"]
-      response.should be_success
-      decoded_response.length.should == 2
-    end
-
-    it "searches software, techniques and location by substring match" do
-      get :index, :kaggle_user => ["favorite_technique|includes|svm",
-                                   "favorite_software|includes|ggplot2",
-                                   "location|includes|SaN FrAnCiScO"]
-      response.should be_success
-      decoded_response.length.should == 1
-      user = decoded_response.first
-      user['username'].should == 'tstark'
-    end
-
-    it "doesn't break if you pass in a number" do
-      get :index, :kaggle_user => ["favorite_technique|includes|1234"]
-
-      response.should be_success
-    end
-
-    it "searches software, techniques and location by substring match" do
-      get :index, :kaggle_user => ["favorite_technique|includes|"]
-      response.should be_success
-      decoded_response.length.should == 2
-    end
-
-    it "does something ok" do
-      get :index, :kaggle_user => ["notakey|includes|foo"]
-      response.should be_success
-      decoded_response.length.should == 0
+      it "presents an error json" do
+        get :index, :workspace_id => -1
+        response.code.should == '422'
+        decoded_errors.record.should == 'KAGGLE_API_UNREACHABLE'
+      end
     end
 
     generate_fixture "kaggleUserSet.json" do
-      get :index
+      get :index, :workspace_id => '-1'
     end
   end
 end

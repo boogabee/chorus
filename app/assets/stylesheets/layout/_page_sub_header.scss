@@ -1,0 +1,29 @@
+@import "_common";
+@import "compass/css3";
+
+.page_sub_header {
+    position: fixed;
+    height: $subheader-height;
+    padding-top: $header-height;
+
+    color: $color-text3;
+    background: $subheader-background-color;
+    
+    font-size:$page_header-fontsize;
+    line-height: $subheader-height;
+    
+    border-bottom: $border-canon;
+    
+    /* first child within the subheader is the div > span that contains the subheader text */
+    > :first-child {
+        padding-left: $page-margin-left;
+        padding-right: $page-margin-right;
+    }
+    
+    span#sub_header_pagetitle {
+        display: inline-block;
+        @include ellipsis;
+        /* if it gets this long, thats about long enough in the header */
+        width:95%;
+        }
+}

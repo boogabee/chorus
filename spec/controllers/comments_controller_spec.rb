@@ -13,33 +13,39 @@ describe CommentsController do
   let(:commenter) { event_author }
 
   describe "#create" do
-    before do
-      @params = {
-          event_id: event.id,
-          text: "hello world in jasmine test!"
+    let(:params) do
+      {
+        event_id: event.id,
+        body: 'hello world in jasmine test!'
       }
     end
 
     it "uses authorization" do
       mock(subject).authorize! :create_comment_on, Comment, event
-      post :create, @params
+      post :create, params
     end
 
     it "should post with appropriate response" do
-      post :create, @params
+      post :create, params
       response.code.should == "201"
     end
 
     it "should create make the current user the author" do
-      post :create, @params
-      Comment.find_by_text(@params[:text]).author.should == commenter
+      post :create, params
+      Comment.find_by_body(params[:body]).author.should == commenter
+    end
+    
+    it 'sanitizes the body of the note' do
+      params[:body] = "<b>not evil</b><script>alert('evil')</script>"
+      post :create, params
+      decoded_response.body.should == '<b>not evil</b>'
     end
 
     context "when event author comments" do
       before do
-        Comment.create!({:event => event, :author => first_commenter, :text => "Nice event"}, :without_protection => true)
-        Comment.create!({:event => event, :author => second_commenter, :text => "Great event"}, :without_protection => true)
-        post :create, @params
+        Comment.create!({:event => event, :author => first_commenter, :body => "Nice event"}, :without_protection => true)
+        Comment.create!({:event => event, :author => second_commenter, :body => "Great event"}, :without_protection => true)
+        post :create, params
       end
 
       it "notifies the other commenters" do
@@ -60,8 +66,8 @@ describe CommentsController do
       let(:commenter) { first_commenter }
 
       before do
-        Comment.create!({:event => event, :author => second_commenter, :text => "I am a second comment"}, :without_protection => true)
-        post :create, @params
+        Comment.create!({:event => event, :author => second_commenter, :body => "I am a second comment"}, :without_protection => true)
+        post :create, params
       end
 
       it "notifies the event author" do
@@ -79,9 +85,9 @@ describe CommentsController do
 
     context "when some user's have commented multiple times" do
       before do
-        Comment.create!(:event_id => event.id, :author_id => event_author.id, :text => "I comment on myself")
-        Comment.create!(:event_id => event.id, :author_id => first_commenter.id, :text => "Great event")
-        Comment.create!(:event_id => event.id, :author_id => first_commenter.id, :text => "Great event again")
+        Comment.create!(:event_id => event.id, :author_id => event_author.id, :body => "I comment on myself")
+        Comment.create!(:event_id => event.id, :author_id => first_commenter.id, :body => "Great event")
+        Comment.create!(:event_id => event.id, :author_id => first_commenter.id, :body => "Great event again")
       end
 
       let(:commenter) { second_commenter }
@@ -89,7 +95,7 @@ describe CommentsController do
       it "only notifies the same user once" do
         expect {
           expect {
-            post :create, @params
+            post :create, params
           }.to change {
             Notification.where(:recipient_id => event_author.id, :event_id => event.id).count
           }.by(1)
@@ -98,10 +104,24 @@ describe CommentsController do
         }.by(1)
       end
     end
+
+    context "when the event is not a note" do
+      let(:event) { events(:owner_creates_gpdb_data_source) }
+      let(:commenter) { users(:the_collaborator) }
+
+      before do
+        Comment.create!({:event => event, :author => commenter, :body => "I am a comment"}, :without_protection => true)
+        post :create, params
+      end
+
+      it "does not notify the event actor" do
+        Notification.where(:recipient_id => event_author.id, :event_id => event.id).should_not exist
+      end
+    end
   end
 
   describe "#show" do
-    let(:comment) { Comment.new({:event_id => event.id, :text => "Comment on a note", :author_id => commenter.id}) }
+    let(:comment) { Comment.new({:event_id => event.id, :body => "Comment on a note", :author_id => commenter.id}) }
     before do
       comment.save!
     end
@@ -113,18 +133,17 @@ describe CommentsController do
 
     it "presents the comment" do
       get :show, :id => comment.id
-      decoded_response.text.should == "Comment on a note"
+      decoded_response.body.should == "Comment on a note"
     end
 
     generate_fixture "comment.json" do
-
       get :show, :id => comment.id
     end
   end
 
   describe "#destroy" do
     before do
-      @comment = Comment.new({:event_id => event.id, :author_id => commenter.id, :text => "Delete me!"})
+      @comment = Comment.new({:event_id => event.id, :author_id => commenter.id, :body => "Delete me!"})
       @comment.save!
     end
 

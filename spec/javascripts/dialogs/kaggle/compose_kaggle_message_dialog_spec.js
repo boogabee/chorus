@@ -1,21 +1,17 @@
 describe("chorus.dialogs.ComposeKaggleMessage", function () {
     beforeEach(function () {
         this.qtip = stubQtip(".more-info");
-        setLoggedInUser(rspecFixtures.user({email:'user@chorus.com'}));
+        setLoggedInUser(backboneFixtures.user({email:'user@chorus.com'}));
         this.kaggleUser = new chorus.models.KaggleUser({fullName:"Batman"});
-        this.workspace = rspecFixtures.workspace();
+        this.workspace = backboneFixtures.workspace();
         this.dialog = new chorus.dialogs.ComposeKaggleMessage({
-            recipients:new chorus.collections.KaggleUserSet(this.kaggleUser),
-            workspace:this.workspace
+            collection:new chorus.collections.KaggleUserSet(this.kaggleUser),
+            pageModel:this.workspace
         });
         this.dialog.render();
     });
 
     describe('#render', function () {
-        it("sets the workspace for the model", function () {
-            expect(this.dialog.model.get('workspace')).toBe(this.workspace);
-        });
-
         it("sets the default value of the from field to the users email", function () {
             expect(this.dialog.$('input[name=replyTo]').val()).toBe('user@chorus.com');
         });
@@ -31,8 +27,8 @@ describe("chorus.dialogs.ComposeKaggleMessage", function () {
                         new chorus.models.KaggleUser({fullName:"Catwoman"})]
                     );
                 this.dialog = new chorus.dialogs.ComposeKaggleMessage({
-                    recipients:this.kaggleUsers,
-                    workspace:this.workspace
+                    collection: this.kaggleUsers,
+                    pageModel: this.workspace
                 });
                 this.dialog.render();
             });
@@ -44,8 +40,8 @@ describe("chorus.dialogs.ComposeKaggleMessage", function () {
             context("when the recipient names run over the limit", function () {
                 beforeEach(function () {
                     this.dialog = new chorus.dialogs.ComposeKaggleMessage({
-                        recipients:this.kaggleUsers,
-                        workspace:this.workspace,
+                        collection: this.kaggleUsers,
+                        pageModel: this.workspace,
                         maxRecipientCharacters:10
                     });
                     this.dialog.render();
@@ -104,8 +100,8 @@ describe("chorus.dialogs.ComposeKaggleMessage", function () {
                 var datasets;
                 beforeEach(function () {
                     datasets = [
-                        rspecFixtures.workspaceDataset.datasetTable({ objectName:"i_bought_a_zoo" }),
-                        rspecFixtures.workspaceDataset.datasetTable({ objectName:"bourne_identity" })
+                        backboneFixtures.workspaceDataset.datasetTable({ objectName:"i_bought_a_zoo" }),
+                        backboneFixtures.workspaceDataset.datasetTable({ objectName:"bourne_identity" })
                     ];
                     chorus.modal.trigger("datasets:selected", datasets);
                 });
@@ -124,10 +120,10 @@ describe("chorus.dialogs.ComposeKaggleMessage", function () {
                     beforeEach(function () {
                         _.each(datasets, function (dataset, i) {
                             this.server.completeFetchAllFor(dataset.columns(), [
-                                fixtures.databaseColumn({name:"Rhino_" + i, recentComment:"awesome", typeCategory:"STRING" }),
-                                fixtures.databaseColumn({name:"Sloth_" + i, recentComment:"lazy", typeCategory:"WHOLE_NUMBER" })
+                                backboneFixtures.databaseColumn({name:"Rhino_" + i, typeCategory:"STRING" }),
+                                backboneFixtures.databaseColumn({name:"Sloth_" + i, typeCategory:"WHOLE_NUMBER" })
                             ]);
-                            this.server.completeFetchFor(dataset.statistics(), rspecFixtures.datasetStatisticsTable({ rows:11 * (i + 1) }));
+                            this.server.completeFetchFor(dataset.statistics(), backboneFixtures.datasetStatisticsTable({ rows:11 * (i + 1) }));
                         }, this);
                     });
 
@@ -157,10 +153,10 @@ describe("chorus.dialogs.ComposeKaggleMessage", function () {
 
                 describe("when some of the fetches don't complete", function () {
                     beforeEach(function () {
-                        this.server.completeFetchAllFor(datasets[0].columns(), [
-                            fixtures.databaseColumn({name:"Rhino_0", recentComment:"awesome", typeCategory:"STRING" }),
-                            fixtures.databaseColumn({name:"Sloth_0", recentComment:"lazy", typeCategory:"WHOLE_NUMBER" })
-                        ]);
+                        this.server.completeFetchAllFor(datasets[0].columns(), backboneFixtures.databaseColumnSet([
+                            {name:"Rhino_0", description:"awesome", typeCategory:"STRING" },
+                            {name:"Sloth_0", description:"lazy", typeCategory:"WHOLE_NUMBER" }
+                        ]));
                     });
 
                     it("doesn't update the message", function () {
@@ -253,13 +249,13 @@ describe("chorus.dialogs.ComposeKaggleMessage", function () {
             });
 
             it("marks the inputs invalid", function() {
-               expect(this.dialog.$("input[name=replyTo]")).toHaveClass("has_error");
-               expect(this.dialog.$("input[name=subject]")).toHaveClass("has_error");
-               expect(this.dialog.$("textarea[name=htmlBody]")).toHaveClass("has_error");
+                expect(this.dialog.$("input[name=replyTo]")).toHaveClass("has_error");
+                expect(this.dialog.$("input[name=subject]")).toHaveClass("has_error");
+                expect(this.dialog.$("textarea[name=htmlBody]")).toHaveClass("has_error");
             });
 
             it("stops the loading spinner", function() {
-               expect(this.dialog.$("button.submit").isLoading()).toBeFalsy();
+                expect(this.dialog.$("button.submit").isLoading()).toBeFalsy();
             });
         });
     });

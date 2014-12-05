@@ -3,15 +3,12 @@ class WorkspaceSearch < Search
 
   validates_presence_of :workspace_id
 
-  def initialize(current_user, params = {})
-    @models_to_search = [Workspace, Workfile, Dataset]
-    super
-    @workspace_id = params[:workspace_id]
+  def models_to_search
+    super & [Workspace, Workfile, Dataset]
   end
 
   def build_search
-    super
-    @search.build do
+    super.build do
       any_of do
         with :workspace_id, workspace_id if models_to_search.include?(Workspace) || models_to_search.include?(Workfile)
         with :found_in_workspace_id, workspace_id if models_to_search.include?(Dataset)
@@ -24,9 +21,10 @@ class WorkspaceSearch < Search
   end
 
   def results
-    return @results if @results
-    search.associate_grouped_notes_with_primary_records
-    @results = search.results
+    @results ||= begin
+      search.associate_grouped_notes_with_primary_records
+      search.results
+    end
   end
 
   private

@@ -1,0 +1,45 @@
+<form>
+    <div class="girdle">
+        <label class="required">{{t "data_sources.dialog.data_source_name"}}</label>
+        <input type="text" name="name" maxlength="64" value="{{name}}" tabindex="1"/>
+
+        {{#if hdfsDataSource}}
+            {{hdfsVersionsSelect false}}
+        {{/if}}
+
+        <label>{{t "data_sources.dialog.description"}}</label>
+        <textarea name="description" maxlength="4095" rows="6" tabindex="2">{{description}}</textarea>
+        {{#if gpdbPgOrOracle}}
+            {{dbDataSourceFields this}}
+        {{/if}}
+        {{#if gpOrPg}}
+            <label>
+                <input type="checkbox" name="ssl" tabindex="1" {{#if ssl}}checked{{/if}}/>
+                {{t "data_sources.dialog.use_ssl"}}
+            </label>
+        {{/if}}
+
+        {{#if hdfsDataSource}}
+            {{hdfsDataSourceFields this}}
+        {{/if}}
+
+        {{#if jdbcDataSource}}
+            {{jdbcDataSourceFields this}}
+        {{/if}}
+
+        {{#if gnipDataSource}}
+            <label class="gnip_host required" name="streamUrl">
+                {{t "data_sources.dialog.gnip_url"}}
+                <img src="/images/more-info.png" class="help" data-text='{{t "data_sources.dialog.gnip_help_text"}}'/>
+            </label>
+            <input class="gnip_host" type="text" name="streamUrl" value="{{streamUrl}}" maxlength="255"/>
+
+            <label class="gnip_username required" name="username">{{t "data_sources.dialog.gnip_username"}}</label>
+            <label class="gnip_password" name="password">{{t "data_sources.dialog.gnip_password"}}</label>
+
+            <input class="gnip_username" type="text" name="username" value="{{username}}" maxlength="255"/>
+            <input class="gnip_password" type="password" name="password" value="" maxlength="255" autocomplete="off"/>
+        {{/if}}
+    </div>
+    {{formControls "data_sources.edit_dialog.save" }}
+</form>

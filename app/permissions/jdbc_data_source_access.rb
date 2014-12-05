@@ -1,0 +1,1 @@
+class JdbcDataSourceAccess < DataSourceAccess; end

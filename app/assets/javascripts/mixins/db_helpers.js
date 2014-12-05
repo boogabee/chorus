@@ -1,13 +1,13 @@
 chorus.Mixins.dbHelpers = {
-    safePGName: function() {
+    ensureDoubleQuoted: function() {
         function encode(name) {
-            var isSafe = name.match(chorus.ValidationRegexes.SafePgName());
-            return isSafe ? name : '"' + name + '"';
+            var doubleQuoted = name.match(chorus.ValidationRegexes.DoubleQuoted());
+            return doubleQuoted ? name : '"' + name + '"';
         }
 
         return _.map(arguments, function(arg) {
-            return encode(arg)
-        }).join('.')
+            return encode(arg);
+        }).join('.');
     },
 
     sqlEscapeString: function(string) {

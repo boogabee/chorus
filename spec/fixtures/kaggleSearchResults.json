@@ -1,0 +1,728 @@
+{ "users": [
+    {
+        "KaggleId":47822,
+        "KaggleRank":1,
+        "KagglePoints":599510.9,
+        "FavoriteTechnique":"Random Forest, Matrix Methods",
+        "FavoriteSoftware":"R, Matlab, Java",
+        "LegalName":"Felicia Woodard",
+        "Location":"San Francisco, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/DSC07173.jpg",
+        "PastCompetitionTypes":[
+            "High Dimensionality",		
+            "Unsupervised Learning",
+            "Binary Classification",
+            "Government",
+            "Insurance",
+            "SQL",
+            "R"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47828,
+        "KaggleRank":16,
+        "KagglePoints":100660.7,
+        "FavoriteTechnique":"Matrix Factorization",
+        "FavoriteSoftware":"R, Python",
+        "LegalName":" Guy Burdge ",
+        "Location":"Paris, France",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/oppoAMBRO02-5083.jpg",
+        "PastCompetitionTypes":[
+            "Natural Language Processing",
+            "Semi-supervised Learning",
+            "Government",
+            "Public Policy",
+            "R"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47829,
+        "KaggleRank":42,
+        "KagglePoints":41564.2,
+        "FavoriteTechnique":"Visualization",
+        "FavoriteSoftware":"SQL, Perl, C",
+        "LegalName":"Amy Clerk",
+        "Location":"Beijing, China",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/IMG_3083.jpg",
+        "PastCompetitionTypes":[
+            "Natural Language Processing",
+            "Unsupervised Learning",
+            "Public Policy"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47830,
+        "KaggleRank":157,
+        "KagglePoints":5064.5,
+        "FavoriteTechnique":"C-Means",
+        "FavoriteSoftware":"R",
+        "LegalName":"Nelson Frahm",
+        "Location":"Munich, Germany",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/imagery_02_11_08_000032.jpg",
+        "PastCompetitionTypes":[
+            "Semi-supervised Learning",
+            "High Dimensionality",
+            "Health",
+            "R",
+            "Python"       
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47831,
+        "KaggleRank":409,
+        "KagglePoints":2814.5,
+        "FavoriteTechnique":"Random Forest",
+        "FavoriteSoftware":"Ruby",
+        "LegalName":"Chandra Seelig",
+        "Location":"Los Angeles, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/Handsome_man_looking_away.jpg",
+        "PastCompetitionTypes":[
+            "Natural Language Processing",
+            "Life Sciences"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47832,
+        "KaggleRank":892,
+        "KagglePoints":23759.1,
+        "FavoriteTechnique":"Logistic Regression",
+        "FavoriteSoftware":"R",
+        "LegalName":"Elnora Mcmorrow",
+        "Location":"London, England",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/PR_008-_SI_-_12_03_12-509.jpg",
+        "PastCompetitionTypes":[
+            "High Dimensionality",
+            "Government"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47833,
+        "KaggleRank":1039,
+        "KagglePoints":18773.5,
+        "FavoriteTechnique":"Relational Learning",
+        "FavoriteSoftware":"SVM",
+        "LegalName":"Fernando Cast",
+        "Location":"Madrid, Spain",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/Pr_34_-_TRS_-_16_07_10_-_620.jpg",
+        "PastCompetitionTypes":[
+            "Unstructured",
+            "Time Series",
+            "Finance"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47834,
+        "KaggleRank":2526,
+        "KagglePoints":17829.6,
+        "FavoriteTechnique":"CART",
+        "FavoriteSoftware":"R",
+        "LegalName":"Tyrone Humbertson",
+        "Location":"Chicago, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/PR_014-_SI_-_03_04_12-019.jpg",
+        "PastCompetitionTypes":[
+            "Unsupervised Learning",
+            "Start-ups",
+            "Credit"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47835,
+        "KaggleRank":6823,
+        "KagglePoints":14274.4,
+        "FavoriteTechnique":"Neural Net",
+        "FavoriteSoftware":"Modeler 14",
+        "LegalName":" Lonnie Besaw",
+        "Location":"San Jose, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/Pedja_Nikolic_MG_3254.jpg",
+        "PastCompetitionTypes":[
+            "Computer Vision",
+            "Research"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47836,
+        "KaggleRank":13820,
+        "KagglePoints":9274.9,
+        "FavoriteTechnique":"Market Basket",
+        "FavoriteSoftware":"Alpine",
+        "LegalName":"Clinton Reichenbach",
+        "Location":"Sydney, Australia",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/imagery_12_11_08_000342.jpg",
+        "PastCompetitionTypes":[
+            "Binary Classification",
+            "SQL"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47837,
+        "KaggleRank":17303,
+        "KagglePoints":8362.6,
+        "FavoriteTechnique":"Decision Trees",
+        "FavoriteSoftware":"Python",
+        "LegalName":"Milagros Boulay",
+        "Location":"Moscow, Russia",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/PR_029-_SI_-_31_05_12-735.jpg",
+        "PastCompetitionTypes":[
+            "Data Manipulation",
+            "Research"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47838,
+        "KaggleRank":24158,
+        "KagglePoints":8137.4,
+        "FavoriteTechnique":"Gradient Boosting",
+        "FavoriteSoftware":"Matlab",
+        "LegalName":"Serena Becraft",
+        "Location":"St. Louis, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/2008520.jpg",
+        "PastCompetitionTypes":[
+            "Unsupervised Learning",
+            "Matlab"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47839,
+        "KaggleRank":26458,
+        "KagglePoints":7738.6,
+        "FavoriteTechnique":"Random Forest",
+        "FavoriteSoftware":"CART",
+        "LegalName":" Kunal Khadse",
+        "Location":"New Delhi, India",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/D34_3496.jpg",
+        "PastCompetitionTypes":[
+            "Finance"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47840,
+        "KaggleRank":29103,
+        "KagglePoints":7336.8,
+        "FavoriteTechnique":"SVD",
+        "FavoriteSoftware":"R with a little SAS",
+        "LegalName":"Malinda Levitan",
+        "Location":"San Francisco, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/DSC07236.jpg",
+        "PastCompetitionTypes":[
+            "Geospatial",
+            "QSAR",
+            "Consumer Behavior",
+            "Research"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":36462,
+        "KaggleRank":30215,
+        "KagglePoints":6628.3,
+        "FavoriteTechnique":"MLPs",
+        "FavoriteSoftware":"C++",
+        "LegalName":"Lance Pendelton",
+        "Location":"New York, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/young_guy_standing_looking_away.jpg",
+        "PastCompetitionTypes":[
+            "Regression"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47879,
+        "KaggleRank":32528,
+        "KagglePoints":6236.8,
+        "FavoriteTechnique":"Logistic Regression",
+        "FavoriteSoftware":"Weka",
+        "LegalName":"Katy Trundy",
+        "Location":"Boston, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/S1295788.JPG",
+        "PastCompetitionTypes":[
+            "Binary Classification",
+            "Consumer Behavior",
+            "Finance"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":48823,
+        "KaggleRank":43572,
+        "KagglePoints":4719.6,
+        "FavoriteTechnique":"AIS",
+        "FavoriteSoftware":"R",
+        "LegalName":"Dollie Kircher",
+        "Location":"Dallas, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/PR_012-_SI_-_27_03_12-038.jpg",
+        "PastCompetitionTypes":[
+            "Regression"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":48824,
+        "KaggleRank":47328,
+        "KagglePoints":4210.2,
+        "FavoriteTechnique":"Linear Regression",
+        "FavoriteSoftware":"Scikit-learn",
+        "LegalName":"Clinton Rames",
+        "Location":"London, England",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/PR_014-_SI_-_03_04_12-141.jpg",
+        "PastCompetitionTypes":[
+            "Insurance"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47825,
+        "KaggleRank":51183,
+        "KagglePoints":3628.3,
+        "FavoriteTechnique":"SVM",
+        "FavoriteSoftware":"R, Mahout",
+        "LegalName":"Marcie Wei",
+        "Location":"Singapore, Republic of Singapore",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/______4.jpg",
+        "PastCompetitionTypes":[
+            "Visualization",
+            "Graph",
+            "Retail"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":1,
+                "PartOfTeam":true
+            }
+        ]
+    },
+    {
+        "KaggleId":47826,
+        "KaggleRank":54183,
+        "KagglePoints":3212.6,
+        "FavoriteTechnique":"Bayesian Methods",
+        "FavoriteSoftware":"Octave, Java",
+        "LegalName":"Amy Cline",
+        "Location":"New York, United States",
+        "Gravatar":"http://c95711.r11.cf3.rackcdn.com/Mix_-_25_11_08_053.jpg",
+        "PastCompetitionTypes":[
+            "Computer Vision",
+            "Binary Classification",
+            "Life Sciences",
+            "Research"
+        ],
+        "PastCompetitions":[
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            },
+            {
+                "CompetitionName":"Breakins",
+                "Finish":1,
+                "TotalTeamCount":2,
+                "PartOfTeam":true
+            }
+        ]
+    }
+]}

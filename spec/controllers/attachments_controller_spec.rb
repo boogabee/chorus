@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe AttachmentsController do
-  ignore_authorization!
   let(:user) { users(:owner) }
 
   before do
@@ -9,7 +8,7 @@ describe AttachmentsController do
   end
 
   context "#create" do
-    let(:event) { Events::NoteOnGreenplumInstance.last }
+    let(:event) { Events::NoteOnDataSource.last }
 
     context "with a binary file" do
       it "changes the file content" do
@@ -37,8 +36,17 @@ describe AttachmentsController do
         controller.head :ok
       }
       get :show, :note_id => attachment.note.to_param, :id => attachment.to_param, :style => 'icon'
-      response.code.should == "200"
-      decoded_response.type == "image/gif"
+    end
+
+    context "when you don't have access" do
+      let(:attachment) { attachments(:attachment_private_workspace) }
+
+      it "authorizes" do
+        log_in(users(:default))
+        get :show, :note_id => attachment.note.to_param, :id => attachment.to_param, :style => 'icon'
+
+        response.should be_forbidden
+      end
     end
   end
 end

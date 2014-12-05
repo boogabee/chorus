@@ -1,4 +1,20 @@
 describe("chorus.ValidationRegexes", function() {
+    function itWorks(functionName, options) {
+        describe(functionName, function() {
+            _.each(options.good, function(value) {
+                it("passes for " + value, function() {
+                    expect(value.match(chorus.ValidationRegexes[functionName]())).toBeTruthy();
+                });
+            });
+
+            _.each(options.bad, function(value) {
+                it("does not pass for " + value, function() {
+                    expect(value.match(chorus.ValidationRegexes[functionName]())).toBeFalsy();
+                });
+            });
+        });
+    }
+
     itWorks("ChorusIdentifier64", {
         good: [ "a_valid_name", new Array(65).join("a"), "a2", "A2" ],
         bad: [ "some invalid name", new Array(66).join("a"), "123", "okay_until_$^#$%#$", "_leading_underscore" ]
@@ -14,13 +30,13 @@ describe("chorus.ValidationRegexes", function() {
         bad: [ "some invalid name", "123", "okay_until_$^#$%#$", "_leading_underscore" ]
     });
 
-    itWorks("SafePgName", {
-        good: ['"a_good_name"', '"1number"', "a_b_c_5", "_still_good"],
+    itWorks("DoubleQuoted", {
+        good: ['"a_good_name"', '"1number"', '"a_b_c_5"', '"_still_good"'],
         bad: ["1number", "'single quotes'", "   ", '"hi"there', "hiThere"]
     });
 
     itWorks("AllWhitespace", {
-        good: ['', '  ', "\x09", " \x09     ", " \n "],
+        good: ['', '  ', "\x09", " \x09     ", " \n ", "    &nbsp;   "],
         bad: ["             1", "1       ", "words"]
     });
 
@@ -54,21 +70,15 @@ describe("chorus.ValidationRegexes", function() {
         bad: ["", "one", "12three", "a2342"]
     });
 
-    function itWorks(functionName, options) {
-        describe(functionName, function() {
-            _.each(options.good, function(value) {
-                it("passes for " + value, function() {
-                    expect(value.match(chorus.ValidationRegexes[functionName]())).toBeTruthy();
-                });
-            });
+    itWorks("MaxLength64", {
+        good: ["1 test$^", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+        bad: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+    });
 
-            _.each(options.bad, function(value) {
-                it("does not pass for " + value, function() {
-                    expect(value.match(chorus.ValidationRegexes[functionName]())).toBeFalsy();
-                });
-            });
-        });
-    }
+    itWorks("PostgresIdentifier", {
+        good: ["test", "test_", "test_123"],
+        bad: ["_test", "1test", "test-"]
+    });
 
     describe("ChorusIdentifer (when given a length argument)", function() {
         it("returns a Chorus Identifier matcher with the supplied max length", function() {

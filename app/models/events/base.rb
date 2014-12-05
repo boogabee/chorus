@@ -5,8 +5,18 @@ module Events
     include SoftDelete
     include Recent
 
-    def self.eager_load_associations
-      [{:attachments => :note}, :workfiles, :comments, :datasets, :actor, :target1, :target2, {:workspace => [:associated_datasets, :owner, {:sandbox => {:database => :gpdb_instance}}]}]
+    def self.activity_stream_eager_load_associations
+      [
+          {:attachments => :note},
+          {:workfiles => {:latest_workfile_version => :workfile}},
+          {:comments => :author},
+          :datasets,
+          :actor,
+          :promoted_by,
+          :target1,
+          :target2,
+          :workspace
+      ]
     end
 
     self.table_name = :events
@@ -14,29 +24,32 @@ module Events
     serialize :additional_data, JsonHashSerializer
 
     class_attribute :entities_that_get_activities, :target_names, :object_translations
-    attr_accessible :actor, :action, :target1, :target2, :workspace, :additional_data, :insight, :promotion_time, :promoted_by
+    attr_accessible :actor, :action, :target1, :target2, :target3, :workspace, :additional_data, :as => :create
 
     has_many :activities, :foreign_key => :event_id, :dependent => :destroy
-    has_many :notifications
+    has_many :notifications, :foreign_key => :event_id, :dependent => :destroy
     has_one :notification_for_current_user, :class_name => 'Notification', :conditions => proc {
-      "recipient_id = #{ActiveRecord::Base.current_user.id}"
+      "recipient_id = #{current_user.id}"
     }, :foreign_key => :event_id
 
-    has_many :comments, :foreign_key => :event_id
+    has_many :comments, :foreign_key => :event_id, :dependent => :destroy
 
     # subclass associations on parent to facilitate .includes
-    has_many :attachments, :class_name => 'Attachment', :foreign_key => 'note_id'
-    has_many :notes_workfiles, :foreign_key => 'note_id'
+    has_many :attachments, :class_name => 'Attachment', :foreign_key => 'note_id', :dependent => :destroy
+    has_many :notes_workfiles, :foreign_key => 'note_id', :dependent => :destroy
     has_many :workfiles, :through => :notes_workfiles
-    has_many :datasets_notes, :foreign_key => 'note_id'
+    has_many :notes_work_flow_results, :foreign_key => 'note_id', :dependent => :destroy
+    has_many :datasets_notes, :foreign_key => 'note_id', :dependent => :destroy
     has_many :datasets, :through => :datasets_notes
 
     belongs_to :actor, :class_name => 'User'
     belongs_to :target1, :polymorphic => true
     belongs_to :target2, :polymorphic => true
+    belongs_to :target3, :polymorphic => true
     belongs_to :workspace
+    belongs_to :promoted_by, :class_name => 'User'
 
-    [:actor, :workspace, :target1, :target2].each do |method|
+    [:actor, :workspace, :target1, :target2, :target3, :promoted_by].each do |method|
       define_method("#{method}_with_deleted") do
         original_method = :"#{method}_without_deleted"
         send(original_method) || try_unscoped(method) { send(original_method, true) }
@@ -49,7 +62,14 @@ module Events
     end
 
     def self.add(params)
-      create!(params).tap { |event| event.create_activities }
+      event = new(params, :as => :create)
+      event.build_activities
+      event.save!
+      event
+    end
+
+    def self.presenter_class
+      EventPresenter
     end
 
     def action
@@ -63,37 +83,56 @@ module Events
       end
     end
 
-    def self.visible_to(user)
-        group("events.id").readonly(false).
-            joins(:activities).
-            where(%Q{(events.published = true) OR (activities.entity_type = 'GLOBAL') OR (activities.entity_type = 'Workspace'
-            and activities.entity_id in (SELECT workspace_id from memberships where user_id = #{user.id}))})
-    end
-    class << self
-      alias_method :for_dashboard_of, :visible_to
+    def self.for_dashboard_of(user)
+      workspace_activities = <<-SQL
+      activities.entity_id IN (
+        SELECT workspace_id
+        FROM memberships
+        WHERE user_id = #{user.id})
+      SQL
+      self.activity_query(user, workspace_activities)
     end
 
-    def create_activities
-      self.class.entities_that_get_activities.each do |entity_name|
-        create_activity(entity_name)
+    def self.visible_to(user)
+      workspace_activities = <<-SQL
+      activities.entity_id IN (
+        SELECT workspace_id
+        FROM memberships
+        WHERE user_id = #{user.id})
+      OR workspaces.public = true
+      OR (SELECT admin FROM users WHERE id = #{user.id}) = true
+      SQL
+      self.activity_query(user, workspace_activities).joins('LEFT OUTER JOIN "workspaces" ON "workspaces"."id" = "events"."workspace_id"')
+    end
+
+    def build_activities
+      self.class.entities_that_get_activities.try(:each) do |entity_name|
+        build_activity(entity_name)
       end
     end
 
     private
 
-    def create_activity(entity_name)
+    def self.activity_query(user, workspace_activities)
+      group("events.id").readonly(false).
+          joins(:activities).
+          where(%Q{(events.published = true) OR (events.actor_id=#{user.id}) OR (activities.entity_type = 'GLOBAL') OR (activities.entity_type = 'Workspace'
+          AND (#{workspace_activities}))})
+    end
+
+    def build_activity(entity_name)
       if entity_name == :global
-        Activity.global.create!(:event => self)
+        activities.build(:entity_type => Activity::GLOBAL)
       else
         entity = send(entity_name)
-        Activity.create!(:event => self, :entity => entity)
+        activities.build(:entity => entity)
       end
     end
 
     def self.has_targets(*target_names)
       options = target_names.extract_options!
       self.target_names = target_names
-      self.attr_accessible(*target_names)
+      self.attr_accessible(*target_names, :as => [:create])
 
       target_names.each_with_index do |name, i|
         alias_getter_and_setter("target#{i+1}", name, options)
@@ -118,23 +157,15 @@ module Events
       self.entities_that_get_activities = entity_names
     end
 
-    def self.has_additional_data(*names)
-      attr_accessible(*names)
-      names.each do |name|
-        define_method(name) { additional_data[name.to_s] }
-        define_method("#{name}=") { |value| additional_data[name.to_s] = value }
-      end
-    end
-
     private
 
     def try_unscoped(method, &block)
-      type = target_class(method).try(:unscoped,&block)
+      target_class(method).try(:unscoped, &block)
     end
 
     def target_class(method)
       case method
-        when :actor then User
+        when :actor, :promoted_by then User
         when :workspace then Workspace
         else
           type = try(:"#{method}_type")

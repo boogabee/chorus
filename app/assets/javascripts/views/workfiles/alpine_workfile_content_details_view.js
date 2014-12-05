@@ -1,18 +1,49 @@
 chorus.views.AlpineWorkfileContentDetails = chorus.views.WorkfileContentDetails.extend({
-    templateName:"alpine_workfile_content_details",
+    templateName: "alpine_workfile_content_details",
+    additionalClass: "action_bar_highlighted",
 
-    additionalContext: function() {
-    return  { alpineUrl: this.createAlpineUrl() }
+    events: {
+        'click a.change_workfile_database': 'changeWorkfileDatabase',
+        'click .open_file': 'navigateToWorkFlow'
     },
 
-    createAlpineUrl: function() {
-        var versionFilePath = this.model.get('versionInfo').versionFilePath;
-        var newInsight = new chorus.models.Insight({entityType: "workfile", entityId: this.model.id});
-        var createInsightUrl = 'http://' + window.location.host + newInsight.url();
+    setup: function () {
+        var members = this.model.workspace().members();
+        this.listenTo(members, 'reset loaded', this.render);
+        members.fetch();
+    },
 
-        var alpineUrl = URI("/AlpineIlluminator/alpine/result/runflow.jsp")
-            .addQuery("flowFilePath", versionFilePath)
-            .addQuery("actions[create_workfile_insight]", createInsightUrl);
-        return alpineUrl.toString();
+    additionalContext: function () {
+        var ctx = {
+            workFlowShowUrl: this.model.workFlowShowUrl(),
+            canOpen: this.model.canOpen(),
+            canUpdate: this.canUpdate()
+        };
+        ctx.locationNames = _.map(this.model.executionLocations(), function (executionLocation) {
+            if (executionLocation.get("entityType") === "gpdb_database") {
+                return executionLocation.dataSource().get("name") + '.' + executionLocation.get("name");
+            } else {
+                return executionLocation.get("name");
+            }
+        }).join(', ');
+
+        return ctx;
+    },
+
+    changeWorkfileDatabase: function(e) {
+        e.preventDefault();
+        new chorus.dialogs.ChangeWorkFlowExecutionLocation({
+            model: this.model
+        }).launchModal();
+    },
+
+    canUpdate: function(){
+        return this.model.workspace().isActive() && this.model.workspace().canUpdate();
+    },
+
+    navigateToWorkFlow:function(){
+        this.model.notifyWorkflowLimitedDataSource();
+
+        chorus.router.navigate(this.model.workFlowShowUrl());
     }
 });

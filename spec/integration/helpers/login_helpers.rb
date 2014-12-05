@@ -1,16 +1,20 @@
 module LoginHelpers
-  def login(userOrUsername, password = FixtureBuilder.password)
-    username = userOrUsername.is_a?(String) ? userOrUsername : userOrUsername.username
-    visit(WEBPATH['login_route'])
-    wait_for_ajax
-    fill_in 'username', :with => username
+  def current_route
+    URI.parse(current_url).fragment
+  end
+
+  def login(user, password = FixtureBuilder.password)
+    visit("/#/login")
+    page.should have_selector("form.login")
+    fill_in 'username', :with => user.username
     fill_in 'password', :with => password
-    click_button "Login"
-    wait_for_ajax(25)
-    wait_until { current_route == '/' || page.all('.has_error').size > 0 || page.all('.errors li').size > 0 }
+    click_button "Sign In"
+
+    page.find(".header .username").should have_content(user.first_name)
   end
 
   def logout
     visit("/#/logout")
+    page.should have_selector("form.login")
   end
 end

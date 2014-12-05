@@ -14,14 +14,14 @@ chorus.views.PaginatedJoinTablesList = chorus.views.Base.extend({
             hideIfNoPagination: true
         });
 
-        this.bindings.add(this.collection, 'searched', this.render);
+        this.listenTo(this.collection, 'searched', this.render);
     },
 
     collectionModelContext: function(model) {
         return {
             columns: model.has("columns") && model.get("columns"),
-            isView: model.metaType() == "view",
-            iconUrl: model.iconUrl({ size: "medium" })
+            isView: model.metaType() === "view",
+            iconUrl: model.iconUrl({ size: "icon" })
         };
     }
 });

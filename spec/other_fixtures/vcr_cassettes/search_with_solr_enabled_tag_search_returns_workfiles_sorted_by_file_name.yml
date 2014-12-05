@@ -1,0 +1,698 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><add><doc><field name=\"\
+        id\">Tag 1000003</field><field name=\"type\">Tag</field><field name=\"type\"\
+        >ActiveRecord::Base</field><field name=\"class_name\">Tag</field><field name=\"\
+        type_name_s\">Tag</field><field boost=\"1000000\" name=\"name_texts\">tagSort</field></doc></add>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>3}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:00 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><add><doc><field name=\"\
+        id\">ChorusWorkfile 1000012</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"tag_ids_im\">1000003</field><field name=\"grouping_id_s\">ChorusWorkfile\
+        \ 1000012</field><field name=\"type_name_s\">Workfile</field><field name=\"\
+        security_type_name_sm\">Workfile</field><field name=\"security_type_name_sm\"\
+        >Workfile</field><field name=\"sort_name_s\">public</field><field boost=\"\
+        1000000\" name=\"file_name_texts\">Public</field><field boost=\"1000\" name=\"\
+        description_texts\">searchquery</field><field boost=\"1000\" name=\"version_comments_texts\"\
+        /><field boost=\"1000\" name=\"tag_names_texts\">tagSort</field></doc></add>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>1}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:00 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><add><doc><field name=\"\
+        id\">ChorusWorkfile 1000015</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"tag_ids_im\">1000003</field><field name=\"grouping_id_s\">ChorusWorkfile\
+        \ 1000015</field><field name=\"type_name_s\">Workfile</field><field name=\"\
+        security_type_name_sm\">Workfile</field><field name=\"security_type_name_sm\"\
+        >Workfile</field><field name=\"sort_name_s\">tagged</field><field boost=\"\
+        1000000\" name=\"file_name_texts\">tagged</field><field boost=\"1000\" name=\"\
+        description_texts\">A nice description</field><field boost=\"1000\" name=\"\
+        version_comments_texts\"/><field boost=\"1000\" name=\"tag_names_texts\">tagSort</field></doc></add>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>0}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:00 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><commit/>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>9}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:00 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/select?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: fq=type%3A%28User+OR+GpdbDataSource+OR+HdfsDataSource+OR+GnipDataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment+OR+OracleDataSource+OR+JdbcDataSource+OR+PgDataSource+OR+Events%5C%3A%5C%3ANote+OR+Comment%29&fq=tag_ids_im%3A1000003&fq=type_name_s%3A%28User+OR+DataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000015+OR+1000017+OR+1000018+OR+1000019+OR+1000020+OR+1000025+OR+1000027+OR+1000028+OR+1000029%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000015+OR+1000017+OR+1000018+OR+1000019+OR+1000020+OR+1000025+OR+1000027+OR+1000028+OR+1000029%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&sort=sort_name_s+asc&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true&facet=true&f.type_name_s.facet.mincount=1&facet.field=type_name_s&q=%2A%3A%2A
+    headers:
+      content-type:
+      - application/x-www-form-urlencoded; charset=UTF-8
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>4,'params'=>{'facet'=>'true','group.ngroups'=>'true','sort'=>'sort_name_s\
+        \ asc','group.limit'=>'3','wt'=>'ruby','rows'=>'50','start'=>'0','q'=>'*:*','group.truncate'=>'true','f.type_name_s.facet.mincount'=>'1','group.field'=>'grouping_id_s','facet.field'=>'type_name_s','group'=>'true','fq'=>['type:(User\
+        \ OR GpdbDataSource OR HdfsDataSource OR GnipDataSource OR Workspace OR Workfile\
+        \ OR Dataset OR HdfsEntry OR Attachment OR OracleDataSource OR JdbcDataSource\
+        \ OR PgDataSource OR Events\\\\:\\\\:Note OR Comment)','tag_ids_im:1000003','type_name_s:(User\
+        \ OR DataSource OR Workspace OR Workfile OR Dataset OR HdfsEntry OR Attachment)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:RelationalDataset\
+        \ AND -data_source_account_ids_im:(1000001 OR 1000004 OR 1000002 OR 1000006\
+        \ OR 1000007 OR 1000008 OR 1000010 OR 1000011 OR 1000012 OR 1000013 OR 1000014\
+        \ OR 1000015 OR 1000017 OR 1000018 OR 1000019 OR 1000020 OR 1000025 OR 1000027\
+        \ OR 1000028 OR 1000029))','-(security_type_name_sm:ChorusView AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:HdfsDataset AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:RelationalDataset AND -data_source_account_ids_im:(1000001\
+        \ OR 1000004 OR 1000002 OR 1000006 OR 1000007 OR 1000008 OR 1000010 OR 1000011\
+        \ OR 1000012 OR 1000013 OR 1000014 OR 1000015 OR 1000017 OR 1000018 OR 1000019\
+        \ OR 1000020 OR 1000025 OR 1000027 OR 1000028 OR 1000029))','-(security_type_name_sm:ChorusView\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:HdfsDataset\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)']}},'grouped'=>{'grouping_id_s'=>{'matches'=>2,'ngroups'=>2,'groups'=>[{'groupValue'=>'ChorusWorkfile\
+        \ 1000012','doclist'=>{'numFound'=>1,'start'=>0,'docs'=>[{'id'=>'ChorusWorkfile\
+        \ 1000012','file_name_stemmed_texts'=>['Public'],'tag_names_stemmed_texts'=>['tagSort'],'tag_names_texts'=>['tagSort'],'file_name_texts'=>['Public'],'description_texts'=>['searchquery'],'version_comments_stemmed_texts'=>[''],'version_comments_texts'=>[''],'description_stemmed_texts'=>['searchquery']}]}},{'groupValue'=>'ChorusWorkfile\
+        \ 1000015','doclist'=>{'numFound'=>1,'start'=>0,'docs'=>[{'id'=>'ChorusWorkfile\
+        \ 1000015','file_name_stemmed_texts'=>['tagged'],'tag_names_stemmed_texts'=>['tagSort'],'tag_names_texts'=>['tagSort'],'file_name_texts'=>['tagged'],'description_texts'=>['A\
+        \ nice description'],'version_comments_stemmed_texts'=>[''],'version_comments_texts'=>[''],'description_stemmed_texts'=>['A\
+        \ nice description']}]}}]}},'facet_counts'=>{'facet_queries'=>{},'facet_fields'=>{'type_name_s'=>['Workfile',2]},'facet_dates'=>{},'facet_ranges'=>{}}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:00 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><add><doc><field name=\"\
+        id\">ChorusWorkfile 1000015</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"tag_ids_im\">1000003</field><field name=\"grouping_id_s\">ChorusWorkfile\
+        \ 1000015</field><field name=\"type_name_s\">Workfile</field><field name=\"\
+        security_type_name_sm\">Workfile</field><field name=\"security_type_name_sm\"\
+        >Workfile</field><field name=\"sort_name_s\">aaa_tagged</field><field boost=\"\
+        1000000\" name=\"file_name_texts\">aaa_tagged</field><field boost=\"1000\"\
+        \ name=\"description_texts\">A nice description</field><field boost=\"1000\"\
+        \ name=\"version_comments_texts\"/><field boost=\"1000\" name=\"tag_names_texts\"\
+        >tagSort</field></doc></add>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>3}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:01 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><commit/>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>9}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:01 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/select?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: fq=type%3A%28User+OR+GpdbDataSource+OR+HdfsDataSource+OR+GnipDataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment+OR+OracleDataSource+OR+JdbcDataSource+OR+PgDataSource+OR+Events%5C%3A%5C%3ANote+OR+Comment%29&fq=tag_ids_im%3A1000003&fq=type_name_s%3A%28User+OR+DataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000015+OR+1000017+OR+1000018+OR+1000019+OR+1000020+OR+1000025+OR+1000027+OR+1000028+OR+1000029%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000015+OR+1000017+OR+1000018+OR+1000019+OR+1000020+OR+1000025+OR+1000027+OR+1000028+OR+1000029%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&sort=sort_name_s+asc&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true&facet=true&f.type_name_s.facet.mincount=1&facet.field=type_name_s&q=%2A%3A%2A
+    headers:
+      content-type:
+      - application/x-www-form-urlencoded; charset=UTF-8
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>5,'params'=>{'facet'=>'true','group.ngroups'=>'true','sort'=>'sort_name_s\
+        \ asc','group.limit'=>'3','wt'=>'ruby','rows'=>'50','start'=>'0','q'=>'*:*','group.truncate'=>'true','f.type_name_s.facet.mincount'=>'1','group.field'=>'grouping_id_s','facet.field'=>'type_name_s','group'=>'true','fq'=>['type:(User\
+        \ OR GpdbDataSource OR HdfsDataSource OR GnipDataSource OR Workspace OR Workfile\
+        \ OR Dataset OR HdfsEntry OR Attachment OR OracleDataSource OR JdbcDataSource\
+        \ OR PgDataSource OR Events\\\\:\\\\:Note OR Comment)','tag_ids_im:1000003','type_name_s:(User\
+        \ OR DataSource OR Workspace OR Workfile OR Dataset OR HdfsEntry OR Attachment)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:RelationalDataset\
+        \ AND -data_source_account_ids_im:(1000001 OR 1000004 OR 1000002 OR 1000006\
+        \ OR 1000007 OR 1000008 OR 1000010 OR 1000011 OR 1000012 OR 1000013 OR 1000014\
+        \ OR 1000015 OR 1000017 OR 1000018 OR 1000019 OR 1000020 OR 1000025 OR 1000027\
+        \ OR 1000028 OR 1000029))','-(security_type_name_sm:ChorusView AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:HdfsDataset AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:RelationalDataset AND -data_source_account_ids_im:(1000001\
+        \ OR 1000004 OR 1000002 OR 1000006 OR 1000007 OR 1000008 OR 1000010 OR 1000011\
+        \ OR 1000012 OR 1000013 OR 1000014 OR 1000015 OR 1000017 OR 1000018 OR 1000019\
+        \ OR 1000020 OR 1000025 OR 1000027 OR 1000028 OR 1000029))','-(security_type_name_sm:ChorusView\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:HdfsDataset\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)']}},'grouped'=>{'grouping_id_s'=>{'matches'=>2,'ngroups'=>2,'groups'=>[{'groupValue'=>'ChorusWorkfile\
+        \ 1000015','doclist'=>{'numFound'=>1,'start'=>0,'docs'=>[{'id'=>'ChorusWorkfile\
+        \ 1000015','file_name_stemmed_texts'=>['aaa_tagged'],'tag_names_stemmed_texts'=>['tagSort'],'tag_names_texts'=>['tagSort'],'file_name_texts'=>['aaa_tagged'],'description_texts'=>['A\
+        \ nice description'],'version_comments_stemmed_texts'=>[''],'version_comments_texts'=>[''],'description_stemmed_texts'=>['A\
+        \ nice description']}]}},{'groupValue'=>'ChorusWorkfile 1000012','doclist'=>{'numFound'=>1,'start'=>0,'docs'=>[{'id'=>'ChorusWorkfile\
+        \ 1000012','file_name_stemmed_texts'=>['Public'],'tag_names_stemmed_texts'=>['tagSort'],'tag_names_texts'=>['tagSort'],'file_name_texts'=>['Public'],'description_texts'=>['searchquery'],'version_comments_stemmed_texts'=>[''],'version_comments_texts'=>[''],'description_stemmed_texts'=>['searchquery']}]}}]}},'facet_counts'=>{'facet_queries'=>{},'facet_fields'=>{'type_name_s'=>['Workfile',2]},'facet_dates'=>{},'facet_ranges'=>{}}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:01 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><add><doc><field name=\"\
+        id\">ChorusWorkfile 1000000</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000001</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000006</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000000</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >typeahead</field><field boost=\"1000000\" name=\"file_name_texts\">typeahead</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/><field boost=\"1000\" name=\"\
+        version_comments_texts\">Factory commit message</field></doc><doc><field name=\"\
+        id\">LinkedTableauWorkfile 1000001</field><field name=\"type\">LinkedTableauWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">LinkedTableauWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">LinkedTableauWorkfile 1000001</field><field name=\"\
+        type_name_s\">Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >tableau</field><field boost=\"1000000\" name=\"file_name_texts\">tableau</field></doc><doc><field\
+        \ name=\"id\">LinkedTableauWorkfile 1000002</field><field name=\"type\">LinkedTableauWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">LinkedTableauWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">LinkedTableauWorkfile 1000002</field><field name=\"\
+        type_name_s\">Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >searchquery</field><field boost=\"1000000\" name=\"file_name_texts\">searchquery</field></doc><doc><field\
+        \ name=\"id\">LinkedTableauWorkfile 1000003</field><field name=\"type\">LinkedTableauWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">LinkedTableauWorkfile</field><field name=\"workspace_id_im\"\
+        >1000009</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">false</field><field\
+        \ name=\"grouping_id_s\">LinkedTableauWorkfile 1000003</field><field name=\"\
+        type_name_s\">Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >private_tableau</field><field boost=\"1000000\" name=\"file_name_texts\"\
+        >private_tableau</field></doc><doc><field name=\"id\">AlpineWorkfile 1000004</field><field\
+        \ name=\"type\">AlpineWorkfile</field><field name=\"type\">Workfile</field><field\
+        \ name=\"type\">ActiveRecord::Base</field><field name=\"class_name\">AlpineWorkfile</field><field\
+        \ name=\"workspace_id_im\">1000008</field><field name=\"member_ids_im\">1000006</field><field\
+        \ name=\"member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">AlpineWorkfile 1000004</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >alpine_flow</field><field boost=\"1000000\" name=\"file_name_texts\">alpine_flow</field></doc><doc><field\
+        \ name=\"id\">AlpineWorkfile 1000005</field><field name=\"type\">AlpineWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">AlpineWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">AlpineWorkfile 1000005</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >alpine_hadoop_dataset_flow</field><field boost=\"1000000\" name=\"file_name_texts\"\
+        >alpine_hadoop_dataset_flow</field></doc><doc><field name=\"id\">AlpineWorkfile\
+        \ 1000006</field><field name=\"type\">AlpineWorkfile</field><field name=\"\
+        type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">AlpineWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">AlpineWorkfile 1000006</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >alpine_oracle_flow</field><field boost=\"1000000\" name=\"file_name_texts\"\
+        >alpine_oracle_flow</field></doc><doc><field name=\"id\">AlpineWorkfile 1000007</field><field\
+        \ name=\"type\">AlpineWorkfile</field><field name=\"type\">Workfile</field><field\
+        \ name=\"type\">ActiveRecord::Base</field><field name=\"class_name\">AlpineWorkfile</field><field\
+        \ name=\"workspace_id_im\">1000008</field><field name=\"member_ids_im\">1000006</field><field\
+        \ name=\"member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">AlpineWorkfile 1000007</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >multiple_data_source_workflow</field><field boost=\"1000000\" name=\"file_name_texts\"\
+        >multiple_data_source_workflow</field><field boost=\"1000\" name=\"description_texts\"\
+        >Using two datasources to brand cross-media synergies.</field></doc><doc><field\
+        \ name=\"id\">AlpineWorkfile 1000008</field><field name=\"type\">AlpineWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">AlpineWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">AlpineWorkfile 1000008</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >multiple_dataset_workflow</field><field boost=\"1000000\" name=\"file_name_texts\"\
+        >multiple_dataset_workflow</field><field boost=\"1000\" name=\"description_texts\"\
+        >Using two datasources to brand cross-media synergies.</field></doc><doc><field\
+        \ name=\"id\">ChorusWorkfile 1000009</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000006</field><field name=\"member_ids_im\">1000003</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">false</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000009</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >no collaborators private</field><field boost=\"1000000\" name=\"file_name_texts\"\
+        >no collaborators Private</field><field boost=\"1000\" name=\"description_texts\"\
+        >searchquery</field><field boost=\"1000\" name=\"version_comments_texts\"\
+        /></doc><doc><field name=\"id\">ChorusWorkfile 1000010</field><field name=\"\
+        type\">ChorusWorkfile</field><field name=\"type\">Workfile</field><field name=\"\
+        type\">ActiveRecord::Base</field><field name=\"class_name\">ChorusWorkfile</field><field\
+        \ name=\"workspace_id_im\">1000005</field><field name=\"member_ids_im\">1000003</field><field\
+        \ name=\"member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000010</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >no collaborators public</field><field boost=\"1000000\" name=\"file_name_texts\"\
+        >no collaborators Public</field><field boost=\"1000\" name=\"description_texts\"\
+        >No Collaborators Search</field><field boost=\"1000\" name=\"version_comments_texts\"\
+        /></doc><doc><field name=\"id\">ChorusWorkfile 1000011</field><field name=\"\
+        type\">ChorusWorkfile</field><field name=\"type\">Workfile</field><field name=\"\
+        type\">ActiveRecord::Base</field><field name=\"class_name\">ChorusWorkfile</field><field\
+        \ name=\"workspace_id_im\">1000009</field><field name=\"member_ids_im\">1000006</field><field\
+        \ name=\"member_ids_im\">1000007</field><field name=\"public_b\">false</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000011</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >private</field><field boost=\"1000000\" name=\"file_name_texts\">Private</field><field\
+        \ boost=\"1000\" name=\"description_texts\">searchquery</field><field boost=\"\
+        1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"id\">ChorusWorkfile\
+        \ 1000012</field><field name=\"type\">ChorusWorkfile</field><field name=\"\
+        type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000012</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >public</field><field boost=\"1000000\" name=\"file_name_texts\">Public</field><field\
+        \ boost=\"1000\" name=\"description_texts\">searchquery</field><field boost=\"\
+        1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"id\">ChorusWorkfile\
+        \ 1000013</field><field name=\"type\">ChorusWorkfile</field><field name=\"\
+        type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000011</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">false</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000013</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >search private</field><field boost=\"1000000\" name=\"file_name_texts\">Search\
+        \ Private</field><field boost=\"1000\" name=\"description_texts\">searchquery</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"\
+        id\">ChorusWorkfile 1000014</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000010</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000014</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >search public</field><field boost=\"1000000\" name=\"file_name_texts\">Search\
+        \ Public</field><field boost=\"1000\" name=\"description_texts\">searchquery</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/><field boost=\"1000\" name=\"\
+        version_comments_texts\">Committed to searchquery</field></doc><doc><field\
+        \ name=\"id\">ChorusWorkfile 1000015</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"tag_ids_im\">1000000</field><field name=\"tag_ids_im\">1000002</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000015</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >tagged</field><field boost=\"1000000\" name=\"file_name_texts\">tagged</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/><field boost=\"1000\" name=\"\
+        tag_names_texts\">alpha</field><field boost=\"1000\" name=\"tag_names_texts\"\
+        >beta</field></doc><doc><field name=\"id\">ChorusWorkfile 1000016</field><field\
+        \ name=\"type\">ChorusWorkfile</field><field name=\"type\">Workfile</field><field\
+        \ name=\"type\">ActiveRecord::Base</field><field name=\"class_name\">ChorusWorkfile</field><field\
+        \ name=\"workspace_id_im\">1000008</field><field name=\"member_ids_im\">1000006</field><field\
+        \ name=\"member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000016</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >draftedworkfile</field><field boost=\"1000000\" name=\"file_name_texts\"\
+        >DraftedWorkfile</field><field boost=\"1000\" name=\"description_texts\">A\
+        \ nice description</field><field boost=\"1000\" name=\"version_comments_texts\"\
+        /><field boost=\"1000\" name=\"version_comments_texts\">Factory commit message</field></doc><doc><field\
+        \ name=\"id\">ChorusWorkfile 1000017</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000007</field><field name=\"member_ids_im\">1000003</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000017</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >archived</field><field boost=\"1000000\" name=\"file_name_texts\">archived</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"\
+        id\">ChorusWorkfile 1000018</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000018</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >sql.sql</field><field boost=\"1000000\" name=\"file_name_texts\">sql.sql</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"\
+        id\">ChorusWorkfile 1000019</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000019</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >non_utf8.sql</field><field boost=\"1000000\" name=\"file_name_texts\">non_utf8.sql</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"\
+        id\">ChorusWorkfile 1000020</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000020</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >text.txt</field><field boost=\"1000000\" name=\"file_name_texts\">text.txt</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"\
+        id\">ChorusWorkfile 1000021</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000021</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >image.png</field><field boost=\"1000000\" name=\"file_name_texts\">image.png</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"\
+        id\">ChorusWorkfile 1000022</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000022</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >binary.tar.gz</field><field boost=\"1000000\" name=\"file_name_texts\">binary.tar.gz</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"\
+        id\">ChorusWorkfile 1000023</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000023</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >code.cpp</field><field boost=\"1000000\" name=\"file_name_texts\">code.cpp</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc><doc><field name=\"\
+        id\">ChorusWorkfile 1000024</field><field name=\"type\">ChorusWorkfile</field><field\
+        \ name=\"type\">Workfile</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">ChorusWorkfile</field><field name=\"workspace_id_im\"\
+        >1000008</field><field name=\"member_ids_im\">1000006</field><field name=\"\
+        member_ids_im\">1000007</field><field name=\"public_b\">true</field><field\
+        \ name=\"grouping_id_s\">ChorusWorkfile 1000024</field><field name=\"type_name_s\"\
+        >Workfile</field><field name=\"security_type_name_sm\">Workfile</field><field\
+        \ name=\"security_type_name_sm\">Workfile</field><field name=\"sort_name_s\"\
+        >model.pmml</field><field boost=\"1000000\" name=\"file_name_texts\">model.pmml</field><field\
+        \ boost=\"1000\" name=\"description_texts\">A nice description</field><field\
+        \ boost=\"1000\" name=\"version_comments_texts\"/></doc></add>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>11}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:01 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><commit/>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>17}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:01 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><add><doc><field name=\"\
+        id\">Tag 1000000</field><field name=\"type\">Tag</field><field name=\"type\"\
+        >ActiveRecord::Base</field><field name=\"class_name\">Tag</field><field name=\"\
+        type_name_s\">Tag</field><field boost=\"1000000\" name=\"name_texts\">alpha</field></doc><doc><field\
+        \ name=\"id\">Tag 1000001</field><field name=\"type\">Tag</field><field name=\"\
+        type\">ActiveRecord::Base</field><field name=\"class_name\">Tag</field><field\
+        \ name=\"type_name_s\">Tag</field><field boost=\"1000000\" name=\"name_texts\"\
+        >typeahead</field></doc><doc><field name=\"id\">Tag 1000002</field><field\
+        \ name=\"type\">Tag</field><field name=\"type\">ActiveRecord::Base</field><field\
+        \ name=\"class_name\">Tag</field><field name=\"type_name_s\">Tag</field><field\
+        \ boost=\"1000000\" name=\"name_texts\">beta</field></doc></add>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>3}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:01 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><commit/>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>17}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:01 GMT
+- request:
+    method: post
+    uri: http://localhost:8981/solr/update?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><commit/>"
+    headers:
+      content-type:
+      - text/xml
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>3}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:01 GMT
+recorded_with: VCR 2.3.0

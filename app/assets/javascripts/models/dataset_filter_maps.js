@@ -1,4 +1,38 @@
 (function() {
+    function isTrue(columnName) {
+        return columnName + " = TRUE";
+    }
+
+    function isFalse(columnName) {
+        return columnName + " = FALSE";
+    }
+
+    function isNull(columnName, inputValue) {
+        return columnName + " IS NULL";
+    }
+
+    function isNotNull(columnName, inputValue) {
+        return columnName + " IS NOT NULL";
+    }
+
+    // quote single
+    function qs(string) {
+        return "'" + chorus.Mixins.dbHelpers.sqlEscapeString(string) + "'";
+    }
+
+    function makeGenerate(comparator, options) {
+        options || (options = {});
+        _.defaults(options, {
+            inputPrefix: "",
+            inputSuffix: ""
+        });
+        return function(columnName, inputValue) {
+            return inputValue ?
+                columnName + " " + comparator + " " + qs(options.inputPrefix + inputValue + options.inputSuffix) :
+                "";
+        };
+    }
+
     chorus.models.DatasetFilterMaps = {};
 
     chorus.models.DatasetFilterMaps.String = chorus.models.Base.extend({
@@ -6,7 +40,7 @@
 
         comparators: {
             "equal": {usesInput: true, generate: makeGenerate("=") },
-            "not_equal": {usesInput: true, generate: makeGenerate("!=") },
+            "not_equal": {usesInput: true, generate: makeGenerate("<>") },
             "null": {usesInput: false, generate: isNull },
             "not_null": {usesInput: false, generate: isNotNull },
             "like": {usesInput: true, generate: makeGenerate("LIKE") },
@@ -19,7 +53,7 @@
         },
 
         declareValidations: function(attrs) {
-            return true
+            return true;
         }
     });
 
@@ -34,7 +68,7 @@
         },
 
         declareValidations: function(attrs) {
-            return true
+            return true;
         }
     });
 
@@ -43,7 +77,7 @@
 
         comparators: {
             "equal": {usesInput: true, generate: makeGenerate("=") },
-            "not_equal": {usesInput: true, generate: makeGenerate("!=") },
+            "not_equal": {usesInput: true, generate: makeGenerate("<>") },
             "null": {usesInput: false, generate: isNull },
             "not_null": {usesInput: false, generate: isNotNull },
             "greater": {usesInput: true, generate: makeGenerate(">") },
@@ -62,7 +96,7 @@
 
         comparators: {
             "equal": {usesInput: true, generate: makeGenerate("=") },
-            "not_equal": {usesInput: true, generate: makeGenerate("!=") },
+            "not_equal": {usesInput: true, generate: makeGenerate("<>") },
             "null": {usesInput: false, generate: isNull },
             "not_null": {usesInput: false, generate: isNotNull },
             "greater": {usesInput: true, generate: makeGenerate(">") },
@@ -104,7 +138,7 @@
         },
 
         declareValidations: function(attrs) {
-            if (attrs["year"] == "" && attrs["month"] == "" && attrs["day"] == "") return;
+            if (_.isEmpty(attrs["year"]) && _.isEmpty(attrs["month"]) && _.isEmpty(attrs["day"])) { return; }
 
             this.requirePattern("year", chorus.ValidationRegexes.Year(), attrs, "dataset.filter.year_required");
             this.requirePattern("month", chorus.ValidationRegexes.Month(), attrs, "dataset.filter.month_required");
@@ -118,39 +152,5 @@
         declareValidations: function(attrs) {
         }
     });
-
-    function isTrue(columnName) {
-        return columnName + " = TRUE";
-    }
-
-    function isFalse(columnName) {
-        return columnName + " = FALSE";
-    }
-
-    function isNull(columnName, inputValue) {
-        return columnName + " IS NULL";
-    }
-
-    function isNotNull(columnName, inputValue) {
-        return columnName + " IS NOT NULL";
-    }
-
-    function makeGenerate(comparator, options) {
-        options || (options = {});
-        _.defaults(options, {
-            inputPrefix: "",
-            inputSuffix: ""
-        })
-        return function(columnName, inputValue) {
-            return inputValue ?
-                columnName + " " + comparator + " " + qs(options.inputPrefix + inputValue + options.inputSuffix) :
-                "";
-        }
-    }
-
-    // quote single
-    function qs(string) {
-        return "'" + chorus.Mixins.dbHelpers.sqlEscapeString(string) + "'";
-    }
 })();
 

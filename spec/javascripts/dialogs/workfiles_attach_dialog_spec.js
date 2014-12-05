@@ -1,6 +1,6 @@
 describe("chorus.dialogs.WorkfilesAttach", function() {
     beforeEach(function() {
-        this.workfiles = rspecFixtures.workfileSet();
+        this.workfiles = backboneFixtures.workfileSet();
 
         this.workfile1 = this.workfiles.models[0];
         this.workfile1.get("versionInfo").updatedAt = "2020-06-12T17:39:11Z";
@@ -23,7 +23,7 @@ describe("chorus.dialogs.WorkfilesAttach", function() {
     });
 
     it("has the correct submit button text", function() {
-        expect(this.dialog.$('button.submit')).toContainTranslation("workfiles.button.attach_file")
+        expect(this.dialog.$('button.submit')).toContainTranslation("workfiles.button.attach_file");
     });
 
     it("has the correct search placeholder text", function() {
@@ -31,8 +31,8 @@ describe("chorus.dialogs.WorkfilesAttach", function() {
     });
 
     it("has the correct iconUrl", function() {
-        expect(this.dialog.$('li:eq(0) img')).toHaveAttr('src', this.workfile2.iconUrl({ size: "medium" }));
-        expect(this.dialog.$('li:eq(1) img')).toHaveAttr('src', this.workfile1.iconUrl({ size: "medium" }));
+        expect(this.dialog.$('li:eq(0) img')).toHaveAttr('src', this.workfile2.iconUrl({ size: "icon" }));
+        expect(this.dialog.$('li:eq(1) img')).toHaveAttr('src', this.workfile1.iconUrl({ size: "icon" }));
     });
 
     it("has the correct name", function() {

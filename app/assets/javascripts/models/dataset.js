@@ -1,5 +1,5 @@
 chorus.models.Dataset = chorus.models.Base.include(
-    chorus.Mixins.InstanceCredentials.model
+    chorus.Mixins.DataSourceCredentials.model
 ).extend({
     nameAttribute: 'objectName',
     constructorName: "Dataset",
@@ -9,7 +9,7 @@ chorus.models.Dataset = chorus.models.Base.include(
 
     urlTemplate: function(options) {
         if(options && options.download) {
-            return "datasets/{{id}}/download.csv"
+            return "datasets/{{id}}/download.csv";
         } else {
             return "datasets/{{id}}";
         }
@@ -20,8 +20,8 @@ chorus.models.Dataset = chorus.models.Base.include(
         this.bind("change:associatedWorkspaces", this.invalidateWorkspacesAssociated, this);
         this.bind("change:tableauWorkbooks", this.invalidateTableauWorkbooks, this);
 
-        if (!this.has("type")) {
-            this.set({type: this.get("datasetType") || "SOURCE_TABLE"}, { silent: true });
+        if (!this.has("entitySubtype")) {
+            this.set({entitySubtype: this.get("datasetType") || "SOURCE_TABLE"}, { silent: true });
         }
     },
 
@@ -30,8 +30,33 @@ chorus.models.Dataset = chorus.models.Base.include(
     },
 
     isDeleteable: function() {
-        var type = this.get("type")
-        return type && (type == "SOURCE_TABLE" || type == "CHORUS_VIEW");
+        var entitySubtype = this.get("entitySubtype");
+        return entitySubtype && (entitySubtype === "SOURCE_TABLE" || entitySubtype === "CHORUS_VIEW");
+    },
+
+    isHdfsDataset: function () {
+        return this.get('entitySubtype') === "HDFS";
+    },
+
+    isOracle: function() {
+        return this.dataSource() && this.dataSource().isOracle();
+    },
+
+    isJdbc: function() {
+        return this.dataSource() && this.dataSource().isJdbc();
+    },
+
+    isGreenplum: function() {
+        return this.dataSource().isGreenplum();
+    },
+
+    isPostgres: function() {
+        return this.dataSource().isPostgres();
+    },
+
+    isExternal: function() {
+        var objectType = this.statistics().get("objectType");
+        return (/EXT_TABLE$/).test(objectType);
     },
 
     columns: function(options) {
@@ -43,56 +68,43 @@ chorus.models.Dataset = chorus.models.Base.include(
 
             this._columns.dataset = this;
             var objectNameField = this.metaType() + "Name";
-            this._columns.attributes[objectNameField] = (this.metaType() == "query") ? this.get("id") : this.name();
+            this._columns.attributes[objectNameField] = (this.metaType() === "query") ? this.get("id") : this.name();
         }
         return this._columns;
     },
 
-    instance: function() {
-        return this.database().instance();
+    dataSource: function() {
+        return this.schema() && this.schema().dataSource();
     },
 
     database: function() {
         return this.schema().database();
     },
 
-    getImport: function() {
-        return false;
-    },
+    getImports: $.noop,
+
+    lastImport: $.noop,
 
     hasImport: function() {
-        return this.getImport()  && this.getImport().get("id");
-    },
-
-    importRunsAt: function() {
-        if (!this.hasImport() || !this.getImport().hasNextImport()) return;
-
-        return chorus.helpers.relativeTimestamp(this.getImport().nextExecutionAt());
-    },
-
-    nextImportDestination: function() {
-        if (!this.hasImport() || !this.getImport().hasNextImport()) return;
-        return this.getImport().nextDestination();
-    },
-
-    lastImportDestination:function () {
-        var importConfig = this.getImport();
-
-        return importConfig
-            && importConfig.thisDatasetIsSource()
-            && importConfig.isInProgress()
-            && importConfig.lastDestination();
+        return this.getImports() && !this.getImports().isEmpty();
     },
 
     canExport:function () {
-        return this.workspace() && this.workspace().canUpdate()
-            && this.hasCredentials()
-            && this.canBeImportSource()
-            && this.isImportConfigLoaded()
+        return this.workspace() && this.workspace().canUpdate() &&
+            this.hasCredentials() &&
+            this.canBeImportSource();
     },
 
     schema: function() {
-        return new chorus.models.Schema(this.get("schema"));
+        var schema = this._schema || this.get("schema") && new chorus.models.Schema(this.get("schema"));
+        if(this.loaded) {
+            this._schema = schema;
+        }
+        return schema;
+    },
+
+    setSchema: function(newSchema) {
+        this.set('schema', newSchema.attributes);
     },
 
     workspace: function() {
@@ -104,7 +116,7 @@ chorus.models.Dataset = chorus.models.Base.include(
 
     workspacesAssociated: function() {
         if (!this._workspaceAssociated) {
-            var workspaceList = this.get("associatedWorkspaces")
+            var workspaceList = this.get("associatedWorkspaces");
             this._workspaceAssociated = new chorus.collections.WorkspaceSet(workspaceList);
         }
         return this._workspaceAssociated;
@@ -123,16 +135,12 @@ chorus.models.Dataset = chorus.models.Base.include(
         return this.workspace() && !this.workspace().isActive();
     },
 
-    isImportConfigLoaded: function() {
-        return this.getImport() && this.getImport().loaded;
-    },
-
     invalidateWorkspacesAssociated: function() {
-        delete this._workspaceAssociated
+        delete this._workspaceAssociated;
     },
 
     invalidateTableauWorkbooks: function() {
-        delete this._tableauWorkbooks
+        delete this._tableauWorkbooks;
     },
 
     statistics: function() {
@@ -145,36 +153,29 @@ chorus.models.Dataset = chorus.models.Base.include(
 
     iconUrl: function(options) {
         var size = (options && options.size) || "large";
-        var name = this.constructor.iconMap[this.get("type")][this.get("objectType")];
+        var name = this.constructor.iconMap[this.get("entitySubtype")][this.get("objectType")];
         return "/images/" + name + "_" + size + ".png";
     },
 
     lastComment: function() {
-        var commentJson = this.get("recentComment");
-        if (commentJson) {
+        var commentsJson = this.get("recentComments");
+        if (commentsJson && commentsJson.length > 0) {
             var comment = new chorus.models.Comment({
-                body: commentJson.text,
-                author: commentJson.author,
-                commentCreatedStamp: commentJson.timestamp
+                body: commentsJson[0].body,
+                author: commentsJson[0].author,
+                commentCreatedStamp: commentsJson[0].timestamp
             });
+
             comment.loaded = true;
             return comment;
         }
     },
 
     preview: function() {
-        if (this.isChorusView() && (this.isNew() || this.unsavedChanges().query)) {
-            return new chorus.models.ChorusViewPreviewTask({
-                query: this.query(),
-                schemaId: this.schema().id,
-                objectName: this.name()
-            });
-        } else {
-            return new chorus.models.DataPreviewTask({
-                dataset: {id: this.id},
-                objectName: this.name()
-            });
-        }
+        return new chorus.models.DataPreviewTask({
+            dataset: {id: this.id},
+            objectName: this.name()
+        });
     },
 
     download: function(options) {
@@ -183,7 +184,7 @@ chorus.models.Dataset = chorus.models.Base.include(
             data.row_limit = options.rowLimit;
         }
 
-        $.fileDownload(this.url({download: true}), {data: data});
+        chorus.fileDownload(this.url({download: true}), {data: data});
     },
 
     isChorusView: function() {
@@ -191,19 +192,19 @@ chorus.models.Dataset = chorus.models.Base.include(
     },
 
     refetchAfterInvalidated: function() {
-        this.collection && this.fetch()
+        this.collection && this.fetch();
     },
 
     quotedName: function() {
-        return this.safePGName(this.name());
+        return this.ensureDoubleQuoted(this.name());
     },
 
     toText: function() {
         if (this.has("query")) {
             var query = this.get("query").trim().replace(/;$/, "").trim();
-            return "(" + query + ") AS " + this.safePGName(this.name());
+            return "(" + query + ") AS " + this.ensureDoubleQuoted(this.name());
         } else {
-            return this.safePGName(this.schema().name()) + '.' + this.safePGName(this.name());
+            return this.ensureDoubleQuoted(this.schema().name()) + '.' + this.ensureDoubleQuoted(this.name());
         }
     },
 
@@ -228,7 +229,7 @@ chorus.models.Dataset = chorus.models.Base.include(
         if (this.has("query")) {
             return "(" + this.get("query") + ")";
         }
-        return this.safePGName(this.schema().name()) + "." + this.quotedName();
+        return this.ensureDoubleQuoted(this.schema().name()) + "." + this.quotedName();
     },
 
     alias: function() {
@@ -241,7 +242,7 @@ chorus.models.Dataset = chorus.models.Base.include(
 
     fromClause: function() {
         if (this.aliased()) {
-            return this.fromClauseBody() + " AS " + this.alias();
+            return this.fromClauseBody() + " AS " + this.ensureDoubleQuoted(this.alias());
         }
         return this.fromClauseBody();
     },
@@ -263,15 +264,15 @@ chorus.models.Dataset = chorus.models.Base.include(
     },
 
     hasCredentials: function() {
-        return this.get('hasCredentials') !== false
+        return this.get('hasCredentials') !== false;
     },
 
-    analyzableObjectType: function() {
-        return this.get("objectType") === "TABLE";
+    supportsAnalyze: function() {
+        return this.get("objectType") === "TABLE" && (this.isGreenplum() || this.isPostgres());
     },
 
     canAnalyze: function() {
-        return this.hasCredentials() && this.analyzableObjectType() && !this.workspaceArchived();
+        return this.hasCredentials() && this.supportsAnalyze() && !this.workspaceArchived() && !this.isExternal();
     },
 
     analyze: function() {
@@ -332,29 +333,22 @@ chorus.models.Dataset = chorus.models.Base.include(
 
     deriveTableauWorkbook: function() {
         return new chorus.models.TableauWorkbook({
-           dataset: this,
-           name: this.get('objectName')
+            dataset: this,
+            name: this.get('objectName')
         });
     },
 
     humanType: function() {
-      return t(['dataset.types',this.get("type"),this.get("objectType")].join("."));
-    },
-
-    importFrequency: $.noop
+        return t(['dataset.entitySubtypes',this.get("entitySubtype"),this.get("objectType")].join("."));
+    }
 }, {
     metaTypeMap: {
         "TABLE": "table",
         "VIEW": "view",
         "EXTERNAL_TABLE": "table",
         "MASTER_TABLE": "table",
-        "CHORUS_VIEW": "query"
-    },
-
-    entityTypeMap: {
-        "SOURCE_TABLE": "dataset",
-        "SANDBOX_TABLE": "dataset",
-        "CHORUS_VIEW": "chorusView"
+        "CHORUS_VIEW": "query",
+        "MASK": "mask"
     },
 
     iconMap: {
@@ -376,6 +370,10 @@ chorus.models.Dataset = chorus.models.Base.include(
             "MASTER_TABLE": "sandbox_table",
             "VIEW": "sandbox_view",
             "HDFS_EXTERNAL_TABLE": "sandbox_table"
+        },
+
+        "HDFS": {
+            "MASK": "hdfs_dataset"
         }
     }
 });

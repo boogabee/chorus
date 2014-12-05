@@ -1,6 +1,6 @@
 describe("chorus.views.visualizations.EmptyDataWarning", function () {
     beforeEach(function () {
-        this.view = new chorus.views.visualizations.EmptyDataWarning({message: t("visualization.empty_data")})
+        this.view = new chorus.views.visualizations.EmptyDataWarning({message: t("visualization.empty_data")});
     });
 
     describe("#render", function () {

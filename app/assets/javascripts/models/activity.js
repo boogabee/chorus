@@ -1,19 +1,40 @@
-;(function() {
+(function() {
     var CLASS_MAP = {
         "actor": "User",
         "dataset": "WorkspaceDataset",
-        "gpdbInstance": "GpdbInstance",
-        "gnipInstance": "GnipInstance",
+        'dataSource': 'DynamicDataSource',
+        "gnipDataSource": "GnipDataSource",
         "newOwner": "User",
-        "hadoopInstance": "HadoopInstance",
+        "hdfsDataSource": "HdfsDataSource",
+        "hdfsDataset": "HdfsDataset",
         "workfile": "Workfile",
         "workspace": "Workspace",
         "newUser" : "User",
         "noteObject" : "NoteObject",
         "hdfsEntry" : "HdfsEntry",
         "member": "User",
-        "sourceDataset": "WorkspaceDataset"
+        "sourceDataset": "WorkspaceDataset",
+        "schema": "Schema",
+        "job": "Job",
+        "jobResult": "JobResult"
     };
+
+    function makeAssociationMethod(associate, setupFunction) {
+        return function() {
+            var model;
+
+            if ( associate === 'dataset' && this.get(associate)) {
+                model = new chorus.models.DynamicDataset(this.get(associate));
+            } else {
+                var className = CLASS_MAP[associate];
+                var modelClass = chorus.models[className];
+                model = new modelClass(this.get(associate));
+            }
+
+            if (setupFunction) setupFunction.call(this, model);
+            return model;
+        };
+    }
 
     chorus.models.Activity = chorus.models.Base.extend({
         constructorName: "Activity",
@@ -33,13 +54,19 @@
 
         newOwner: makeAssociationMethod("newOwner"),
         workspace: makeAssociationMethod("workspace"),
+        schema: makeAssociationMethod("schema"),
         actor: makeAssociationMethod("actor"),
-        gpdbInstance: makeAssociationMethod("gpdbInstance"),
-        gnipInstance: makeAssociationMethod("gnipInstance"),
-        hadoopInstance: makeAssociationMethod("hadoopInstance"),
+        dataSource: makeAssociationMethod('dataSource'),
+        gnipDataSource: makeAssociationMethod("gnipDataSource"),
+        hdfsDataSource: makeAssociationMethod("hdfsDataSource"),
         workfile: makeAssociationMethod("workfile"),
         newUser: makeAssociationMethod("newUser"),
         member: makeAssociationMethod("member"),
+        job: makeAssociationMethod("job"),
+
+        jobResult: makeAssociationMethod("jobResult", function (model) {
+            model.set({job: this.get("job")}, {silent: true});
+        }),
 
         dataset: makeAssociationMethod("dataset", function(model) {
             model.set({workspace: this.get("workspace")}, {silent: true});
@@ -50,59 +77,53 @@
         }),
 
         hdfsEntry: makeAssociationMethod("hdfsEntry", function(model) {
-            var hdfsFile = this.get("hdfsFile");
-            var pathArray = hdfsFile.path.split("/");
-            var path = _.first(pathArray, pathArray.length - 1).join('/');
-            var name = _.last(pathArray);
+            var hdfsEntry = this.get("hdfsEntry");
             model.set({
-                id : hdfsFile.id,
-                hadoopInstance: hdfsFile.hadoopInstance,
-                path : path,
-                name : name
-            })
+                id : hdfsEntry.id,
+                hdfsDataSource: hdfsEntry.hdfsDataSource
+            });
         }),
+
+        hdfsDataset: makeAssociationMethod("hdfsDataset", function (model) {
+            model.set({workspace: this.get("workspace")}, {silent: true});
+        }),
+
 
         noteObject: function() {
             var model;
 
             switch (this.get("actionType")) {
-                case "NoteOnHadoopInstance":
-                    model = new chorus.models.HadoopInstance();
-                    model.set(this.get("hadoopInstance"));
-                    break;
-                case "NoteOnGreenplumInstance":
-                    model = new chorus.models.GpdbInstance();
-                    model.set(this.get("gpdbInstance"));
-                    break;
-                case "NoteOnGnipInstance":
-                    model = new chorus.models.GnipInstance();
-                    model.set(this.get("gnipInstance"));
-                    break;
-                case "NoteOnHdfsFile":
-                    model = new chorus.models.HdfsEntry();
-                    model.set({
-                        hadoopInstance: new chorus.models.HadoopInstance(this.get("hdfsFile").hadoopInstance),
-                        id: this.get("hdfsFile").id,
-                        name: this.get("hdfsFile").name
-                    });
-                    break;
-                case "NoteOnWorkspace":
-                    model = new chorus.models.Workspace();
-                    model.set(this.get("workspace"));
-                    break;
-                case "NoteOnDataset":
-                    model = new chorus.models.Dataset();
-                    model.set(this.get("dataset"));
-                    break;
-                case "NoteOnWorkspaceDataset":
-                    model = new chorus.models.WorkspaceDataset();
-                    model.set(this.get("dataset"));
-                    model.setWorkspace(this.get("workspace"));
-                    break;
-                case "NoteOnWorkfile":
-                    model = new chorus.models.Workfile();
-                    model.set(this.get("workfile"));
-                    break;
+            case "NoteOnHdfsDataSource":
+                model = new chorus.models.HdfsDataSource();
+                model.set(this.get("hdfsDataSource"));
+                break;
+            case "NoteOnDataSource":
+                model = new chorus.models.DynamicDataSource(this.get("dataSource"));
+                break;
+            case "NoteOnGnipDataSource":
+                model = new chorus.models.GnipDataSource();
+                model.set(this.get("gnipDataSource"));
+                break;
+            case "NoteOnHdfsFile":
+                model = new chorus.models.HdfsEntry();
+                model.set(this.get("hdfsFile"));
+                break;
+            case "NoteOnWorkspace":
+                model = new chorus.models.Workspace();
+                model.set(this.get("workspace"));
+                break;
+            case "NoteOnDataset":
+                model = new chorus.models.DynamicDataset(this.get("dataset"));
+                break;
+            case "NoteOnWorkspaceDataset":
+                model = new chorus.models.WorkspaceDataset();
+                model.set(this.get("dataset"));
+                model.setWorkspace(this.get("workspace"));
+                break;
+            case "NoteOnWorkfile":
+                model = new chorus.models.Workfile();
+                model.set(this.get("workfile"));
+                break;
             }
             return model;
         },
@@ -118,44 +139,50 @@
         },
 
         promoteToInsight: function(options) {
-            var insight = new chorus.models.InsightCount({
+            var insight = new chorus.models.Insight({
                 noteId: this.get("id"),
-                action: "promote"
+                action: "create"
             });
             insight.bind("saved", function() {
-                this.collection.fetch();
+                this.fetch();
                 if (options && options.success) {
                     options.success(this);
                 }
             }, this);
 
-            insight.save(null, { method: "create" });
+            insight.save({ validateBody: false });
+        },
+
+
+        demoteFromInsight: function() {
+            this.set({isInsight: false});
+            new chorus.models.Insight({id: this.id, action: 'destroy'}).destroy();
         },
 
         publish: function() {
-            var insight = new chorus.models.InsightCount({
+            var insight = new chorus.models.Insight({
                 noteId: this.get("id"),
                 action: "publish"
             });
 
             insight.bind("saved", function() {
-                this.collection.fetch();
+                this.fetch();
             }, this);
 
-            insight.save(null, { method: "create" });
+            insight.save({ validateBody: false }, {method: 'create'});
         },
 
         unpublish: function() {
-            var insight = new chorus.models.InsightCount({
+            var insight = new chorus.models.Insight({
                 noteId: this.get("id"),
                 action: "unpublish"
             });
 
             insight.bind("saved", function() {
-                this.collection.fetch();
+                this.fetch();
             }, this);
 
-            insight.save(null, { method: "create" });
+            insight.save({ validateBody: false }, {method: 'create'});
         },
 
         toNote: function() {
@@ -164,34 +191,28 @@
                 body: this.get("body")
             });
 
-            comment.bind("destroy", function() {
-                this.collection.fetch();
-            }, this);
-
-            comment.bind("saved", function() {
-                this.collection.fetch();
-            }, this)
-
             return comment;
         },
 
         attachments: function() {
             if (!this._attachments) {
-                this._attachments = _.map(this.get("attachments"), function(artifactJson) {
+                this._attachments = _.map(this.get("attachments"), function(attachment) {
                     var klass;
-                    switch (artifactJson.entityType) {
-                        case 'workfile':
-                            klass = chorus.models.Workfile;
-                            break;
-                        case 'chorusView':
-                        case 'dataset':
-                            klass = chorus.models.WorkspaceDataset;
-                            break;
-                        default:
-                            klass = chorus.models.Attachment;
-                            break;
+                    switch (attachment.entityType) {
+                    case 'workfile':
+                        klass = chorus.models.DynamicWorkfile;
+                        break;
+                    case 'dataset':
+                        klass = chorus.models.WorkspaceDataset;
+                        break;
+                    case 'work_flow_result':
+                        klass = chorus.models.WorkFlowResult;
+                        break;
+                    default:
+                        klass = chorus.models.Attachment;
+                        break;
                     }
-                    return new klass(artifactJson);
+                    return new klass(attachment);
                 });
             }
             return this._attachments;
@@ -205,6 +226,10 @@
             return this.isNote() && !this.isInsight();
         },
 
+        canBeDemotedBy: function(user) {
+            return this.isInsight() && (user.id === this.promoter().id || user.isAdmin() || user.id === this.workspace().owner().id);
+        },
+
         isInsight: function() {
             return this.get("isInsight");
         },
@@ -214,9 +239,7 @@
         },
 
         hasCommitMessage: function() {
-            return (this.get("action") === "WorkfileUpgradedVersion"
-                || this.get("action") == "WorkfileCreated" )
-                && this.get("commitMessage")
+            return this.get("commitMessage");
         },
 
         isUserGenerated: function () {
@@ -232,16 +255,37 @@
         },
 
         isFailure: function() {
-            return this.get('action') === "GnipStreamImportFailed" || this.get("action") === "FileImportFailed" ||  this.get("action") === "DatasetImportFailed";
+            var failureActions = [
+                "CredentialsInvalid",
+                "GnipStreamImportFailed",
+                "FileImportFailed",
+                "WorkspaceImportFailed",
+                "SchemaImportFailed",
+                "HdfsImportFailed"
+            ];
+
+            return _.contains(failureActions, this.get("action"));
         },
 
         isSuccessfulImport: function() {
-            return this.get('action') === "GnipStreamImportSuccess" || this.get("action") === "FileImportSuccess" ||  this.get("action") === "DatasetImportSuccess" ;
+            var successActions = [
+                "GnipStreamImportSuccess",
+                "FileImportSuccess",
+                "WorkspaceImportSuccess",
+                "SchemaImportSuccess",
+                "HdfsImportSuccess"
+            ];
+
+            return _.contains(successActions, this.get("action"));
+        },
+
+        isHdfsImport: function() {
+            return this.get("action") === "HdfsImportSuccess";
         },
 
         promoterLink: function() {
             var promoter = this.promoter();
-            return promoter ? chorus.helpers.userProfileLink(promoter) : "MISSING PROMOTER";
+            return promoter ? Handlebars.helpers.userProfileLink(promoter) : "MISSING PROMOTER";
         },
 
         promoter: function () {
@@ -249,7 +293,7 @@
         },
 
         promotionTimestamp:function() {
-            return this.get("promotionTime") ? chorus.helpers.relativeTimestamp(this.get("promotionTime")) : nil
+            return this.get("promotionTime") ? Handlebars.helpers.relativeTimestamp(this.get("promotionTime")) : null;
         },
 
         reindexError: function() {
@@ -258,14 +302,4 @@
             }
         }
     });
-
-    function makeAssociationMethod(name, setupFunction) {
-        return function() {
-            var className = CLASS_MAP[name];
-            var modelClass = chorus.models[className];
-            var model = new modelClass(this.get(name));
-            if (setupFunction) setupFunction.call(this, model);
-            return model;
-        };
-    }
 })();

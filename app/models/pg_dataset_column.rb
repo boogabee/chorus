@@ -1,0 +1,1 @@
+class PgDatasetColumn < GpdbDatasetColumn; end

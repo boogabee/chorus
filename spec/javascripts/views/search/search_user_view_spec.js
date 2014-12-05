@@ -1,6 +1,6 @@
 describe("chorus.views.SearchUser", function() {
     beforeEach(function() {
-        this.result = fixtures.searchResult();
+        this.result = backboneFixtures.searchResult();
         this.model = this.result.users().models[0];
         this.model.set({
             highlightedAttributes: {
@@ -11,8 +11,10 @@ describe("chorus.views.SearchUser", function() {
                 content: "<em>Here is some content</em>",
                 username: "<em>foo</em>"
             },
+            lastName: "Doe",
             image: { icon: "bar" }
-        })
+        });
+
         this.view = new chorus.views.SearchUser({ model: this.model });
         this.view.render();
     });
@@ -30,7 +32,7 @@ describe("chorus.views.SearchUser", function() {
     });
 
     it("has the title", function() {
-        expect(this.view.$('.title .content').html()).toContain("<em>test</em>er");
+        expect(this.view.$el.html()).toContain("<em>test</em>er");
     });
 
     describe("supporting messages (title, notes, etc.)", function() {
@@ -149,4 +151,6 @@ describe("chorus.views.SearchUser", function() {
             });
         });
     });
+
+    itBehavesLike.ItPresentsModelWithTags();
 });

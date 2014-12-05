@@ -1,4 +1,6 @@
-chorus.dialogs.WorkspacesNew = chorus.dialogs.Base.extend({
+chorus.dialogs.WorkspacesNew = chorus.dialogs.Base.include(
+        chorus.Mixins.DialogFormHelpers
+    ).extend({
     constructorName: "WorkspacesNew",
 
     templateName:"workspaces_new",
@@ -6,40 +8,31 @@ chorus.dialogs.WorkspacesNew = chorus.dialogs.Base.extend({
 
     persistent:true,
 
-    events:{
-        "keyup input[name=name]": "checkInput",
-        "paste input[name=name]": "checkInput",
-        "submit form.new_workspace":"createWorkspace"
-    },
-
     makeModel:function () {
-        this.model = this.model || new chorus.models.Workspace()
+        this.model = this.model || new chorus.models.Workspace();
     },
 
     setup:function () {
-        this.bindings.add(this.resource, "saved", this.workspaceSaved);
-        this.bindings.add(this.resource, "saveFailed", function() { this.$("button.submit").stopLoading() });
+        this.listenTo(this.resource, "saved", this.workspaceSaved);
+        this.listenTo(this.resource, "saveFailed", this.saveFailed);
+        this.disableFormUnlessValid({formSelector: "form.new_workspace", inputSelector: "input[name='name']"});
     },
 
-    createWorkspace:function createWorkspace(e) {
+    create:function create(e) {
         e.preventDefault();
 
         this.resource.set({
-            name:this.$("input[name=name]").val().trim(),
-            public:!!this.$("input[name=public]").is(":checked")
-        })
+            name: this.$("input[name=name]").val().trim(),
+            "public": !!this.$("input[name=public]").prop('checked'),
+            isProject: this.$('input[name=make_project]').prop('checked')
+        });
 
-        this.$("button.submit").startLoading("actions.creating")
+        this.$("button.submit").startLoading("actions.creating");
         this.resource.save();
     },
 
     workspaceSaved:function () {
-        $(document).trigger("close.facebox");
+        this.closeModal();
         chorus.router.navigate("/workspaces/" + this.model.get("id") + "/quickstart");
-    },
-
-    checkInput : function() {
-        var hasText = this.$("input[name=name]").val().trim().length > 0;
-        this.$("button.submit").prop("disabled", hasText ? false : "disabled");
     }
 });

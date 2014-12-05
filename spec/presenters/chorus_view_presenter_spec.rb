@@ -2,8 +2,7 @@ require 'spec_helper'
 
 describe ChorusViewPresenter, :type => :view do
   before do
-    @user = FactoryGirl.create :user
-    stub(ActiveRecord::Base).current_user { @user }
+    set_current_user(users(:admin))
   end
 
   let(:chorus_view) { datasets(:chorus_view) }
@@ -13,7 +12,7 @@ describe ChorusViewPresenter, :type => :view do
   it "hash should have attributes" do
     hash[:id].should_not be_nil
     hash[:object_name].should == "chorus_view"
-    hash[:type].should == "CHORUS_VIEW"
+    hash[:entity_subtype].should == "CHORUS_VIEW"
     hash[:object_type].should == "CHORUS_VIEW"
     hash[:query].should == "select * from a_table"
     hash[:is_deleted].should be_false
@@ -23,6 +22,4 @@ describe ChorusViewPresenter, :type => :view do
     schema[:id].should == chorus_view.schema.id
     schema[:name].should == chorus_view.schema.name
   end
-
-  it_behaves_like "sanitized presenter", :chorus_view, :name, :object_name
 end

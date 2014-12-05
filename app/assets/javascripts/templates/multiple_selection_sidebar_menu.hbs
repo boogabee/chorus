@@ -1,0 +1,12 @@
+{{#if actions}}
+    <label>{{t "sidebar.selected" count=modelCount}}</label>
+    <div class="actions">
+        <ul class="multiselect_actions">
+            {{#each actions}}
+                <li class="action">
+                    <a href="#" class="{{name}}">{{message}}</a>
+                </li>
+            {{/each}}
+        </ul>
+    </div>
+{{/if}}

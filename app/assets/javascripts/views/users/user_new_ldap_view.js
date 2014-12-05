@@ -1,4 +1,8 @@
 (function() {
+    function userSuccessfullySaved() {
+        chorus.router.navigate("/users");
+    }
+
     chorus.views.UserNewLdap = chorus.views.Base.extend({
         templateName: "user/new_ldap",
         additionalClass: "user_new",
@@ -12,8 +16,8 @@
         },
 
         setup: function() {
-            this.model.ldap = true
-            this.bindings.add(this.model, "saved", userSuccessfullySaved);
+            this.model.ldap = true;
+            this.listenTo(this.model, "saved", userSuccessfullySaved);
         },
 
         postRender: function() {
@@ -39,7 +43,7 @@
 
             this.collection.fetch();
 
-            this.bindings.add(this.collection, "reset", function() {
+            this.listenTo(this.collection, "reset", function() {
                 if (this.collection.models.length > 0) {
                     callback.call(this);
                 } else {
@@ -77,6 +81,7 @@
                 updates[input.attr("name")] = val;
             });
             updates.admin = this.$("input#admin-checkbox").prop("checked") || false;
+            updates.developer = this.$("input#developer-checkbox").prop("checked") || false;
             return updates;
         },
 
@@ -89,9 +94,5 @@
             this.saving = false;
         }
     });
-
-    function userSuccessfullySaved() {
-        chorus.router.navigate("/users");
-    }
 })();
 

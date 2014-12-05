@@ -23,13 +23,21 @@
 
 var fs = require("fs");
 
-var args = phantom.args;
+var args = Array.prototype.slice.call(phantom.args, 0);
 var port = args[0];
+
+var color = true;
+if (args[1] === 'nocolor') {
+    color = false;
+    args.splice(1, 1);
+}
+
 var filter = args[1];
-var url = 'http://localhost:' + port
+
+var url = 'http://localhost:' + port + '?phantom=1&profile=1'
 
 if (filter) {
-    url += '?spec=' + encodeURIComponent(filter);
+    url += '&spec=' + encodeURIComponent(filter);
 }
 
 if (!parseInt(port) || args.length > 2) {
@@ -39,17 +47,12 @@ if (!parseInt(port) || args.length > 2) {
 
 var page = require("webpage").create();
 
-var stdout = fs.open("/dev/stdout", "w");
-var stderr = fs.open("/dev/stderr", "w");
-
 function printError(message) {
-    stderr.write(message + "\n");
-    stderr.flush();
+    console.error(message);
 }
 
 page.onConsoleMessage = function(message) {
-    stdout.write(message);
-    stdout.flush();
+    console.log(message);
 }
 
 var attachedDoneCallback = false;
@@ -58,45 +61,78 @@ page.onResourceReceived = function() {
     // pushed onto the array multiple times -- it looks like the
     // function was queued up several times, depending on the server.
     if (!attachedDoneCallback) {
+        if (color) {
+            page.evaluate(function(){
+                window.colorizeJasmine = true;
+            });
+        }
+
         attachedDoneCallback = page.evaluate(function() {
             if (window.jasmine) {
+                function colorlog (msg, color) {
+                    if (window.colorizeJasmine) {
+                        console.log(colorize(msg, color))
+                    } else {
+                        console.log(msg);
+                    }
+                }
+
                 var reporter = {
                     failures: [],
 
+                    numPending: 0,
                     numPassed: 0,
                     numFailed: 0,
                     numSkipped: 0,
 
-                    reportRunnerStarting: function() {
+                    jasmineStarted: function() {
                         this.startTime = (new Date()).getTime();
                     },
 
-                    reportSpecResults: function(spec) {
-                        var results = spec.results();
-                        if (results.skipped) {
+                    specStarted: function (spec) {
+                        this.specStartTime = (new Date()).getTime();
+                    },
+
+                    specDone: function(result) {
+                        if (result.status == 'disabled') {
                             this.numSkipped++;
-                        } else if (results.passed()) {
-                            this.numPassed++;
-                            console.log(".");
-                        } else {
+                        } else if (result.status == 'failed') {
                             this.numFailed++;
 
-                            var name = spec.getFullName();
-                            var failedExpectations = _.filter(spec.results().getItems(), function(item) {
-                                return (item.type == 'expect') && item.passed && !item.passed()
-                            });
-                            var messages = _.map(failedExpectations, function(expectation) {
+                            var name = result.fullName;
+
+                            var messages = _.map(result.failedExpectations, function(expectation) {
                                 return expectation.message;
                             });
                             this.failures.push({ name: name, messages: messages });
+                            console.log("\nFAILED", chorus.currentSpec, "\n");
+                        } else if (result.status == 'passed') {
+                            this.numPassed++;
+                            var timeTaken = (new Date()).getTime() - this.specStartTime;
+                            if (timeTaken > 500) {
+                                colorlog("O", 'red');
+                            } else if (timeTaken > 250) {
+                                colorlog("O", 'yellow');
+                            } else if (timeTaken > 125) {
+                                colorlog("-", 'yellow');
+                            } else if (timeTaken > 50) {
+                                colorlog("-", 'green');
+                            } else {
+                                colorlog(".", 'green');
+                            }
+                        } else if (result.status == 'pending') {
+                            this.numPending++;
+                        }
 
-                            console.log("F");
+                        var total = this.numPassed + this.numFailed;
+                        if (total !== 0 && (total % 140) == 0) {
+                            console.log("\n");
                         }
                     },
 
-                    reportRunnerResults: function() {
+                    jasmineDone: function() {
                         var totalTime = (new Date()).getTime() - this.startTime;
-                        var totalTests = (this.numPassed + this.numSkipped + this.numFailed);
+                        var totalTests = (this.numPassed + this.numSkipped + this.numFailed + this.numPending);
 
                         _.each(this.failures, function(failure, i) {
                             console.log("\n\n" + (i+1) + ") " + failure.name);
@@ -107,10 +143,12 @@ page.onResourceReceived = function() {
 
                         console.log("\n");
                         console.log("\nTests passed:  " + this.numPassed);
+                        console.log("\nTests pending:  " + this.numPending);
                         console.log("\nTests skipped: " + this.numSkipped);
                         console.log("\nTests failed:  " + this.numFailed);
                         console.log("\nTotal tests:   " + totalTests);
                         console.log("\nRuntime (ms):  " + totalTime);
+                        console.log("\nRuntime (min): " + ((totalTime / 1000) / 60).toFixed(3));
                         console.log("\n\n");
 
                         window.phantomComplete = true;
@@ -125,6 +163,22 @@ page.onResourceReceived = function() {
                 };
 
                 window.jasmine.getEnv().addReporter(reporter);
+
+
+                var runParallel = false;
+                if (runParallel) {
+                    // Use this block to run a specific range of tests (0-1000, say)
+                    // Would be useful if there was a test harness that partitioned the
+                    //   testrunning into something like 4 processes.
+                    var specRangeParams = {
+                        start: 2000, // derive from number of total processes
+                        end: 3000
+                    };
+                    window.jasmine.getEnv().specFilter = function(spec) {
+                        var id = spec.id.match(/(\d+)/)[0];
+                        return id >= specRangeParams.start && id < specRangeParams.end;
+                    };
+                }
 
                 return true;
             }
@@ -148,7 +202,7 @@ page.open(url, function(success) {
             }
         }, 250);
     } else {
-        printError("Failure opening " + url);
+        printError("Failure opening " + url + " - is foreman running?");
         phantom.exit(1);
     }
 });

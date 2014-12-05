@@ -1,52 +1,39 @@
-chorus.dialogs.WorkfilesSqlNew = chorus.dialogs.Base.extend({
-    constructorName: "WorkfilesSqlNew",
+chorus.dialogs.WorkfilesSqlNew = chorus.dialogs.Base.include(chorus.Mixins.DialogFormHelpers).extend({
+    constructorName: "WorkfilesSqlNewDialog",
 
     templateName:"workfiles_sql_new",
     title:t("workfiles.sql_dialog.title"),
 
     persistent:true,
 
-    events:{
-        "keyup input[name=fileName]": "checkInput",
-        "paste input[name=fileName]": "checkInput",
-        "submit form":"create"
-    },
-
     makeModel:function () {
         this.model = this.model || new chorus.models.Workfile({
-            workspace: { id: this.options.workspaceId }
-        })
+            workspace: {id: this.options.pageModel.id}
+        });
     },
 
     setup:function () {
-        this.bindings.add(this.resource, "saved", this.saved);
-        this.bindings.add(this.resource, "saveFailed", this.saveFailed);
+        this.listenTo(this.resource, "saved", this.saved);
+        this.listenTo(this.resource, "saveFailed", this.saveFailed);
+        this.disableFormUnlessValid({
+            formSelector: "form",
+            inputSelector: "input[name=fileName]"
+        });
     },
 
-    create:function create(e) {
-        e.preventDefault();
-
+    create: function() {
         var fileName = this.$("input[name=fileName]").val().trim();
 
         this.resource.set({
             fileName:fileName ? fileName + ".sql" : ""
-        })
+        });
 
-        this.$("button.submit").startLoading("actions.adding")
+        this.$("button.submit").startLoading("actions.adding");
         this.resource.save({source:"empty"});
     },
 
     saved:function () {
-        $(document).trigger("close.facebox");
+        this.closeModal();
         chorus.router.navigate(this.model.showUrl());
-    },
-
-    saveFailed: function() {
-        this.$("button.submit").stopLoading();
-    },
-
-    checkInput: function() {
-        var hasText = this.$("input[name=fileName]").val().trim().length > 0;
-        this.$("button.submit").prop("disabled", hasText ? false : "disabled");
     }
 });

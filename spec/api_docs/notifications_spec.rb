@@ -26,4 +26,16 @@ resource "Notifications" do
       status.should == 200
     end
   end
+
+  delete "/notifications/:id" do
+    parameter :id, "ID of notification to be marked as deleted"
+
+    let(:id) { user.notifications[0].id }
+
+    required_parameters :id
+
+    example_request "Mark notifications as deleted" do
+      status.should == 200
+    end
+  end
 end

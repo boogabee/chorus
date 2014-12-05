@@ -1,0 +1,1 @@
+class PgSchemaPresenter < GpdbSchemaPresenter; end

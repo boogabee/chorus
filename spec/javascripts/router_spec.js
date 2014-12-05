@@ -1,17 +1,16 @@
 describe("chorus.router", function() {
     describe("generateRouteCallback", function() {
         beforeEach(function() {
-            this.chorus = new Chorus();
-            this.backboneSpy = spyOn(Backbone.history, "start")
+            this.chorus = new window.Chorus();
+            this.backboneSpy = spyOn(Backbone.history, "start");
             this.chorus.initialize();
-            spyOn(window, "scroll");
-            spyOn(chorus.PageEvents, "reset");
-
+            spyOn(this.chorus, "scrollToTop");
+            spyOn(chorus.PageEvents, "off");
         });
 
         it("generates a new cachebuster value when navigating", function() {
             spyOn(this.chorus, "updateCachebuster").andCallThrough();
-            this.chorus.router.navigate("/login");
+            this.chorus.router.navigate("login");
             expect(this.chorus.updateCachebuster).toHaveBeenCalled();
         });
 
@@ -19,9 +18,15 @@ describe("chorus.router", function() {
             beforeEach(function() {
                 spyOn(this.chorus.router, "navigate").andCallThrough();
                 spyOn(chorus.pages.UserNewPage.prototype, "initialize").andCallThrough();
+                this.originalPageClass = chorus.pages.UserNewPage.prototype.pageClass;
+                chorus.pages.UserNewPage.prototype.pageClass = "classyPage";
                 spyOnEvent(this.chorus.router, "leaving");
-
+                $("#jasmine_content").append("<div id='page'></div>");
                 this.chorus.router.navigate("/users/new", { foo: "bar" });
+            });
+
+            afterEach(function() {
+                chorus.pages.UserNewPage.prototype.pageClass = this.originalPageClass;
             });
 
             it("fetches the session", function() {
@@ -44,13 +49,13 @@ describe("chorus.router", function() {
                     expect(chorus.pages.UserNewPage.prototype.initialize).toHaveBeenCalled();
                 });
 
-                it("calls reset on the PageEvents object", function() {
-                    expect(chorus.PageEvents.reset).toHaveBeenCalled();
+                it("resets the PageEvents object", function() {
+                    expect(chorus.PageEvents.off).toHaveBeenCalled();
                 });
 
-                it("sets the scroll position to (0,0)", function() {
+                it("scrolls to the top of the page", function() {
                     this.chorus.router.navigate("/users/new");
-                    expect(window.scroll).toHaveBeenCalledWith(0, 0);
+                    expect(this.chorus.scrollToTop).toHaveBeenCalled();
                 });
 
                 it("triggers the 'leaving' event on itself", function() {
@@ -58,8 +63,12 @@ describe("chorus.router", function() {
                 });
 
                 it("sets chorus.page.pageOptions to chorus.pageOptions", function() {
-                    expect(this.chorus.page.pageOptions).toEqual({ foo: "bar" })
+                    expect(this.chorus.page.pageOptions).toEqual({ foo: "bar" });
                     expect(this.chorus.pageOptions).toBeUndefined();
+                });
+
+                it("adds the page class to the #page", function() {
+                    expect($("#page")).toHaveClass("classyPage");
                 });
             });
 
@@ -70,7 +79,7 @@ describe("chorus.router", function() {
                 });
 
                 it("navigates to login", function() {
-                   expect(this.chorus.router.navigate).toHaveBeenCalledWith('/login');
+                    expect(this.chorus.router.navigate).toHaveBeenCalledWith('login');
                 });
             });
         });
@@ -84,18 +93,18 @@ describe("chorus.router", function() {
             context("when the user is already logged in", function() {
                 beforeEach(function() {
                     spyOn(this.chorus.session, "loggedIn").andReturn(true);
-                    this.chorus.router.navigate("/login");
+                    this.chorus.router.navigate("login");
                 });
 
                 it("redirects them to their dashboard", function() {
-                    expect(this.chorus.router.navigate).toHaveBeenCalledWith("/");
+                    expect(this.chorus.router.navigate).toHaveBeenCalledWith("");
                 });
             });
 
             context("when the user is not logged in", function() {
                 beforeEach(function() {
                     spyOn(this.chorus.session, "loggedIn").andReturn(false);
-                    this.chorus.router.navigate("/login");
+                    this.chorus.router.navigate("login");
                 });
 
                 it("goes to the login page", function() {
@@ -109,14 +118,14 @@ describe("chorus.router", function() {
         beforeEach(function() {
             spyOn(Backbone.history, "loadUrl").andCallThrough();
             spyOn(Backbone.history, "navigate").andCallThrough();
-            this.chorus = new Chorus();
-            this.backboneSpy = spyOn(Backbone.history, "start")
+            this.chorus = new window.Chorus();
+            this.backboneSpy = spyOn(Backbone.history, "start");
             this.chorus.initialize();
             var session = this.chorus.session;
             spyOn(this.chorus.session, "fetch").andCallFake(function(options) {
                 options.success(session, { status: "ok" });
-            })
-        })
+            });
+        });
 
         it("renders the page with parameters", function() {
             this.chorus.router.navigate("/workspaces/5");
@@ -130,40 +139,45 @@ describe("chorus.router", function() {
             expect(this.chorus.modal.closeModal).toHaveBeenCalled();
         });
 
-        it("sets chorus.pageOptions to the third argument", function() {
+        it("sets chorus.pageOptions to the second argument", function() {
             this.chorus.router.navigate("/workspaces/5", {foo: "bar"});
             expect(this.chorus.page.pageOptions).toEqual({foo: "bar"});
         });
 
-        describe("when triggerRoute is true", function() {
+        describe("when a current fragment is set", function() {
             beforeEach(function() {
-                Backbone.history.fragment = "/foo";
+                Backbone.history.fragment = "foo";
             });
 
             describe("and the target fragment is not the current fragment", function() {
-                it("delegates to the Backbone.router implementation", function() {
+                it("calls Backbone's navigate with {trigger: true} when pageOptions is undefined", function () {
                     this.chorus.router.navigate("/bar");
-                    expect(Backbone.history.navigate).toHaveBeenCalledWith("/bar", true);
+                    expect(Backbone.history.navigate).toHaveBeenCalledWith("/bar", {trigger: true});
+                });
+
+                it("calls Backbone's navigate with the given trigger value when pageOptions is defined", function () {
+                    this.chorus.router.navigate("/bar", {foo: "bar", trigger: false});
+                    expect(Backbone.history.navigate).toHaveBeenCalledWith("/bar", {foo: "bar", trigger: false});
                 });
             });
 
             describe("and the target fragment is the current fragment", function() {
                 it("calls loadUrl on the fragment", function() {
                     this.chorus.router.navigate("/foo");
-                    expect(Backbone.history.loadUrl).toHaveBeenCalledWith("/foo");
                     expect(Backbone.history.navigate).not.toHaveBeenCalled();
+                    expect(Backbone.history.loadUrl).toHaveBeenCalledWith("/foo");
                 });
 
                 it("calls loadUrl on the fragment, even if the target fragment is prefixed by #", function() {
                     this.chorus.router.navigate("#/foo");
-                    expect(Backbone.history.loadUrl).toHaveBeenCalledWith("/foo");
                     expect(Backbone.history.navigate).not.toHaveBeenCalled();
+                    expect(Backbone.history.loadUrl).toHaveBeenCalledWith("/foo");
                 });
             });
 
             describe("when the fragment is URI encoded", function() {
                 beforeEach(function() {
-                    Backbone.history.fragment = "/foo/'1'|2";
+                    Backbone.history.fragment = "foo/'1'|2";
                 });
 
                 describe("and the target fragment is the current fragment", function() {
@@ -183,6 +197,42 @@ describe("chorus.router", function() {
         });
     });
 
+    describe("when there is an alternate home page", function () {
+        beforeEach(function () {
+            spyOn(chorus.models.Config.instance().license(), 'homePage').andReturn("UserIndex");
+            this.chorus = new window.Chorus();
+            this.backboneSpy = spyOn(Backbone.history, "start");
+            this.chorus.initialize();
+            var session = this.chorus.session;
+            spyOn(this.chorus.session, "fetch").andCallFake(function(options) {
+                options.success(session, { status: "ok" });
+            });
+        });
+
+        it("uses the alternate home page", function() {
+            this.chorus.router.navigate("");
+            expect(this.chorus.page).toBeA(chorus.pages.UserIndexPage);
+        });
+    });
+
+    describe("when there is not an alternate home page", function () {
+        beforeEach(function () {
+            spyOn(chorus.models.Config.instance().license(), 'homePage').andReturn(null);
+            this.chorus = new window.Chorus();
+            this.backboneSpy = spyOn(Backbone.history, "start");
+            this.chorus.initialize();
+            var session = this.chorus.session;
+            spyOn(this.chorus.session, "fetch").andCallFake(function(options) {
+                options.success(session, { status: "ok" });
+            });
+        });
+
+        it("uses the Dashboard page", function() {
+            this.chorus.router.navigate("");
+            expect(this.chorus.page).toBeA(chorus.pages.DashboardPage);
+        });
+    });
+
     describe("#reload", function() {
         it("navigates to the current url fragment", function() {
             Backbone.history.fragment = '/somewhere';
@@ -194,16 +244,16 @@ describe("chorus.router", function() {
 
     describe("url decoding", function() {
         beforeEach(function() {
-            setLoggedInUser()
-            this.chorus = new Chorus();
-            this.backboneSpy = spyOn(Backbone.history, "start")
+            setLoggedInUser();
+            this.chorus = new window.Chorus();
+            this.backboneSpy = spyOn(Backbone.history, "start");
             this.chorus.initialize();
             var session = this.chorus.session;
             spyOn(this.chorus.session, "fetch").andCallFake(function(options) {
                 options.success(session, { status: "ok" });
             });
 
-            spyOn(chorus.pages.SearchIndexPage.prototype, "setup").andCallThrough()
+            spyOn(chorus.pages.SearchIndexPage.prototype, "setup").andCallThrough();
         });
 
         it("does not decode fragments before matching routes", function() {

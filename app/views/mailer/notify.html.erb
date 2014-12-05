@@ -1,0 +1,15 @@
+<div class="media activity_item">
+  <div class="activity_content">
+    <div class="activity_header">
+      <h2><%= link_to(@job.name, build_backbone_url("/workspaces/#{@workspace.id}/jobs/#{@job.id}")) %> <%= @job_result.succeeded? ? 'succeeded' : 'failed' %> in workspace <%= link_to(@workspace.name, build_backbone_url("/workspaces/#{@workspace.id}")) %></h2>
+    </div>
+    <ul class="attachments">
+      <% @job_task_results.each do |result| %>
+          <li>
+            <%= image_tag attachments[as_png(result.class.name)].url, class: 'icon' -%>
+            <%= result.name %>
+          </li>
+      <% end %>
+    </ul>
+  </div>
+</div>

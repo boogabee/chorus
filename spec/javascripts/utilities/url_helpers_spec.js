@@ -29,6 +29,12 @@ describe("chorus.urlHelpers", function() {
             verifyUrl("xls", "xls");
             verifyUrl("xlsx", "xls");
             verifyUrl("twb", "tableau");
+            verifyUrl("pmml", "pmml");
+            verifyUrl("xml", "xml");
+            verifyUrl("js", "js");
+            verifyUrl("md", "md");
+            verifyUrl("pig", "pig");
+            verifyUrl("rb", "rb");
         });
 
         it("maps unknown fileTypes to plain.png", function() {
@@ -38,11 +44,11 @@ describe("chorus.urlHelpers", function() {
 
         it("defaults to large size", function() {
             expect(chorus.urlHelpers.fileIconUrl("C")).toBe("/images/workfiles/large/c.png");
-        })
+        });
 
         it("takes an optional size override", function() {
-            expect(chorus.urlHelpers.fileIconUrl("C", "medium")).toBe("/images/workfiles/medium/c.png");
-        })
+            expect(chorus.urlHelpers.fileIconUrl("C", "icon")).toBe("/images/workfiles/icon/c.png");
+        });
 
         it("returns 'plain' when null is passed", function() {
             verifyUrl(undefined, "plain");

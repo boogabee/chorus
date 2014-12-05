@@ -1,10 +1,11 @@
 jQuery.fn.extend({
-    startLoading: function(translationKey) {
+    startLoading: function(translationKey, opts) {
+        opts = opts || {};
         this.each(function() {
             var el = $(this);
             if (el.isLoading()) return;
 
-            var spinner = new Spinner({
+            var spinner = new Spinner(_.extend({
                 lines: 12,
                 length: 3,
                 width: 2,
@@ -13,13 +14,13 @@ jQuery.fn.extend({
                 speed: 1,
                 trail: 75,
                 shadow: false
-            }).spin();
+            }, opts)).spin();
 
-            var originalText = el.text();
+            var originalHtml = el.html();
             var text = translationKey ? t(translationKey) : '';
             el.text(text).
                 append(spinner.el).
-                data("loading-original-text", originalText).
+                data("loading-original-html", originalHtml).
                 addClass("is_loading");
 
             if (el.is("button")) {
@@ -36,14 +37,14 @@ jQuery.fn.extend({
         this.each(function() {
             var el = $(this);
             if (!el.isLoading()) return;
-            var originalText = el.data("loading-original-text");
+            var originalHtml = el.data("loading-original-html");
             // $.text(val) clears the selected element, so .text here kills the spinner inside the button.
-            el.removeData("loading-original-text").removeClass("is_loading").prop("disabled", false).text(originalText);
+            el.removeData("loading-original-html").removeClass("is_loading").prop("disabled", false).html(originalHtml);
         });
     },
 
     isLoading: function() {
-        return this.eq(0).hasClass("is_loading")
+        return this.eq(0).hasClass("is_loading");
     },
 
     outerHtml: function() {

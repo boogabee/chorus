@@ -1,4 +1,12 @@
 .dataset_create_chorus_view_sidebar {
+    legend {
+        color: $color-text1;
+        font-size: 16px;
+        font-weight: $semibold;
+        display: inline-block;
+        margin-bottom: 8px;
+    }
+
     .joins {
         margin-bottom: 20px;
     }
@@ -28,20 +36,15 @@
     }
 
     .selected_columns {
+        @include sidebar-panel;
         color: $color-text2;
-        font-size: 12px;
-        padding: 8px;
 
-        .title {
-            color: $color-text1;
-            font-size: 16px;
-            font-weight: $semibold;
-            display: inline-block;
-            margin-bottom: 8px;
+        & > span, & > div, & > ul {
+           padding: 0px 8px;
         }
 
         .dataset {
-            margin-bottom: 5px;
+            margin: 5px 0px;
             @include secondary-text-semibold;
 
             .aliased_name {
@@ -67,21 +70,17 @@
     }
 
     button {
-        bottom: -15px;
-
-        &.disabled {
-            color: #D6DBE0;
-            border-color: #D6DBE0;
-        }
-    }
-    fieldset {
-        padding: 0 0 15px 0;
+        margin-top: 10px;
     }
 
     a.remove {
         float: right;
         display: none;
         @include secondary-text-small;
+    }
+
+    .no_columns_selected {
+        @include secondary-text-normal;
     }
 
     .columns, .no_columns_selected {
@@ -92,10 +91,8 @@
         .name {
             display: inline-block;
             font-size: 14px;
-            line-height: 19px;
             font-weight: normal;
             color: black;
-            padding-left: 15px;
             max-width: 124px;
             @include ellipsis;
         }

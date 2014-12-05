@@ -1,13 +1,9 @@
 describe("chorus.collections.DatasetFilterSet", function() {
     beforeEach(function() {
 
-        this.dataset = rspecFixtures.workspaceDataset.datasetTable();
+        this.dataset = backboneFixtures.workspaceDataset.datasetTable();
         this.columns = this.dataset.columns();
-        this.columns.reset([
-            fixtures.databaseColumn(),
-            fixtures.databaseColumn(),
-            fixtures.databaseColumn()
-        ]);
+        this.columns.reset(backboneFixtures.databaseColumnSet().models);
 
         var filter1 = new chorus.models.DatasetFilter({column: this.columns.at(0), comparator: "equal", input: {value: "A"}});
         var filter2 = new chorus.models.DatasetFilter({column: this.columns.at(1), comparator: "not_equal", input: {value: "B"}});

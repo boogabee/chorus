@@ -1,7 +1,19 @@
 describe("sinon extensions", function() {
+    function itReturnsStatus(code) {
+        it("returns a status code of " + code, function() {
+            expect(this.fakeRequest.status).toBe(code);
+        });
+    }
+
+    function itIncludesError() {
+        it("returns an error message in the 'message' field", function() {
+            expect(JSON.parse(this.fakeRequest.responseText).errors).toEqual(this.errors);
+        });
+    }
+
     beforeEach(function() {
         this.errors = { record: "not accessible" };
-        this.response = { instanceId: 1 };
+        this.response = { dataSourceId: 1 };
         this.fakeRequest = new sinon.FakeXMLHttpRequest();
     });
 
@@ -14,17 +26,17 @@ describe("sinon extensions", function() {
 
         context("when given a model", function() {
             beforeEach(function() {
-                this.model = new chorus.models.Base({ foo: "bar" })
+                this.model = new chorus.models.Base({ foo: "bar" });
                 this.xhr.succeed(this.model);
             });
 
             it("returns a 200 status", function() {
-                this.xhr.succeed(rspecFixtures.user());
+                this.xhr.succeed(backboneFixtures.user());
                 expect(this.xhr.status).toBe(200);
             });
 
             it("returns the right content-type", function() {
-                this.xhr.succeed(rspecFixtures.user());
+                this.xhr.succeed(backboneFixtures.user());
                 expect(this.xhr.responseHeaders["Content-Type"]).toBe("application/json");
             });
 
@@ -83,7 +95,7 @@ describe("sinon extensions", function() {
             this.collection = new chorus.collections.UserSet();
 
             this.model.fetch();
-            this.collection.fetch()
+            this.collection.fetch();
         });
 
         context("it is called with a specified result", function() {
@@ -117,7 +129,7 @@ describe("sinon extensions", function() {
                 });
 
                 it("uses an empty model set", function() {
-                    expect(this.collection.models.length).toBe(0)
+                    expect(this.collection.models.length).toBe(0);
                     expect(this.collection.get('group')).toBeUndefined();
                     expect(this.collection.loaded).toBeTruthy();
                 });
@@ -144,14 +156,33 @@ describe("sinon extensions", function() {
                 it("uses the current attributes of the model", function() {
                     var user = new chorus.models.User({ id: '1', name: "Keanu Reeves" });
                     var fakeRequest = this.server.makeFakeResponse(user);
-                    expect(fakeRequest).toEqual({ id: '1', name: "Keanu Reeves" });
+                    expect(fakeRequest).toEqual({ id: 1, name: "Keanu Reeves" });
+                });
+
+                it("does not convert the id to an integer if it is non-numeric", function() {
+                    var user = new chorus.models.User({ id: 'hiya' });
+                    var fakeRequest = this.server.makeFakeResponse(user);
+                    expect(fakeRequest).toEqual({ id: 'hiya' });
                 });
             });
 
             context("it is called with a collection", function() {
-                it("uses an empty model set", function() {
-                    var collection = new chorus.collections.UserSet([], { group: "Agents" })
-                    expect(this.server.makeFakeResponse(collection)).toEqual([]);
+                it("uses the model set", function() {
+                    var collection = new chorus.collections.UserSet([
+                        { id: '1', name: "Keanu Reeves" }
+                    ], { group: "Agents" });
+                    expect(this.server.makeFakeResponse(collection)).toEqual([
+                        { id: 1, name: "Keanu Reeves" }
+                    ]);
+                });
+
+                it("does not convert the ids to an integer if it is non-numeric", function() {
+                    var collection = new chorus.collections.UserSet([
+                        { id: 'hiya' }
+                    ], { group: "Agents" });
+                    expect(this.server.makeFakeResponse(collection)).toEqual([
+                        { id: 'hiya' }
+                    ]);
                 });
             });
         });
@@ -159,7 +190,7 @@ describe("sinon extensions", function() {
 
     describe("#respondJson", function() {
         beforeEach(function() {
-            this.fakeRequest.respondJson(403, { response: { foo: "bar" } })
+            this.fakeRequest.respondJson(403, { response: { foo: "bar" } });
         });
 
         itReturnsStatus(403);
@@ -177,10 +208,10 @@ describe("sinon extensions", function() {
 
     describe("#fail", function() {
         beforeEach(function() {
-            this.fakeRequest.fail()
+            this.fakeRequest.fail();
         });
 
-        itReturnsStatus(200);
+        itReturnsStatus(400);
 
         it("returns an error message in the 'message' field", function() {
             expect(this.fakeRequest.responseText).toContain("something went wrong!");
@@ -193,54 +224,38 @@ describe("sinon extensions", function() {
 
     describe("#failForbidden", function() {
         beforeEach(function() {
-            this.fakeRequest.failForbidden(this.errors, this.response)
+            this.fakeRequest.failForbidden(this.errors);
         });
 
         itReturnsStatus(403);
-        itIncludesErrorAndResponse();
+        itIncludesError();
     });
 
     describe("#failUnauthorized", function() {
         beforeEach(function() {
-            this.fakeRequest.failUnauthorized(this.errors, this.response);
+            this.fakeRequest.failUnauthorized(this.errors);
         });
 
         itReturnsStatus(401);
-        itIncludesErrorAndResponse();
+        itIncludesError();
     });
 
     describe("#failNotFound", function() {
         beforeEach(function() {
             this.fakeRequest = new sinon.FakeXMLHttpRequest();
-            this.fakeRequest.failNotFound(this.errors, this.response);
+            this.fakeRequest.failNotFound(this.errors);
         });
 
         itReturnsStatus(404);
-        itIncludesErrorAndResponse();
+        itIncludesError();
     });
 
     describe("#failUnprocessableEntity", function() {
         beforeEach(function() {
-            this.fakeRequest.failUnprocessableEntity(this.errors, this.response);
+            this.fakeRequest.failUnprocessableEntity(this.errors);
         });
 
         itReturnsStatus(422);
-        itIncludesErrorAndResponse();
+        itIncludesError();
     });
-
-    function itReturnsStatus(code) {
-        it("returns a status code of " + code, function() {
-            expect(this.fakeRequest.status).toBe(code);
-        });
-    }
-
-    function itIncludesErrorAndResponse() {
-        it("returns an error message in the 'message' field", function() {
-            expect(JSON.parse(this.fakeRequest.responseText).errors).toEqual(this.errors);
-        });
-
-        it("includes the response if one is given", function() {
-            expect(JSON.parse(this.fakeRequest.responseText).response).toEqual(this.response);
-        });
-    }
 });

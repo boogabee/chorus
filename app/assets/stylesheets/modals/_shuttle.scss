@@ -1,21 +1,16 @@
 $list-item-height: 39px;
-$list-border-width: 1px;
-$shuttle-width: 720px;
 
 .shuttle_widget {
     background-color: $body-background-color;
-    width: $shuttle-width;
-    border-bottom: 1px solid $list-border-color;
-    border-top: 1px solid $list-border-color;
 
     .shuttle_header {
-        border-bottom: 1px solid $list-border-color;
+        border-bottom: $border-canon;
         position: relative;
         height: 33px;
 
         .search_container {
             left: 0;
-            border-right: 1px solid $list-border-color;
+            border-right: $border-canon;
 
             .chorus_search_container {
                 width: 70%;
@@ -57,7 +52,7 @@ $shuttle-width: 720px;
 
     .shuttle_body {
         position: relative;
-        height: (($list-item-height + $list-border-width) * 8);
+        height: (($list-item-height + $default-border-width) * 8);
     }
 
     a {
@@ -83,9 +78,8 @@ $shuttle-width: 720px;
     div.image {
         position: relative;
         display: inline-block;
-        padding: 2px;
         width: $list-item-height - 6px;
-        height: $list-item-height - 6px;
+        height: $list-item-height - 10px;
     }
 
     ul {
@@ -98,7 +92,7 @@ $shuttle-width: 720px;
 
         li {
             height: $list-item-height;
-            border-bottom: $list-border-width dotted $list-border-color;
+            border-bottom: $border-canon;
             padding: 0 8px;
             line-height: $list-item-height - 3px;
 
@@ -114,7 +108,7 @@ $shuttle-width: 720px;
 
         &.available {
             left: 0;
-            border-right: 1px solid $list-border-color;
+            border-right: $border-canon;
 
             li {
                 img.checkmark {
@@ -160,11 +154,7 @@ $shuttle-width: 720px;
     }
 }
 
-.dialog.workspace_edit_members .dialog_content{
-    padding: 0;
-    .modal_controls {
-        padding: 0 20px 20px;
-    }
-
+.dialog.workspace_edit_members .dialog_content .form_controls {
+     margin-top: 0px;
 }
 

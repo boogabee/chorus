@@ -6,6 +6,7 @@
     text-align: left;
     overflow-y: auto;
     overflow-x: hidden;
+    border-radius: 3px;
 
     .popup {
         position: relative;
@@ -13,7 +14,6 @@
     .content {
         @include after-clearfix();
         padding: 0;
-        background: #fff;
 
         > p {
             &:first-child {
@@ -32,10 +32,10 @@
     .header {
         .close {
             position: absolute;
-            top: 18px;
+            top: 6px;
             right: 15px;
             padding: 2px;
-            background: #fff;
+            color: $color-text4;
         }
     }
 
@@ -61,7 +61,7 @@
     left: 0px;
     height: 100%;
     width: 100%;
-    opacity: 0.45 !important;
+    background-color: $lightbox-overlay-color !important;
 }
 
 .facebox_hide {
@@ -69,6 +69,6 @@
 }
 
 .facebox_overlayBG {
-    background-color: #000;
+   /*  background-color: #000; */
     z-index: $dialog-overlay-z-index;
 }

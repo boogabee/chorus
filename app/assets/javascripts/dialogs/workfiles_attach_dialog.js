@@ -11,17 +11,18 @@ chorus.dialogs.WorkfilesAttach = chorus.dialogs.PickItems.extend({
 
     makeModel:function () {
         this.collection = new chorus.collections.WorkfileSet([], {workspaceId:this.options.workspaceId || this.options.workspaceId });
+        this.collection = new chorus.collections.FilteringCollection(null, {collection: this.collection});
         this.collection.fetchAll();
     },
 
     collectionModelContext: function (model) {
         return {
             name: model.get("fileName"),
-            imageUrl: model.iconUrl({size:"medium"})
+            imageUrl: model.iconUrl({size:"icon"})
         };
     },
 
     collectionComparator: function(model) {
-        return -(Date.parseFromApi(model.get("versionInfo").updatedAt).getTime());
+        return -(chorus.parseDateFromApi(model.get("versionInfo").updatedAt).getTime());
     }
 });

@@ -1,8 +1,7 @@
-@import "_common.scss";
+@import "_common";
 
-@import "users/_user_list.scss";
-@import "users/_user_new_edit.scss";
-@import "users/_user_show.scss";
-@import "users/_profile.scss";
-@import "users/_change_password_dialog.scss";
-@import "users/_user_sidebar.scss";
+@import "users/_user_new_edit";
+@import "users/_user_show";
+@import "users/_profile";
+@import "users/_user_sidebar";
+@import "users/_user_dashboard_edit";

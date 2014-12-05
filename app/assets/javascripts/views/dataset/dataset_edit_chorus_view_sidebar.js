@@ -11,22 +11,22 @@ chorus.views.DatasetEditChorusViewSidebar = chorus.views.Sidebar.extend({
         this.collection = this.model.activities();
         this.collection.fetch();
 
-        this.bindings.add(this.collection, "changed", this.render);
+        this.listenTo(this.collection, "changed", this.render);
         this.requiredResources.push(this.model);
     },
 
     resourcesLoaded: function() {
-        this.tabs = new chorus.views.TabControl(["datasets_and_columns", "database_function_list", "activity"]);
+        this.tabs = new chorus.views.TabControl(["data", "database_function_list", "activity"]);
         this.schema = this.model.schema();
 
-        this.tabs.database_function_list = new chorus.views.DatabaseFunctionSidebarList({schema: this.schema});
-        this.tabs.datasets_and_columns = new chorus.views.DatasetAndColumnList({model: this.schema})
+        this.tabs.database_function_list = new chorus.views.FunctionTab({ schema: this.schema });
+        this.tabs.data = new chorus.views.DataTab({ schema: this.schema });
         this.tabs.activity = new chorus.views.ActivityList({
             collection: this.collection,
             additionalClass: "sidebar",
             displayStyle: ['without_object', 'without_workspace']
         });
 
-        this.tabs.bind("selected", _.bind(this.recalculateScrolling, this))
+        this.listenTo(this.tabs, 'selected', this.recalculateScrolling);
     }
 });

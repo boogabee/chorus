@@ -15,7 +15,7 @@ describe("window.t", function () {
             it("calls I18n.t with the value given", function () {
                 t("hello.world", { some:"thing" });
                 expect(I18n.t).toHaveBeenCalledWith("hello.world", { some:"thing" });
-            })
+            });
         });
 
         context("with a functionCallContext", function () {

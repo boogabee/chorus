@@ -1,6 +1,6 @@
 describe("chorus.models.CSVImport", function() {
     beforeEach(function() {
-        this.model = rspecFixtures.csvImport();
+        this.model = backboneFixtures.csvImport();
         this.model.set({
                 csvId:this.model.id,
                 id:null
@@ -17,7 +17,7 @@ describe("chorus.models.CSVImport", function() {
 
     describe("toJSON", function() {
         it("does not include the contents, as this was uploaded as the csv file", function() {
-            expect(this.model.toJSON().csvimport.contents).toBeUndefined();
+            expect(this.model.toJSON().csv_import.contents).toBeUndefined();
         });
     });
 });

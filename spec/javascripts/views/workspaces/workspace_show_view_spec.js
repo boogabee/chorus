@@ -27,5 +27,5 @@ describe("chorus.views.WorkspaceShow", function() {
                 expect(this.view.$(".activity_list").length).toBe(1);
             });
         });
-    })
-})
+    });
+});

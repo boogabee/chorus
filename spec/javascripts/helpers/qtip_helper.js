@@ -9,4 +9,4 @@ $.fn.hasQtip = function hasQtip() {
     });
 
     return sawItem && allHaveQtip;
-}
+};

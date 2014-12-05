@@ -1,18 +1,34 @@
-@import "_common.scss";
+@import "_common";
 
 #page[data-page=StyleGuide]  {
+    .sub_nav {
+        padding-top: 0px;
+        position: initial
+    }
+
+    .popup .view_guts {
+        border: $border-canon;
+    }
     .dark_text_color { color : $color-text2 }
     .secondary_text_color { color : $color-text3 }
     .weak_text_color { color : $color-text4 }
 
-    ul.views {
+    .fixed {
+      position: static;
+    }
+
+    div.views {
         padding: 20px;
 
-        li.view {
+        div.view {
             padding: 20px 0;
 
             > h1 {
                 padding: 10px;
+            }
+
+            > .view_guts {
+                border: 1px solid $border-color;
             }
         }
     }
@@ -37,14 +53,6 @@
         @include font-normal-beta;
     }
 
-    .font_normal_gamma {
-        @include font-normal-gamma;
-    }
-
-    .font_content_details {
-        @include font-content-details;
-    }
-
     .list_section_heading {
         @include list-section-heading;
     }
@@ -66,7 +74,7 @@
     }
 
     .alert_background_color {
-    background-color: $alert-background-color;
+    background-color: $alert;
     }
     .workfiles-action-details-background-color {
     background-color: $content-details-action-background-color;
@@ -80,17 +88,8 @@
     background-color: $activity-stream-comment-background-color;
     }
 
-
-    .data_table {
-        border: 1px solid black;
-        width: 350px;
-        height: 300px;
-    }
-
     table {
         td, th, tr { @include debugging-mixin; }
-        width: 90%;
-        margin-left: 20px;
         text-shadow: none !important;
         border-spacing: 0px;
         border-collapse: separate;
@@ -120,7 +119,6 @@
             &.text2 { color: $color-text2; }
             &.text3 { color: $color-text3; }
             &.text4 { color: $color-text4; }
-            &.text5 { color: $color-text5; }
             &.link { color: $link-color; }
         }
 
@@ -133,4 +131,48 @@
         }
     }
 
+    .vertical_padding {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .color-swatch-item {
+        position: relative;
+        display: inline-block;
+        width: 382px;
+        margin: 8px;
+
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            border: 1px solid black;
+            margin: 8px;
+        }
+
+        .color-swatch-name {
+            position: absolute;
+            top: 13px;
+        }
+    }
+
+    .style_guide_fonts {
+        overflow: hidden;
+    }
+
+    .ui-state-active {
+        background: white;
+    }
+
+    ul.ui-tabs-nav {
+        border-bottom: 1px solid black;
+        border-radius: 0;
+        & > li {
+          display: inline-block;
+        }
+    }
+
+    .data_grid {
+      height: 200px;
+    }
 }

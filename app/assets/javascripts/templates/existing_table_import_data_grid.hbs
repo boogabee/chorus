@@ -1,0 +1,13 @@
+<div class="grid"></div>
+
+<div class="menu_content hidden">
+    <ul>
+        {{#each destinationColumns}}
+            <li name={{name}}>
+                <div class="check_wrapper"><span class="check hidden"></span></div>
+                <a class="name" href="#" title="{{name}}">{{name}}</a><span class="count"/>
+                <span class="type">{{type}}</span>
+            </li>
+        {{/each}}
+    </ul>
+</div>

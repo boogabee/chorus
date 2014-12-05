@@ -1,10 +1,10 @@
 require 'spec_helper'
 
-describe ChorusViewsController, :database_integration => true do
-  let(:gpdb_instance) { GpdbIntegration.real_gpdb_instance }
-  let(:account) { gpdb_instance.owner_account }
+describe ChorusViewsController, :greenplum_integration do
+  let(:gpdb_data_source) { GreenplumIntegration.real_data_source }
+  let(:account) { gpdb_data_source.owner_account }
   let(:user) { account.owner }
-  let(:database) { GpdbIntegration.real_database }
+  let(:database) { GreenplumIntegration.real_database }
   let(:schema) { database.schemas.find_by_name('test_schema') }
   let(:workspace) { workspaces(:public) }
   let(:dataset) { datasets(:table) }
@@ -14,7 +14,7 @@ describe ChorusViewsController, :database_integration => true do
     log_in user
   end
 
-  context "#create" do
+  describe "#create" do
     context "when creating a chorus view from a dataset" do
       let(:options) {
         HashWithIndifferentAccess.new(
@@ -27,13 +27,23 @@ describe ChorusViewsController, :database_integration => true do
         )
       }
 
-      it "creates a chorus view" do
+      it "uses authorization" do
+        mock(controller).authorize!(:can_edit_sub_objects, workspace)
         post :create, options
+      end
 
-        chorus_view = Dataset.chorus_views.last
+      it "creates a chorus view" do
+        expect {
+          post :create, options
+        }.to change { GpdbDataset.chorus_views.count }.by(1)
+
+        chorus_view = GpdbDataset.chorus_views.last
         chorus_view.name.should == "my_chorus_view"
-        workspace.bound_datasets.should include(chorus_view)
+        chorus_view.workspace.should == workspace
+      end
 
+      it "presents the new Chorus View" do
+        post :create, options
         response.code.should == "201"
         decoded_response[:query].should == "Select * from base_table1"
         decoded_response[:schema][:id].should == schema.id
@@ -68,12 +78,17 @@ describe ChorusViewsController, :database_integration => true do
         )
       }
 
+      it "uses authorization" do
+        mock(controller).authorize!(:can_edit_sub_objects, workspace)
+        post :create, options
+      end
+
       it "creates a chorus view" do
         post :create, options
 
-        chorus_view = Dataset.chorus_views.last
+        chorus_view = GpdbDataset.chorus_views.last
         chorus_view.name.should == "my_chorus_view"
-        workspace.bound_datasets.should include(chorus_view)
+        chorus_view.workspace.should == workspace
 
         response.code.should == "201"
         decoded_response[:query].should == "Select * from base_table1"
@@ -114,22 +129,57 @@ describe ChorusViewsController, :database_integration => true do
     end
   end
 
-  describe "#update" do
-    let(:chorus_view) do
-      datasets(:chorus_view).tap { |c|
-        c.schema = schema
-        c.query = "select 1;"
-        c.save!
-      }
+  describe "#duplicate" do
+    let(:chorus_view) { datasets(:executable_chorus_view) }
+
+    let(:options) { { :id => chorus_view.id, :object_name => 'duplicate_chorus_view' } }
+
+    it "duplicate the chorus view" do
+      expect { post :duplicate, options }.to change(GpdbDataset.chorus_views, :count).by(1)
+
+      new_chorus_view = GpdbDataset.chorus_views.last
+      new_chorus_view.name.should == "duplicate_chorus_view"
+      chorus_view.workspace.source_datasets.should_not include(new_chorus_view)
+
+      response.code.should == "201"
+      decoded_response[:query].should == chorus_view.query
+      decoded_response[:schema][:id].should == schema.id
+      decoded_response[:object_name].should == "duplicate_chorus_view"
+      decoded_response[:workspace][:id].should == workspace.id
     end
+
+    it "uses authorization" do
+      mock(controller).authorize!(:can_edit_sub_objects, workspace)
+      post :duplicate, options
+    end
+
+    it "creates an event" do
+      post :duplicate, options
+
+      new_chorus_view = GpdbDataset.chorus_views.last
+
+      the_event = Events::Base.last
+      the_event.action.should == "ChorusViewCreated"
+      the_event.source_object.id.should == chorus_view.id
+      the_event.source_object.should be_a(ChorusView)
+      the_event.workspace.id.should == workspace.id
+      the_event.dataset.id.should == new_chorus_view.id
+    end
+  end
+
+  describe "#update" do
+    let(:chorus_view) { datasets(:executable_chorus_view) }
 
     let(:options) do
       {
         :id => chorus_view.to_param,
-        :workspace_dataset => {
-            :query => 'select 2;'
-        }
+        :query => 'select 2;'
       }
+    end
+
+    it "uses authorization" do
+      mock(controller).authorize!(:can_edit_sub_objects, workspace)
+      put :update, options
     end
 
     it "updates the definition of chorus view" do
@@ -164,8 +214,11 @@ describe ChorusViewsController, :database_integration => true do
   end
 
   describe "#destroy" do
-    let(:chorus_view) do
-      datasets(:chorus_view).tap { |c| c.schema = schema }
+    let(:chorus_view) { datasets(:chorus_view) }
+
+    it "uses authorization" do
+      mock(controller).authorize!(:can_edit_sub_objects, workspace)
+      delete :destroy, :id => chorus_view.to_param
     end
 
     it "lets a workspace member soft delete a chorus view" do
@@ -174,30 +227,6 @@ describe ChorusViewsController, :database_integration => true do
       chorus_view.reload.deleted?.should be_true
     end
 
-    it "deletes the workspace association" do
-      AssociatedDataset.find_by_dataset_id(chorus_view.id).should_not be_nil
-      delete :destroy, :id => chorus_view.to_param
-      response.should be_success
-      AssociatedDataset.find_by_dataset_id(chorus_view.id).should be_nil
-    end
-
-    it "deletes any imports from that chorus view" do
-      ImportSchedule.create!({
-         :start_datetime => '2012-09-04 23:00:00-07',
-         :end_date => '2012-12-04',
-         :frequency => 'weekly',
-         :workspace_id => workspace.id,
-         :to_table => "new_table_for_import",
-         :source_dataset_id => chorus_view.id,
-         :truncate => 't',
-         :new_table => 't',
-         :user_id => user.id} , :without_protection => true)
-
-      ImportSchedule.find_by_source_dataset_id(chorus_view.id).should_not be_nil
-      delete :destroy, :id => chorus_view.to_param
-      response.should be_success
-      ImportSchedule.find_by_source_dataset_id(chorus_view.id).should be_nil
-    end
   end
 
   describe "#convert" do
@@ -206,38 +235,37 @@ describe ChorusViewsController, :database_integration => true do
     end
 
     before do
-      Gpdb::ConnectionBuilder.connect!(gpdb_instance, account, database.name) do |connection|
-        connection.exec_query("DROP VIEW IF EXISTS \"test_schema\".\"Gretchen\"")
-      end
       chorus_view.schema = schema
       chorus_view.save!
     end
 
+    after do
+      schema.connect_with(account).execute("DROP VIEW IF EXISTS \"test_schema\".\"Gretchen\"")
+    end
+
+    it "uses authorization" do
+      mock(controller).authorize!(:can_edit_sub_objects, chorus_view.workspace)
+      post :convert, :id => chorus_view.to_param, :object_name => "Gretchen", :workspace_id => workspace.id
+    end
 
     context "When there is no error in creation" do
-
-      after do
-        Gpdb::ConnectionBuilder.connect!(gpdb_instance, account, database.name) do |connection|
-          connection.exec_query("DROP VIEW IF EXISTS \"test_schema\".\"Gretchen\"")
-        end
-      end
-
       it "creates a database view" do
         expect {
           post :convert, :id => chorus_view.to_param, :object_name => "Gretchen", :workspace_id => workspace.id
+          response.should be_success
         }.to change(GpdbView, :count).by(1)
-
-        response.should be_success
       end
 
       it "creates an event" do
-        post :convert, :id => chorus_view.to_param, :object_name => "Gretchen", :workspace_id => workspace.id
+        expect {
+          post :convert, :id => chorus_view.to_param, :object_name => "Gretchen", :workspace_id => workspace.id
+        }.to change(Events::Base, :count).by(1)
 
         the_event = Events::Base.last
         the_event.action.should == "ViewCreated"
         the_event.source_dataset.id.should == chorus_view.id
         the_event.source_dataset.should be_a(Dataset)
-        the_event.workspace.id.should == workspace.id
+        the_event.workspace.id.should == chorus_view.workspace.id
       end
     end
 
@@ -250,7 +278,7 @@ describe ChorusViewsController, :database_integration => true do
       it "raises an Error" do
         expect {
           post :convert, :id => chorus_view.to_param, :object_name => "Gretchen", :workspace_id => workspace.id
-        }.to change(GpdbView, :count).by(0)
+        }.to_not change(GpdbView, :count)
 
         response.should_not be_success
       end
@@ -258,21 +286,13 @@ describe ChorusViewsController, :database_integration => true do
 
     context "when database view already exists" do
       before do
-        Gpdb::ConnectionBuilder.connect!(gpdb_instance, account, database.name) do |connection|
-          connection.exec_query("CREATE VIEW \"test_schema\".\"Gretchen\" AS SELECT 1")
-        end
-      end
-
-      after do
-        Gpdb::ConnectionBuilder.connect!(gpdb_instance, account, database.name) do |connection|
-          connection.exec_query("DROP VIEW IF EXISTS \"test_schema\".\"Gretchen\"")
-        end
+        schema.connect_with(account).create_view("Gretchen", "SELECT 1")
       end
 
       it "raises an Error" do
         expect {
           post :convert, :id => chorus_view.to_param, :object_name => "Gretchen", :workspace_id => workspace.id
-        }.to change(GpdbView, :count).by(0)
+        }.to_not change(GpdbView, :count)
 
         response.should_not be_success
       end

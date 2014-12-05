@@ -1,0 +1,1 @@
+class PgDataSourcePresenter < GpdbDataSourcePresenter; end

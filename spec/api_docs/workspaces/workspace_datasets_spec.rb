@@ -9,11 +9,21 @@ resource "Workspaces" do
 
   before do
     log_in user
-    stub(Dataset).refresh.with_any_args { |account, schema, options| schema.datasets }
+    any_instance_of(Schema) do |schema|
+      stub(schema).refresh_datasets.with_any_args { workspace.sandbox.datasets }
+      stub(schema).dataset_count.with_any_args { workspace.sandbox.datasets.count }
+    end
   end
 
   get "/workspaces/:workspace_id/datasets" do
+    before do
+      any_instance_of(HdfsDataset) do |ds|
+        stub(ds).contents { ["content"] }
+      end
+    end
     parameter :workspace_id, "Id of a workspace"
+    parameter :type, "Specific type of datasets (SANDBOX_TABLE, SANDBOX_DATASET, CHORUS_VIEW, SOURCE_TABLE, NON_CHORUS_VIEW)"
+    parameter :database_id, "Id of a database (Results will be scoped to this database)"
 
     required_parameters :workspace_id
     pagination
@@ -24,6 +34,15 @@ resource "Workspaces" do
   end
 
   get "/workspaces/:workspace_id/datasets/:id" do
+    before do
+      any_instance_of(GpdbTable) do |table|
+        stub(table).verify_in_source { true }
+      end
+      any_instance_of(GpdbSchema) do |schema|
+        stub(schema).verify_in_source { true }
+      end
+    end
+
     parameter :workspace_id, "Id of a workspace"
     parameter :id, "Id of a dataset"
 
@@ -38,21 +57,36 @@ resource "Workspaces" do
 
   post "/workspaces/:workspace_id/datasets" do
     parameter :workspace_id, "Id of the workspace with which to associate the datasets"
-    parameter :dataset_ids, "Comma-delimited list of dataset Ids to associate with the workspace"
+    parameter :'dataset_ids[]', "Dataset Id to associate with the workspace, can be specified multiple times"
 
-    required_parameters :workspace_id, :dataset_ids
+    required_parameters :workspace_id, :'dataset_ids[]'
 
     before do
-      workspace.sandbox = gpdb_schemas(:searchquery_schema)
+      workspace.sandbox = schemas(:searchquery_schema)
       workspace.save
     end
 
     let(:view) { datasets(:view) }
     let(:table) { datasets(:table) }
-    let(:dataset_ids) { view.to_param + "," + table.to_param }
 
-    example_request "Associate a list of non-sandbox datasets with the workspace" do
+    example "Associate a list of non-sandbox datasets with the workspace" do
+      do_request(:dataset_ids => [table.to_param, view.to_param])
       status.should == 201
+    end
+  end
+
+  delete "/workspaces/:workspace_id/datasets" do
+    parameter :workspace_id, "Id of the workspace from which the datasets will be disassociated from"
+    parameter :'dataset_ids[]', "Dataset Id to disassociate from the workspace, can be specified multiple times"
+
+    required_parameters :workspace_id, :'dataset_ids[]'
+
+    let(:source_table) { datasets(:source_table) }
+    let(:other_table) { datasets(:other_table) }
+
+    example "Disassociate a list of non-sandbox datasets with the workspace" do
+      do_request(:dataset_ids => [source_table.to_param, other_table.to_param])
+      status.should == 200
     end
   end
 

@@ -10,18 +10,28 @@ describe Kaggle::MessagesController, :kaggle_api => true do
   describe "#create" do
     let(:params) { {
         "reply_to" => "chorusadmin@example.com",
-        "html_body" => "Example Body",
+        "html_body" => "Example Body\nwith two lines",
         "subject" => "Example Subject",
         "recipient_ids" => ["6732"],
         "workspace_id" => "1"
     } }
-    it_behaves_like "an action that requires authentication", :post, :create
+    it_behaves_like "an action that requires authentication", :post, :create, :workspace_id => '-1'
 
-    it "returns 200 when the message sends" do
-      mock(Kaggle::API).send_message(satisfy {|arg| arg.values.select{|v| !v.nil? }.length == 5})
+    it "returns 201 when the message sends" do
+      mock(Kaggle::API).send_message(
+          hash_including('replyTo' => 'chorusadmin@example.com',
+                         'userId' => ['6732'],
+                         'subject' => 'Example Subject',
+                         'apiKey' => ChorusConfig.instance['kaggle.api_key']
+       ))
 
       post :create, params
       response.should be_success
+    end
+
+    it "formats the message to appear correctly in emails" do
+      mock(Kaggle::API).send_message(hash_including('htmlBody' => 'Example Body<br>with two lines'))
+      post :create, params
     end
 
     context 'when the message send fails' do

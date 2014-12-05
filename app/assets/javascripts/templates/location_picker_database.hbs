@@ -1,0 +1,20 @@
+<div class="header_container">
+    {{#if allowCreate}}
+    <a class="new hidden" href="">{{t "sandbox.new.database"}}</a>
+    {{/if}}
+    <label class="required">{{t "sandbox.select.database"}}</label>
+</div>
+<div class="loading_text hidden">
+    <span class="loading_spinner"></span>
+</div>
+
+<div class="unavailable">{{t "sandbox.unavailable.database"}}</div>
+<div class="select_container">
+    <select class="full_dialog_horizontal" name="database"></select>
+</div>
+{{#if allowCreate}}
+<div class="create_container hidden">
+    <input class="name" name="databaseName" maxlength="63" placeholder="{{t "sandbox.database.name.placeholder"}}"></input>
+    <a class="cancel" href="#">{{t "actions.cancel"}}</a>
+</div>
+{{/if}}

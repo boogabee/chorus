@@ -1,9 +1,9 @@
 describe("chorus.views.NotificationRecipient", function() {
     beforeEach(function() {
-        this.user1 = rspecFixtures.user({ firstName: "Aaron", lastName: "Jenkins"});
-        this.user2 = rspecFixtures.user({ firstName: "Bob", lastName: "Jenkins"});
-        this.user3 = rspecFixtures.user({ firstName: "Matt", lastName: "Jenkins"});
-        this.loggedInUser = rspecFixtures.user({ firstName: "Xavier", lastName: "Jenkins"});
+        this.user1 = backboneFixtures.user({ firstName: "Aaron", lastName: "Jenkins"});
+        this.user2 = backboneFixtures.user({ firstName: "Bob", lastName: "Jenkins"});
+        this.user3 = backboneFixtures.user({ firstName: "Matt", lastName: "Jenkins"});
+        this.loggedInUser = backboneFixtures.user({ firstName: "Xavier", lastName: "Jenkins"});
         setLoggedInUser({ id: this.loggedInUser.get("id") });
 
         this.users = new chorus.collections.UserSet([
@@ -61,6 +61,18 @@ describe("chorus.views.NotificationRecipient", function() {
             });
 
             context("when a user is selected", function() {
+                function itHasOnlyTheFirstUser() {
+                    it("has an entry with that user in the picked_users list", function() {
+                        expect(this.view.$(".picked_users li").length).toBe(1);
+                        expect(this.view.$(".picked_users li:eq(0) .name")).toContainText(this.user1.displayName());
+                    });
+
+                    it("returns an array containing only that user's ID", function() {
+                        expect(this.view.getPickedUsers().length).toBe(1);
+                        expect(this.view.getPickedUsers()).toContain(this.user1.id.toString());
+                    });
+                }
+
                 beforeEach(function() {
                     this.oldSelectableUserCount = this.view.$("select option").length - 1;
                     spyOn(chorus, "styleSelect");
@@ -140,7 +152,7 @@ describe("chorus.views.NotificationRecipient", function() {
                             });
 
                             it("shows the select control", function() {
-                                expect(this.view.$(".ui-selectmenu.users")).not.toHaveClass("hidden")
+                                expect(this.view.$(".ui-selectmenu.users")).not.toHaveClass("hidden");
                             });
                         });
                     });
@@ -159,18 +171,6 @@ describe("chorus.views.NotificationRecipient", function() {
                         expect(this.view.getPickedUsers().length).toBe(0);
                     });
                 });
-
-                function itHasOnlyTheFirstUser() {
-                    it("has an entry with that user in the picked_users list", function() {
-                        expect(this.view.$(".picked_users li").length).toBe(1);
-                        expect(this.view.$(".picked_users li:eq(0) .name")).toContainText(this.user1.displayName());
-                    });
-
-                    it("returns an array containing only that user's ID", function() {
-                        expect(this.view.getPickedUsers().length).toBe(1);
-                        expect(this.view.getPickedUsers()).toContain(this.user1.id.toString());
-                    });
-                }
             });
         });
     });

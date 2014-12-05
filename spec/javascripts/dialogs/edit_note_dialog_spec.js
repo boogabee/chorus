@@ -1,15 +1,15 @@
 describe("chorus.dialogs.EditNote", function() {
     beforeEach(function() {
+        unstubClEditor();
         this.text = "Hi i'm a friendly text";
-        this.note = rspecFixtures.activity.noteOnGreenplumInstanceCreated({
+        this.note = backboneFixtures.activity.noteOnGreenplumDataSource({
             body: this.text
         });
-        this.note.collection = chorus.collections.ActivitySet.forDashboard();
+        this.note.collection = new chorus.collections.ActivitySet([]);
         this.dialog = new chorus.dialogs.EditNote({ activity: this.note });
         $('#jasmine_content').append(this.dialog.el);
 
         spyOn(this.dialog, "makeEditor").andCallThrough();
-        stubDefer();
 
         this.dialog.render();
     });
@@ -20,7 +20,7 @@ describe("chorus.dialogs.EditNote", function() {
 
     context("when the activity is an insight", function() {
         beforeEach(function() {
-            this.note = fixtures.activities.INSIGHT_CREATED({ workspace: { id: '2' }});
+            this.note = backboneFixtures.activity.insightOnGreenplumDataSource();
             this.dialog = new chorus.dialogs.EditNote({ activity: this.note });
             $('#jasmine_content').append(this.dialog.el);
             this.dialog.render();
@@ -43,12 +43,12 @@ describe("chorus.dialogs.EditNote", function() {
     it("makes a cl editor with toolbar", function() {
         expect(this.dialog.$('.toolbar')).toExist();
         expect(this.dialog.makeEditor).toHaveBeenCalled();
-        var editorArgs = this.dialog.makeEditor.mostRecentCall.args;
+        var editorArgs = this.dialog.makeEditor.lastCall().args;
 
         expect(editorArgs[0]).toBe(this.dialog.el);
         expect(editorArgs[1]).toBe(".toolbar");
         expect(editorArgs[2]).toBe("body");
-        expect(editorArgs[3]).toEqual({ width : 566, height : 150, controls : 'bold italic | bullets numbering | link unlink' });
+        expect(editorArgs[3]).toEqual({ width : 'auto', height : 150, controls : 'bold italic | bullets numbering | link unlink' });
     });
 
     describe("submitting the form with a blank body", function() {
@@ -64,7 +64,7 @@ describe("chorus.dialogs.EditNote", function() {
             this.dialog.$("textarea").val("<br>");
             this.dialog.$("button.submit").click();
 
-            expect(this.dialog.model.errors.body).toEqual("Note is required")
+            expect(this.dialog.model.errors.body).toEqual("Note is required");
             expect(this.dialog.$(".cleditorMain")).toHaveClass("has_error");
         });
 
@@ -72,7 +72,7 @@ describe("chorus.dialogs.EditNote", function() {
             this.dialog.$("textarea").val("&nbsp;&nbsp;");
             this.dialog.$("button.submit").click();
 
-            expect(this.dialog.model.errors.body).toEqual("Note is required")
+            expect(this.dialog.model.errors.body).toEqual("Note is required");
             expect(this.dialog.$(".cleditorMain")).toHaveClass("has_error");
         });
 
@@ -81,7 +81,7 @@ describe("chorus.dialogs.EditNote", function() {
             this.dialog.$("textarea").val("                     ");
             this.dialog.$("button.submit").click();
 
-            expect(this.dialog.model.errors.body).toEqual("Note is required")
+            expect(this.dialog.model.errors.body).toEqual("Note is required");
             expect(this.dialog.$(".cleditorMain")).toHaveClass("has_error");
         });
     });
@@ -96,27 +96,28 @@ describe("chorus.dialogs.EditNote", function() {
         it("starts a spinner", function() {
             expect(this.dialog.$("button.submit").isLoading()).toBeTruthy();
             expect(this.dialog.$("button.submit").text()).toContainTranslation("actions.saving");
-        })
+        });
 
         it("updates the note correctly", function() {
             var note = this.note.toNote();
             expect(note).toHaveBeenUpdated();
             var update = this.server.lastUpdateFor(note);
-            expect(update.params()["note[body]"]).toBe("Agile, meet big data. Let's pair.");
+            expect(update.json()["note"]["body"]).toBe("Agile, meet big data. Let's pair.");
         });
 
-        describe("when the put completes successfully", function() {
+        describe("when the save completes successfully", function() {
             beforeEach(function() {
-                spyOn(this.dialog, "closeModal")
+                spyOn(this.dialog, "closeModal");
+                spyOn(chorus.PageEvents, "trigger");
                 this.server.lastUpdate().succeed();
-            });
-
-            it("removes the spinner from the button", function() {
-                expect($.fn.stopLoading).toHaveBeenCalledOnSelector("button.submit")
             });
 
             it("closes the dialog", function() {
                 expect(this.dialog.closeModal).toHaveBeenCalled();
+            });
+
+            it('triggers the note:saved event', function() {
+                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith('note:saved', this.dialog.model);
             });
         });
 
@@ -129,10 +130,10 @@ describe("chorus.dialogs.EditNote", function() {
 
             it("does not close the dialog box", function() {
                 expect(this.dialog.closeModal).not.toHaveBeenCalled();
-            })
+            });
 
             it("removes the spinner from the button", function() {
-                expect($.fn.stopLoading).toHaveBeenCalledOnSelector("button.submit")
+                expect($.fn.stopLoading).toHaveBeenCalledOnSelector("button.submit");
             });
         });
     });

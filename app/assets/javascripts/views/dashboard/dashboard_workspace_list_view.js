@@ -6,7 +6,11 @@ chorus.views.DashboardWorkspaceList = chorus.views.Base.extend({
     useLoadingSection: true,
 
     setup: function() {
-        chorus.PageEvents.subscribe("insight:promoted", this.fetchWorkspaces, this);
+        this.subscribePageEvent("insight:promoted", this.fetchWorkspaces);
+        this.subscribePageEvent("insight:demoted", this.fetchWorkspaces);
+        this.subscribePageEvent("note:deleted", this.fetchWorkspaces);
+        this.subscribePageEvent("comment:added", this.fetchWorkspaces);
+        this.subscribePageEvent("comment:deleted", this.fetchWorkspaces);
     },
 
     fetchWorkspaces: function() {
@@ -24,14 +28,14 @@ chorus.views.DashboardWorkspaceList = chorus.views.Base.extend({
                 insightCountString = t("dashboard.workspaces.recent_comments_and_insights", {
                     recent_comments: t("dashboard.workspaces.recent_comments", {count: numComments}),
                     recent_insights: t("dashboard.workspaces.recent_insights", {count: numInsights})
-                })
+                });
             } else {
-                insightCountString = t("dashboard.workspaces.recent_comments", {count: numComments})
+                insightCountString = t("dashboard.workspaces.recent_comments", {count: numComments});
             }
         } else if (numInsights > 0) {
-            insightCountString = t("dashboard.workspaces.recent_insights", {count: numInsights})
+            insightCountString = t("dashboard.workspaces.recent_insights", {count: numInsights});
         } else {
-            insightCountString = t("dashboard.workspaces.no_recent_comments_or_insights")
+            insightCountString = t("dashboard.workspaces.no_recent_comments_or_insights");
         }
 
         return {
@@ -43,7 +47,7 @@ chorus.views.DashboardWorkspaceList = chorus.views.Base.extend({
                 timestamp: comments[0].get("timestamp"),
                 author: comments[0].author().displayName()
             }
-        }
+        };
     },
 
     cleanupCommentLists: function() {
@@ -93,7 +97,7 @@ chorus.views.DashboardWorkspaceList = chorus.views.Base.extend({
 
             var li = this.$("li[data-id=" + workspace.get("id") + "]");
             this.lis.push(li);
-            li.find(".comment .count").qtip({
+            li.find(".comment .count.nonzero").qtip({
                 content: el,
                 show: {
                     event: 'mouseover',

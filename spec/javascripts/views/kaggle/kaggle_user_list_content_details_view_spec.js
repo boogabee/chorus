@@ -1,6 +1,6 @@
 describe("chorus.views.KaggleUserListContentDetails", function () {
     beforeEach(function () {
-        this.collection = rspecFixtures.kaggleUserSet();
+        this.collection = backboneFixtures.kaggleUserSet();
         this.view = new chorus.views.KaggleUserListContentDetails({collection:this.collection});
     });
 

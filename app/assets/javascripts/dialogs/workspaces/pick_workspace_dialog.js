@@ -1,6 +1,4 @@
 chorus.dialogs.PickWorkspace = chorus.dialogs.PickItems.extend({
-    constructorName: "PickWorkspace",
-
     title: t("dataset.associate.title.one"),
     constructorName: "PickWorkspaceDialog",
     submitButtonTranslationKey: "dataset.associate.button.one",
@@ -9,21 +7,9 @@ chorus.dialogs.PickWorkspace = chorus.dialogs.PickItems.extend({
     selectedEvent: 'files:selected',
     modelClass: "Workspace",
 
-    setup: function() {
-        this._super("setup");
-    },
-
-    additionalContext: function() {
-        var ctx = this._super("additionalContext", arguments);
-
-        return _.extend(ctx, {
-            serverErrors: this.serverErrors
-        });
-    },
-
     makeModel: function() {
         this.pageModel = this.options.pageModel;
-        this.collection = this.collection || this.defaultWorkspaces();
+        this.collection = new chorus.collections.FilteringCollection(null, {collection: this.defaultWorkspaces()});
         this.collection.fetchAll();
     },
 

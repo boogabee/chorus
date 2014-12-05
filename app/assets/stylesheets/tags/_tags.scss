@@ -1,0 +1,136 @@
+.tags_input {
+    border: 1px solid $border-color;
+    background-color: #FFFFFF;
+    padding: 3px;
+    padding-bottom: 0;
+
+    .text-core {
+        width: 100%;
+
+        .text-wrap {
+            width: 100%;
+
+            input {
+                display: inline-block;
+                width: 200px;
+                border: 0;
+                margin: 0 0 0 5px;
+                padding: 0;
+                vertical-align: top;
+                min-height: 20px;
+            }
+
+            input.has_error {
+                padding-right: 20px;
+            }
+
+            textarea.borderless {
+                border: none;
+            }
+
+            .tag_editor {
+                line-height: 16px;
+                font-size: 13px;
+            }
+
+            .text-tags {
+                line-height: 16px;
+            }
+
+            .text-tags .text-tag {
+                display: inline-block;
+                max-width: 100%;
+
+                div.text-button {
+                    background-color: #3096DE;
+                    padding-left: 10px;
+                    padding-right: 17px;
+                    padding-bottom: 3px;
+                    max-width: 100%;
+                    color: #FFF;
+
+                    .text-label {
+                        vertical-align: middle;
+                        padding-right: 5px;
+                        word-wrap: break-word;
+                        max-width: 100%;
+                        font-size: 12px;
+                        font-weight: $semibold;
+                    }
+
+                    .transition-border {
+                        border-left: 1px solid #1174B7;
+                        border-right: 1px solid #59B1F1;
+                        position: absolute;
+                        width: 0;
+                        right: 15px;
+                        top: 0;
+                        bottom: 0;
+                    }
+
+                    .text-remove {
+                        color: #FFF;
+                        position: absolute;
+                        top: 0;
+                        bottom: 0;
+                        right: 1px;
+                        line-height: 19px;
+                        padding: 0 4px;
+                        font-size: 10px;
+                    }
+                }
+            }
+
+            .text-dropdown {
+                border: 1px solid $type-ahead-result-border-color;
+                font: inherit;
+                font-size: 12px;
+                font-weight: $semibold;
+
+                .text-list {
+                    .text-suggestion {
+                        padding: 6px 10px;
+
+                        &.text-selected {
+                            background: $picklist-selected-background-color;
+                        }
+                        .create_new {
+                            font-style: italic;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    .arrow_left {
+        display: inline-block;
+        background-color: #fff;
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 7px;
+    }
+
+    .tag-list {
+        div {
+            display: inline-block;
+            position: relative;
+            margin: 2px 2px;
+            max-width: 100%;
+
+            span.text-label {
+                display: inline-block;
+                font-size: 12px;
+                font-weight: $semibold;
+                color: #FFF;
+                background-color: #3096DE;
+                padding: 0 10px;
+                line-height: 20px;
+                word-wrap: break-word;
+                max-width: 100%;
+            }
+        }
+    }
+}

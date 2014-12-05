@@ -12,5 +12,12 @@ chorus.views.SubNav = chorus.views.Base.extend({
 
         var selected = this.$("li." + this.options.tab);
         selected.addClass("selected");
+    },
+
+    additionalContext: function() {
+        return {
+            limitMilestones: chorus.models.Config.instance().license().limitMilestones(),
+            limitJobs: chorus.models.Config.instance().license().limitJobs()
+        };
     }
 });

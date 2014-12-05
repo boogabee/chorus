@@ -5,9 +5,9 @@ describe("chorus.dialogs.KaggleInsertDatasetSchemaPicker", function() {
         dialog = new chorus.dialogs.KaggleInsertDatasetSchema({ workspaceId : "33" });
         datasets = new chorus.collections.WorkspaceDatasetSet([], {workspaceId: "33" });
         datasetModels = [
-                            newFixtures.workspaceDataset.sandboxTable({ objectName: "A", columns: 42, id: "REAL_ID" }),
-                            newFixtures.workspaceDataset.chorusView({ objectName: "B", columns: 666, id: "AGENT_SMITH" })
-                        ];
+            backboneFixtures.workspaceDataset.datasetTable({ objectName: "A", id: "REAL_ID" }),
+            backboneFixtures.workspaceDataset.chorusView({ objectName: "B", id: "AGENT_SMITH" })
+        ];
     });
 
     describe("#render", function() {

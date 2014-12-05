@@ -1,19 +1,20 @@
 describe("chorus.collections.CsvHdfsFileSet", function () {
     beforeEach(function() {
         this.collection = new chorus.collections.CsvHdfsFileSet([
-            fixtures.hdfsEntryFileJson(),
-            fixtures.hdfsEntryDirJson(),
-            fixtures.hdfsEntryBinaryFileJson()
-        ], { id: 123, hadoopInstance: {id: 1}});
+            backboneFixtures.hdfsFile().attributes,
+            backboneFixtures.hdfsDir().attributes,
+            backboneFixtures.hdfsFile().attributes
+        ], { id: 123, hdfsDataSource: {id: 1}});
     });
 
     it("use the correct url", function() {
-        expect(this.collection.url()).toMatchUrl("/hadoop_instances/1/files/123", {paramsToIgnore: ["page", "per_page"]})
+        expect(this.collection.url()).toMatchUrl("/hdfs_data_sources/1/files/?id=123", {paramsToIgnore: ["page", "per_page"]});
     });
 
-    describe("#filesOnly", function () {
-        it("returns only hdfs files", function() {
-            expect(this.collection.filesOnly().length).toBe(2);
+    describe("#removeDirectories", function () {
+        it("removes directories, leaving only files", function() {
+            this.collection.removeDirectories();
+            expect(this.collection.length).toBe(2);
         });
     });
 });

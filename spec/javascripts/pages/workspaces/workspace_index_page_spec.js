@@ -1,18 +1,18 @@
 describe("chorus.pages.WorkspaceIndexPage", function() {
     beforeEach(function() {
-        this.workspaces = rspecFixtures.workspaceSet();
+        this.workspaces = backboneFixtures.workspaceSet();
         this.page = new chorus.pages.WorkspaceIndexPage();
     });
 
     describe("#initialize", function() {
         it("has a helpId", function() {
-            expect(this.page.helpId).toBe("workspaces")
-        })
+            expect(this.page.helpId).toBe("workspaces");
+        });
 
         it("has a sidebar", function() {
             expect(this.page.sidebar).toBeA(chorus.views.WorkspaceListSidebar);
         });
-    })
+    });
 
     describe("#render", function() {
         beforeEach(function() {
@@ -21,38 +21,37 @@ describe("chorus.pages.WorkspaceIndexPage", function() {
 
         describe("when the collection is loading", function() {
             it("should have a loading element", function() {
-                expect(this.page.$(".loading")).toExist();
+                expect(this.page.$(".loading_section")).toExist();
             });
 
             it("has a header", function() {
                 expect(this.page.$("h1")).toExist();
-            })
+            });
         });
 
         describe("when the collection is loaded", function() {
             beforeEach(function() {
                 chorus.bindModalLaunchingClicks(this.page);
-                this.server.completeFetchFor(this.page.collection)
+                this.server.completeFetchFor(this.page.collection, this.workspaces.models);
             });
 
-            it("creates a WorkspaceList view", function() {
-                expect(this.page.$(".workspace_list")).toExist();
+            it("passes the multiSelect option to the list content details", function() {
+                expect(this.page.mainContent.contentDetails.options.multiSelect).toBeTruthy();
             });
 
-            it("displays an 'add workspace' button", function() {
-                expect(this.page.$("button:contains('Create Workspace')")).toExist();
-            });
+            itBehavesLike.aPageWithPrimaryActions([{name: 'create_workspace', target: chorus.dialogs.WorkspacesNew}]);
 
             describe("when the workspace:selected event is triggered on the list view", function() {
                 beforeEach(function() {
-                    expect(this.page.model).toBeUndefined();
-                    chorus.PageEvents.broadcast("workspace:selected", this.page.collection.at(0));
+                    chorus.PageEvents.trigger("workspace:selected", this.page.collection.at(3));
                 });
 
                 it("sets the model of the page", function() {
-                    expect(this.page.model).toBe(this.page.collection.at(0));
-                })
+                    expect(this.page.model).toBe(this.page.collection.at(3));
+                });
             });
+
+            itBehavesLike.aPageWithMultiSelect();
         });
     });
 

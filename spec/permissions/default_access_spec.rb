@@ -14,6 +14,30 @@ describe DefaultAccess do
     end
   end
 
+  describe "#owner?" do
+    let(:object) { Object.new }
+
+    context "when you are the owner of an object" do
+      before do
+        stub(object).owner { user }
+      end
+
+      it "should allow access" do
+        access.owner?(object).should be_true
+      end
+    end
+
+    context "when you are not the owner of an object" do
+      before do
+        stub(object).owner { users(:the_collaborator) }
+      end
+
+      it "should prevent access" do
+        access.owner?(object).should be_false
+      end
+    end
+  end
+
   describe "#access_for(model)" do
     context "when there is an access class for the given model" do
       it "returns an access class for that model" do

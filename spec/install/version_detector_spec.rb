@@ -1,3 +1,4 @@
+require 'minimal_spec_helper'
 require_relative "../../packaging/install/version_detector"
 require 'fakefs/spec_helpers'
 
@@ -7,8 +8,8 @@ describe VersionDetector do
   let(:detector) { described_class.new(destination_path) }
   let(:destination_path) { '/opt/chorus' }
 
-  describe "#can_upgrade_legacy?" do
-    subject { detector.can_upgrade_legacy? }
+  describe "#check_for_legacy!" do
+    subject { detector.check_for_legacy! }
 
     context "when the currently installed version is 2.2" do
       before do
@@ -26,7 +27,9 @@ describe VersionDetector do
         end
       end
 
-      it { should be_true }
+      it "should raise upgrade to 2.2 required" do
+        expect { subject }.to raise_error(InstallerErrors::InstallAborted, /Chorus must be upgraded to 2.2 before it can be upgraded to 2.3/)
+      end
     end
 
     context "when the currently installed version is 2.0" do
@@ -38,7 +41,7 @@ describe VersionDetector do
       end
 
       it "should raise upgrade_to_2_1_required" do
-        expect { subject }.to raise_error(InstallerErrors::InstallAborted, /Chorus must be upgraded to 2.1 before it can be upgraded to 2.2/)
+        expect { subject }.to raise_error(InstallerErrors::InstallAborted, /Chorus must be upgraded to 2.1 before it can be upgraded to 2.3/)
       end
     end
 
@@ -60,8 +63,8 @@ describe VersionDetector do
     end
   end
 
-  describe "#can_upgrade_2_2?" do
-    subject { detector.can_upgrade_2_2? version }
+  describe "#can_upgrade?" do
+    subject { detector.can_upgrade? version }
     let(:version) { '2.2.0.1-8840ae71c' }
 
     context "when the most recent installed version is more recent" do

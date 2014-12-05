@@ -11,7 +11,7 @@ chorus.dialogs.WorkfileNewVersion = chorus.dialogs.Base.extend({
     },
 
     setup:function () {
-        this.bindings.add(this.model, "saved", this.saved);
+        this.listenTo(this.model, "saved", this.saved);
     },
 
     makeModel:function () {
@@ -22,12 +22,11 @@ chorus.dialogs.WorkfileNewVersion = chorus.dialogs.Base.extend({
     saveWorkfileNewVersion:function (e) {
         e.preventDefault();
         this.$("button.submit").startLoading("actions.saving");
-        this.model.set({"commitMessage":this.$("[name=commitMessage]").val()}, {silent:true});
-        this.model.saveAsNewVersion();
+        this.model.set({"commitMessage": _.escape(this.$("[name=commitMessage]").val())}, {silent:true});
+        this.model.save({}, {newWorkfileVersion: true});
     },
 
     saved:function () {
-        this.$("button.submit").stopLoading();
         this.closeModal();
         this.pageModel.trigger("invalidated");
     }

@@ -1,32 +1,19 @@
 chorus.Mixins.Events = {
-    forwardEvent: function(eventName, target) {
-        this.bind(eventName, function() {
-            var args = _.toArray(arguments);
-            args.unshift(eventName);
-            target.trigger.apply(target, args);
-        });
-    },
 
+    //Only bind if that triple doesn't yet exist.
     bindOnce: function(eventName, callback, context) {
-        var callbacksForThisEvent = this._callbacks && this._callbacks[eventName];
-        var callbackAlreadyBound = _.any(callbacksForThisEvent, function(pair) {
-            if(!pair) {
-                return;
-            }
-            return pair[0] === callback && pair[1] === context;
-        });
-        if (callbackAlreadyBound) return;
+        var callbacksForThisEvent = this._events && this._events[eventName];
+        if (callbacksForThisEvent){
+            var found = _.any (callbacksForThisEvent, function(binding) {
+                return binding.callback._callback === callback && binding.context === context;
+            });
 
-        this.bind(eventName, callback, context);
-        this.bind(eventName, unbinder, this);
-
-        function unbinder() {
-            this.unbind(eventName, callback, context);
-            this.unbind(eventName, unbinder, this);
+            if(found) { return true; }
         }
+        this.once(eventName, callback, context);
     },
 
     shouldTriggerImmediately: function(eventName) {
-        return false
+        return false;
     }
 };

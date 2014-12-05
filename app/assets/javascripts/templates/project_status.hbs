@@ -1,0 +1,32 @@
+<div class='facts'>
+    <span class="label">{{t "workspace.owner"}}:</span>
+    <a class="owner" title="{{ownerName}}" href="{{ownerShowUrl}}">{{ownerName}}</a>
+
+    <div class='status_link'>
+        <span class="label">{{t 'workspace.project.status.label'}}</span>
+        <a class="edit_project_status {{projectStatus}}" href="#">{{t projectStatusKey}}</a>
+        {{#if latestStatusChangeActivity}}
+            <i class='oi oi-flip-horizontal status_reason' data-glyph="comment-square"/>
+        {{/if}}
+    </div>
+</div>
+
+{{#unless limitMilestones}}
+<div class="milestones">
+    <div class='target_date'>
+        <span class="label">Target:</span>
+        {{#if projectTargetDate}}
+            {{relativeTimestamp projectTargetDate}}
+        {{else}}
+            {{t 'workspace.project.target.none_set'}}
+        {{/if}}
+    </div>
+
+
+    <span class="label">{{t 'workspace.project.progress.label'}}</span>
+    <div class='progress_container'>
+        <div class="progress {{projectStatus}}" style="width: {{milestoneProgress}}%;"></div>
+    </div>
+    <a class='ratio' href="{{milestonesUrl}}">{{milestoneCompletedCount}} / {{milestoneCount}}</a>
+</div>
+{{/unless}}

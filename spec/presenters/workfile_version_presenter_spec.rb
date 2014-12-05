@@ -8,7 +8,7 @@ describe WorkfileVersionPresenter, :type => :view do
   let(:options) { {} }
 
   before(:each) do
-    stub(ActiveRecord::Base).current_user { owner }
+    set_current_user(owner)
   end
 
   describe "#to_hash" do
@@ -26,21 +26,9 @@ describe WorkfileVersionPresenter, :type => :view do
       workfile_hash.should have_key(:execution_schema)
     end
 
-    it "uses the user presenter to serialize the owner and modifier" do
-      hash[:owner].to_hash.should == UserPresenter.new(owner, view).presentation_hash
-      hash[:modifier].to_hash.should == UserPresenter.new(owner, view).presentation_hash
-    end
-
-    it "sanitizes values" do
-      bad_value = "<script>alert('got your cookie')</script>"
-
-      workfile_version = FactoryGirl.build :workfile_version, :commit_message => bad_value
-      workfile_version.contents = test_file('small1.gif')
-      workfile_version.workfile = workfile
-
-      json = WorkfileVersionPresenter.new(workfile_version, view).to_hash[:version_info]
-
-      json[:commit_message].should_not match "<"
+    it "presents the owner and modifier succinctly" do
+      hash[:owner].to_hash.should == UserPresenter.new(owner, view, :succinct => true).presentation_hash
+      hash[:modifier].to_hash.should == UserPresenter.new(owner, view, :succinct => true).presentation_hash
     end
 
     context "when not on the workfile page" do
@@ -100,6 +88,17 @@ describe WorkfileVersionPresenter, :type => :view do
         it "includes the text of the file" do
           hash[:content].should == File.read(version.contents.path)
         end
+
+        context "for a very large file" do
+          before do
+            stub(version).contents_file_size { 100.megabytes }
+            mock(version).get_content(131072)
+          end
+
+          it "it should display a truncated preview of the file, with partial_file flag set" do
+            hash[:partial_file].should be_true
+          end
+        end
       end
 
       context "when the file is sql" do
@@ -116,9 +115,16 @@ describe WorkfileVersionPresenter, :type => :view do
         it "includes the text of the file" do
           hash[:content].should == File.read(version.contents.path)
         end
+
+        context 'when the content has characters which are ambiguously defined between encodings' do
+          let(:workfile) { workfiles(:'non_utf8.sql') }
+
+          it 'includes the text of the file' do
+            hash[:content].should == File.read(version.contents.path)
+          end
+        end
       end
     end
-
 
     context "when rendering the activity stream" do
       let(:options) { {:activity_stream => true} }

@@ -1,0 +1,124 @@
+@import "_common";
+
+.date-picker {
+    z-index: 20001;
+}
+
+.titled-input-group {
+    border-top: 2px solid $border-color-dark;
+    padding-right: 0;
+    margin-right: 24px;
+}
+
+.import_now {
+    hr {
+        margin-top: 1em;
+        height:  1px;
+        background-color: $border-color;
+        border:  none;
+    }
+
+    .selection {
+        @include font-normal-alpha;
+    }
+
+    .selection:hover {
+        cursor: text;
+    }
+
+    fieldset {
+        border: none;
+        padding: 0 15px 0px;
+
+        &.disabled {
+            border: none;
+            padding-bottom: 0;
+
+            .inputs {
+                display: none;
+            }
+        }
+    }
+
+    .destination {
+        padding-bottom: 10px;
+    }
+
+    input[type=checkbox] {
+        margin-left: 20px;
+    }
+
+    .row {
+        line-height: 34px;
+        vertical-align: middle;
+    }
+
+    label {
+        display: inline-block;
+        min-width: 200px;
+        line-height: 20px;
+    }
+
+    label.main {
+        @include font-menu;
+    }
+
+    .new_table {
+        .name {
+            width: 206px;
+        }
+    }
+
+    .select_schema {
+        font-size: 12px;
+        font-weight: $semibold;
+        color: #5f5f5f;
+        border: 1px solid $border-color;
+        -webkit-border-radius: 30px;
+        border-radius: 30px;
+        background: none;
+        margin-bottom: 2px;
+        padding: 5px 14px;
+        display: inline-block;
+        margin-right: 12px;
+    }
+
+    .change_schema {
+        font-size: 12px;
+        font-weight: $semibold;
+        margin-left: 10px;
+    }
+
+    .existing_table {
+        .names {
+            width: 200px;
+            display: inline-block;
+        }
+
+        label.main {
+            vertical-align: top;
+            margin-top: 10px;
+        }
+
+        .dataset_picked {
+            font-size: 13px;
+            font-weight: $semibold;
+            margin-right: 5px;
+            display: inline-block;
+            line-height: 14px;
+        }
+
+        a.dataset_picked {
+            display: inline-block;
+            line-height: 14px;
+        }
+    }
+
+    .limit {
+        .row_limit {
+            float: right;
+            width: 120px;
+            @include after-clearfix;
+        }
+    }
+}

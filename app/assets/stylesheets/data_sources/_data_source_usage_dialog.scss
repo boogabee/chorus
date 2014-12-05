@@ -1,0 +1,91 @@
+.data_source_usage {
+    li {
+        border-bottom: $border-canon;
+        margin-top: 5px;
+        padding-bottom: 5px;
+        width: 100%;
+
+        .image_container {
+            width: 45px;
+            vertical-align: top;
+            float: left;
+        }
+
+        .details {
+            overflow: hidden;
+        }
+
+        .workspace_link {
+            @include font-primary-link;
+            line-height: 1.4;           
+        }
+
+        .pair {
+            font-size: 13px;
+            padding-top: 4px;
+            display: block;
+        }
+
+        .key {
+            display: inline-block;
+            color: $color-text2;
+        }
+
+        .value {
+            float: right;
+            line-height: 1.2;
+            max-width: 200px;
+            text-align: right;
+            @include ellipsis;
+        }
+    }
+
+    li:last-child {
+        border-bottom: none;
+    }
+
+    .usage_bar {
+        height: 16px;
+        width: 100%;
+        background: $progress-bar-background-color;
+        font-size: 12px;
+
+        .size_text {
+            color: $color-text2;
+            display: block;
+            float: left;
+            margin-left: 5px;
+            margin-top: 1px;
+        }
+    }
+
+    .used {
+        height: 100%;
+        float: left;
+        display: inline-block;
+        background: $link-color;
+        border-right: 1px solid #FFFFFF;
+
+        .percentage_text {
+            float: right;
+            height: 100%;
+            display: inline-block;
+            margin-right: 5px;
+            margin-top: 1px;
+            color: #FFFFFF;
+        }
+
+        .size_text {
+            color: #FFFFFF;
+        }
+    }
+
+    .full {
+        background-color: $progress-bar-full-background-color;
+    }
+
+    .sub_content {
+        overflow: auto;
+        max-height: 380px;
+    }
+}

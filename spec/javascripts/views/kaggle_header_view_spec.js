@@ -1,6 +1,6 @@
 describe("chorus.views.KaggleHeader", function() {
     beforeEach(function() {
-        this.view = new chorus.views.KaggleHeader()
+        this.view = new chorus.views.KaggleHeader();
     });
 
     describe("#render", function() {

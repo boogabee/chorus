@@ -1,4 +1,4 @@
-chorus.alerts.WorkfileDraft = chorus.alerts.Base.extend({
+chorus.alerts.WorkfileDraft = chorus.alerts.Confirm.extend({
     constructorName: "WorkfileDraft",
 
     text:t("workfile.alert.text"),
@@ -7,15 +7,9 @@ chorus.alerts.WorkfileDraft = chorus.alerts.Base.extend({
     cancel:t("workfile.alert.latest_version"),
     additionalClass:"info",
 
-    postRender:function () {
-        _.delay(_.bind(function () {
-            this.$("button.submit").focus()
-        }, this), 250);
-    },
-
     confirmAlert:function () {
         var draft = new chorus.models.Draft({workspaceId:this.model.workspace().id, workfileId:this.model.get("id")});
-        this.bindings.add(draft, "change", function (draft) {
+        this.listenTo(draft, "change", function (draft) {
             this.closeModal();
             this.model.isDraft = true;
             this.model.content(draft.get("content"));
@@ -27,14 +21,13 @@ chorus.alerts.WorkfileDraft = chorus.alerts.Base.extend({
     cancelAlert:function () {
         var draft = new chorus.models.Draft({workspaceId:this.model.workspace().id, workfileId:this.model.get("id"), id:"Dummy"});
 
-        this.bindings.add(draft, "change", function () {
+        this.listenTo(draft, "change", function () {
             draft.destroy();
         });
 
-        this.bindings.add(draft, "destroy", function () {
+        this.listenTo(draft, "destroy", function () {
             this.closeModal();
-            this.model.set({ hasDraft:false })
-
+            this.model.set({ hasDraft:false });
         });
 
         draft.fetch();

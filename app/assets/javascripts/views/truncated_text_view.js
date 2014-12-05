@@ -8,13 +8,14 @@ chorus.views.TruncatedText = chorus.views.Base.extend({
     },
 
     additionalContext: function() {
-        var value = this.model.get(this.options.attribute)
+        var value = this.model.get(this.options.attribute);
         if(this.options.attributeIsHtmlSafe && value) {
             value = new Handlebars.SafeString(value);
         }
         return {
-            text: value
-        }
+            text: value,
+            unexpandable: this.options.unexpandable
+        };
     },
 
     postRender: function() {
@@ -30,9 +31,11 @@ chorus.views.TruncatedText = chorus.views.Base.extend({
                 numLines++;
                 this.$(".styled_text").addClass("extra_line");
             }
-
+            
+            // take the original text, and calculate how tall it will render as numLines
+            // compare to heightlimit, and add expandable links if it is greater
             var text = this.$(".original");
-            var heightLimit = parseInt(text.css("line-height")) * numLines;
+            var heightLimit = parseInt(text.css("line-height"), 10) * numLines;
             if (text.height() > heightLimit) {
                 $(this.el).addClass('expandable');
             } else {
@@ -50,7 +53,6 @@ chorus.views.TruncatedText = chorus.views.Base.extend({
 
     openLink: function(e) {
         e && e.preventDefault();
-        window.open($(e.currentTarget).attr("href"))
+        window.open($(e.currentTarget).attr("href"));
     }
 });
-

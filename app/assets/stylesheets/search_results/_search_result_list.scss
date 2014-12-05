@@ -1,11 +1,15 @@
 .search_result_list {
+    li {
+        background-color: #FFFFFF !important;
+    }
+
     .list_content_details {
         @include list-section-heading;
         width: auto;
         padding: 5px 10px;
-        @include background-image(linear-gradient(#ebeef2, #d7dfe9));
-        border-top: 1px solid #cbcbcb;
-        border-bottom: 1px solid #a4a4a4;
+        background-color: $subheader-background-color;
+        border-top: $border-canon;
+        border-bottom: $border-canon;
         height: 20px;
         line-height: 20px;
         vertical-align: middle;
@@ -35,53 +39,12 @@
         color: $color-text4;
     }
 
-    li {
+    .result_item {
         min-height: 45px;
-        a.name {
-            font-size: 18px;
-        }
 
-        img {
-            vertical-align: top;
-            max-width: 32px;
-            max-height: 32px;
-        }
-
-        .description {
-            padding-left: 5px;
-            display: inline-block;
-            vertical-align: middle;
-
-            .found_in {
-                display: block;
-            }
-
-            em {
-                background-color: $search-highlight-color;
-                font-weight: $semibold;
-            }
-
-            .location {
-                padding: 5px 0;
-                color: $color-text2;
-                line-height: 15px;
-
-                a, span {
-                    font-size: 12px;
-                }
-
-                a {
-                    font-weight: $semibold;
-                }
-            }
-
-            .description_content {
-                @include font-normal-alpha;
-            }
-        }
-
-        .prefix {
-            @include font-content-details;
+        em {
+            background-color: $search-highlight-color;
+            font-weight: $semibold;
         }
 
         .content {
@@ -96,7 +59,6 @@
         }
 
         .comments, .more_comments, .supporting_message, .more_supporting_message, .column_description, .table_description{
-            @include font-content-details;
             margin: 0;
 
             .comment {
@@ -105,20 +67,27 @@
                 .comment_type {
                     padding-right: 5px;
                 }
-
-                .comment_content {
-                    @include font-normal-alpha;
-
-                    em {
-                        background: yellow;
-                    }
-                }
             }
 
             .has_more_comments, .more_comments {
                 a {
                     font-size: 12px;
                 }
+            }
+        }
+
+        .version_comments {
+            .version_comment {
+                color: $color-text2;
+                font-size: 14px;
+                font-weight: $semibold;
+                line-height: 19px;
+                padding: 3px 0;
+            }
+
+            .comment_type {
+                padding-right: 5px;
+                font-size: 13px;
             }
         }
     }

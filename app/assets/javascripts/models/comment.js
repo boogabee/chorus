@@ -1,5 +1,7 @@
 chorus.models.Comment = chorus.models.Activity.extend({
     constructorName: "Comment",
+    entityType: 'comment',
+
     urlTemplate:function (options) {
         return "comments/{{id}}";
     },
@@ -10,14 +12,14 @@ chorus.models.Comment = chorus.models.Activity.extend({
     },
 
     declareValidations:function (newAttrs) {
-        this.require('text', newAttrs);
+        this.require('body', newAttrs);
     },
 
     attrToLabel:{
-        "text":"notes.text"
+        "body":"notes.body"
     },
 
     note: function() {
-        return this.get('type') && this.get("type") == "NOTE";
+        return this.get('type') && this.get("type") === "NOTE";
     }
 });

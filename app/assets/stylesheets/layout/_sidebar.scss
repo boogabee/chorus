@@ -1,3 +1,5 @@
+@import "_browser_support";
+
 body .ui-draggable-dragging {
     .name {
         max-width: 60%;
@@ -8,15 +10,20 @@ body .ui-draggable-dragging {
         margin-top: 8px;
         color: $color-text3;
     }
+
+    @include grab_cursor;
 }
 
 #sidebar {
+    .multiple_selection { @include dark-sidebar-panel; }
+
     &:focus {
         outline: none;
     }
 
     width: $sidebar-width;
     padding-left: $sidebar-padding-x;
+    padding-top: $sidebar-padding-top;
     position: absolute;
     top: 0;
     right: 0;
@@ -45,82 +52,33 @@ body .ui-draggable-dragging {
     }
 
     .image {
-        padding-bottom: 16px;
-        text-align: center;
-    }
-
-    .actions {
-        h1 {
-            @include ellipsis;
-            @include heading-sidebar;
-            margin-bottom: 10px;
-        }
-
-        a, span, .disabled {
-            font-size: 12px;
-            font-weight: $semibold;
-        }
-
-        .disabled {
-            color: $color-text4;
-        }
-
-        li {
-            padding-bottom: 3px;
-            margin-left: 10px;
+        margin-top: $sidebar-padding-top;
+        
+        .workspace_image {
+            border: $border-canon;
         }
     }
+
     .pairs {
         font-size: 14px;
         line-height: 18px;
 
         .pair {
             display: block;
-            border-bottom: $dotted-list-item-border;
+            border-bottom: $border-canon;
             margin-right: 10px;
+            margin-bottom: 5px;
         }
 
         .key {
-            display: inline-block;
-            color: $color-text2;
-            width: 49%;
+            color: $color-text1;
+            font-weight: $semibold;
         }
 
         .value {
-            width: 47%;
-            color: black;
-            max-width: 120px;
-            text-align: right;
-            vertical-align: top;
-            display: inline-block;
-            @include ellipsis;
+            color: $color-text1;
+            word-wrap: break-word;
         }
-
-        .multiline {
-            margin-right: 10px;
-
-            .key {
-                border-bottom: $dotted-list-item-border;
-            }
-
-            .value {
-                width: auto;
-                max-width: 100%;
-                padding-left: 0;
-                display: block;
-                border-bottom: $dotted-list-item-border;
-
-                &:nth-child(2) {
-                    width: 47%;
-                    max-width: 120px;
-                    display: inline-block;
-                }
-            }
-        }
-    }
-
-    img {
-        max-width: $sidebar-width - 20px;
     }
 
     .members {
@@ -128,13 +86,8 @@ body .ui-draggable-dragging {
         li {
             display: inline-block;
             vertical-align: middle;
-            height: $icon-image-height + 6px;
-            padding-bottom: 3px;
-        }
-
-        img {
-            width: $icon-image-width;
-            height: $icon-image-height;
+            height: $icon-image-height + 3px;
+            width: $icon-image-width + 3px;
         }
 
         .dialog {
@@ -161,9 +114,14 @@ body .ui-draggable-dragging {
     }
 
     .sidebar_content {
+        margin-bottom: $guts-padding-bottom;
+
+        & > .actions {
+            @include dark-sidebar-panel;
+        }
+
         .tabbed_area {
             .context {
-                @include font-content-details;
                 font-size: 14px;
 
                 span {
@@ -174,7 +132,6 @@ body .ui-draggable-dragging {
                     @include ellipsis;
                     @include menu-triangle;
                     max-width: 140px;
-                    border-bottom: 1px dotted $link-color;
                     color: $link-color;
                 }
             }
@@ -192,97 +149,113 @@ body .ui-draggable-dragging {
                 margin: 4px 0px 17px 20px;
             }
 
-            .database_function_sidebar_list, .database_dataset_sidebar_list, .database_column_sidebar_list {
-                ul {
-                    margin-top: 10px;
-                }
-
-                li {
-                    height: 29px;
-                    padding-top: 0px;
-                    padding-bottom: 0px;
-                    color: $color-text2;
-                    cursor: pointer;
-
-                    img {
-                        margin-top: 2px;
-                        display: inline-block;
-                        vertical-align: middle;
-                    }
-
-                    .name, .details {
-                        margin-top: 2px;
-                        font-size: 14px;
-                        display: inline-block;
-                        @include ellipsis;
-                        max-width: 75%;
-                        vertical-align: middle;
-                        line-height: 19px;
-                    }
-
-                    .name {
-                        font-weight: $semibold;
-                    }
-
-                    &:first-child {
-                        border-top: $dotted-list-item-border;
-                        margin-top: -1px;
-                    }
-                    &:last-child {
-                        border-bottom: $dotted-list-item-border;
-                    }
-
-                    &.hover {
-                        margin-top: -1px;
-                        background-color: $selected-row-hover-background-color;
-                        border-top: 1px solid $list-border-color;
-                        border-bottom: 1px solid $list-border-color;
-                    }
-                }
-
-                a.more {
-                    display: block;
-                    font-size: 13px;
-                    font-weight: $semibold;
-                    text-align: center;
-                    margin-top: 10px;
-                    padding-bottom: 10px;
-                }
-
-                .empty_selection {
-                    .top {
-                        @include secondary-text-small-semibold;
-                    }
+            .data_tab_dataset {
+                .toggle_visibility {
+                    position: relative;
                 }
             }
+        }
+    }
+}
 
-            .database_column_sidebar_list {
-                .context {
-                    line-height: 1.2;
-                    .table, .schema {
-                        display: inline-block;
-                        max-width: 80px;
-                        @include ellipsis;
-                    }
-                }
+.function_tab {
+    li {
+        a {
+            @include grab_cursor;
+        }
 
-                li {
-                    .name {
-                        max-width: 60%;
-                    }
-                    .details {
-                        float: right;
-                        margin-top: 8px;
-                        color: $color-text3;
-                    }
-                }
+        &:hover {
+            background-color: $selected-row-hover-background-color;
+            @include grab_cursor;
+        }
+    }
+}
+
+.function_tab, .data_tab {
+    ul {
+        margin-top: 10px;
+    }
+
+    li {
+        padding-top: 0px;
+        padding-bottom: 0px;
+        color: $color-text2;
+
+        img {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .name {
+            font-weight: $semibold;
+            padding-bottom: 0px;
+        }
+
+        .list_item_text {
+            margin-top: 2px;
+            margin-bottom: 2px;
+            font-size: 14px;
+            display: inline-block;
+            max-width: 75%;
+            vertical-align: middle;
+            line-height: 19px;
+            word-break: break-all;
+        }
+    }
+
+    a.more {
+        display: block;
+        font-size: 13px;
+        font-weight: $semibold;
+        text-align: center;
+        margin-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .empty_selection {
+        .top {
+            @include secondary-text-small-semibold;
+        }
+    }
+
+    .schema_menu {
+        display: none;
+    }
+
+    .accordion {
+        li {
+            .dataset_title {
+                &:hover { @include grab_cursor; }
             }
 
-            .database_function_sidebar_list, .database_dataset_sidebar_list {
-                .schema_menu {
-                    display: none;
-                }
-            }
+            a { @include grab_cursor; }
+        }
+    }
+}
+
+.data_tab_dataset_column_list {
+    ul {
+        margin: 0 0 5px 0;
+    }
+
+    li {
+        padding-top: 0px;
+        padding-bottom: 0px;
+        color: $color-text2;
+        cursor: pointer;
+        border-bottom: none;
+
+        .column_name {
+            font-weight: $semibold;
+            max-width: 60%;
+        }
+        .column_type {
+            color: $color-text3;
+            vertical-align: top;
+        }
+
+        &:hover {
+            @include grab_cursor;
         }
     }
 }
@@ -290,7 +263,7 @@ body .ui-draggable-dragging {
 .drag_helper {
     width: 225px;
     height: 29px;
-    z-index: 9999;
+    z-index: $drag-z-index;
     margin-top: 2px;
     font-size: 14px;
 
@@ -316,5 +289,14 @@ body .ui-draggable-dragging {
         margin-top: 2px;
         display: inline-block;
         vertical-align: middle;
+    }
+}
+
+#sidebar_wrapper .sidebar_schema_picker .ui-tooltip-content {
+    padding: 0;
+    white-space: nowrap;
+    ul {
+        overflow-x: hidden;
+        padding: 4px 8px;
     }
 }

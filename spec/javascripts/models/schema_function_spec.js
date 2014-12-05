@@ -6,29 +6,30 @@ describe("chorus.models.SchemaFunction", function() {
             returnType: "void",
             language: "sql",
             argNames: ["elephant", ""],
-            argTypes: ["Int", "Bool"]})
-    })
+            argTypes: ["Int", "Bool"]
+        });
+    });
     describe("#toText", function() {
         context("with lowercase names", function() {
             it("formats the string to put into the sql editor", function() {
-                expect(this.model.toText()).toBe('aa.fun(Int elephant, Bool arg2)');
+                expect(this.model.toText()).toBe('"aa"."fun"(Int elephant, Bool arg2)');
             });
         });
         context("with uppercase letters in the names", function() {
             beforeEach(function() {
                 this.model.set({schemaName: "Aa", name: "fuN"});
-            })
+            });
             it("puts quotes around the uppercase names", function() {
                 expect(this.model.toText()).toBe('"Aa"."fuN"(Int elephant, Bool arg2)');
             });
-        })
+        });
 
     });
 
     describe("#toHintText", function() {
         it("formats the string correctly", function() {
-            expect(this.model.toHintText()).toBe("void fun(Int elephant, Bool arg2)")
-        })
+            expect(this.model.toHintText()).toBe("void fun(Int elephant, Bool arg2)");
+        });
     });
 
     describe("#formattedArgumentList(ensureParams)", function () {
@@ -51,5 +52,12 @@ describe("chorus.models.SchemaFunction", function() {
                 });
             });
         });
+
+        context("when the function arguments are unnamed", function() {
+            it("sets the arguments names to argN correctly", function() {
+                this.model.set({ argNames: null });
+                expect(this.model.formattedArgumentList()).toBe("(Int arg1, Bool arg2)");
+            });
+        });
     });
-})
+});

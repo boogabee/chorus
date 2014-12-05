@@ -1,6 +1,6 @@
 describe("chorus.collections.SchemaSet", function() {
     beforeEach(function() {
-        this.collection = rspecFixtures.schemaSet({ database: {id: '41' }} );
+        this.collection = backboneFixtures.schemaSet({ database: {id: '41' }} );
     });
 
     it("has the right URL", function() {
@@ -8,22 +8,22 @@ describe("chorus.collections.SchemaSet", function() {
         expect(this.collection.url()).toContain("/databases/42/schemas");
     });
 
-    it("includes the InstanceCredentials mixin", function() {
-        expect(this.collection.instanceRequiringCredentials).toBe(chorus.Mixins.InstanceCredentials.model.instanceRequiringCredentials);
+    it("includes the DataSourceCredentials mixin", function() {
+        expect(this.collection.dataSourceRequiringCredentials).toBe(chorus.Mixins.DataSourceCredentials.model.dataSourceRequiringCredentials);
     });
 
     describe("#sort", function() {
         beforeEach(function() {
             this.collection.reset([
-                rspecFixtures.schema({ name: 'z'}),
-                rspecFixtures.schema({ name: 'G'}),
-                rspecFixtures.schema({ name: 'a'})
+                backboneFixtures.schema({ name: 'z'}),
+                backboneFixtures.schema({ name: 'G'}),
+                backboneFixtures.schema({ name: 'a'})
             ]);
         });
 
         it("sorts by name, case insensitive", function() {
-            var names = this.collection.pluck('name')
+            var names = this.collection.pluck('name');
             expect(names).toEqual(['a', 'G', 'z']);
-        })
+        });
     });
 });

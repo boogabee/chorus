@@ -1,82 +1,164 @@
 require "spec_helper"
 
 describe ChorusView do
-  describe "#validate_query", :database_integration => true do
-    let(:database) { GpdbIntegration.real_database }
-    let(:schema) { database.schemas.find_by_name('public') }
-    let(:account) { GpdbIntegration.real_gpdb_account }
-    let(:gpdb_instance) { GpdbIntegration.real_gpdb_instance }
+  describe "validations" do
+    it { should validate_presence_of(:workspace) }
+    it { should belong_to(:workspace) }
+    it { should validate_presence_of(:query) }
 
-    it "can be valid" do
-      chorus_view = ChorusView.new({:name => "query", :schema => schema, :query => "selecT 1;"}, :without_protection => true)
-      chorus_view.should be_valid
-      chorus_view.query.should == "selecT 1;"
-    end
+    describe "#validate_query", :greenplum_integration do
+      let(:database) { GreenplumIntegration.real_database }
+      let(:schema) { database.schemas.find_by_name('public') }
+      let(:account) { GreenplumIntegration.real_account }
+      let(:gpdb_data_source) { GreenplumIntegration.real_data_source }
+      let(:workspace) { workspaces(:public)}
+      let(:user) { users(:the_collaborator) }
+      let(:chorus_view) { FactoryGirl.build(:chorus_view, :schema => schema, :workspace => workspace) }
+      let(:query) { "selecT 1;" }
 
-    it "should return only one result set" do
-      described_class.new(
-          {
-              :name => 'multiple result sets',
-              :schema => schema,
-              :query => "select 1; select 2;"
-          },
-          :without_protection => true).should_not be_valid
-    end
-
-    it 'does not execute the query' do
-      schema.with_gpdb_connection(account) do |conn|
-        conn.exec_query("drop table if exists bad_chorus_view_table;")
+      before do
+        set_current_user(user)
+        chorus_view.query = query # Factory by default represses validation
       end
 
-      chorus_view = described_class.new(
-          {
-              :name => 'multiple result sets',
-              :schema => schema,
-              :query => "select 1; drop table if exists bad_chorus_view_table; create table bad_chorus_view_table();"
-          },
-          :without_protection => true)
-      chorus_view.validate_query
-      schema.with_gpdb_connection(account) do |conn|
+      it "can be valid" do
+        chorus_view.should be_valid
+      end
+
+      describe 'with comment containing semicolon' do
+        describe 'single line comment' do
+          let(:query) {  "select 1; -- a comment with semicolon ; in it" }
+
+          it "can be valid" do
+            chorus_view.should be_valid
+          end
+
+          describe 'with multiple statements' do
+            let(:query) {  "select 1; -- a comment with semicolon ; in it\n select 2;" }
+
+            it 'is invalid' do
+              chorus_view.should have_error_on(:query).with_message(:multiple_result_sets)
+            end
+          end
+        end
+
+        describe 'multi line comment' do
+          let(:query) {  "select 1; /* a comment with semicolon ; in\n it */" }
+
+          it "can be valid" do
+            chorus_view.should be_valid
+          end
+
+          describe 'with multiple statements' do
+            let(:query) {  "select 1; /* a comment with semicolon ; in\n it */ select 2;" }
+
+            it 'is invalid' do
+              chorus_view.should have_error_on(:query).with_message(:multiple_result_sets)
+            end
+          end
+        end
+      end
+
+      describe 'with multiple statements' do
+        let(:query) {  "select 1; create table a_new_table()" }
+
+        it 'is invalid' do
+          chorus_view.should have_error_on(:query).with_message(:multiple_result_sets)
+        end
+
+        it 'cleans up' do
+          chorus_view.validate_query
+          schema.connect_with(account).table_exists?('a_new_table').should be_false
+        end
+      end
+
+      describe 'when it references a nonexistent table' do
+        let(:query) { "select * from a_non_existent_table_aaa;" }
+
+        it 'is invalid' do
+          chorus_view.should have_error_on(:query).with_message(:generic)
+        end
+      end
+
+      describe 'when it starts with not select or with' do
+        let(:query) { "create table query_not_starting_with_keyword_table();" }
+        it 'is invalid' do
+          chorus_view.should have_error_on(:query).with_message(:start_with_keywords)
+        end
+      end
+    end
+  end
+
+  describe '#save' do
+    let(:user) { users(:owner) }
+    let(:workspace) { workspaces(:public) }
+    let(:params) do
+      {
+          object_name: 'joe',
+          query: "SELECT * FROM workspace.nba0610 AS a WHERE a.player = 'Joe Johnson'",
+          schema_id: schema.id,
+          workspace_id: workspace.id
+      }
+    end
+
+    before do
+      set_current_user(user)
+      any_instance_of(PostgresLikeConnection) do |pg_conn|
+        mock(pg_conn).validate_query.with_any_args { true }
+      end
+    end
+
+    context 'with a postgres schema' do
+      let(:schema) { schemas(:pg) }
+
+      it 'can be created' do
         expect {
-          conn.exec_query("select * from bad_chorus_view_table")
-        }.to raise_error(ActiveRecord::StatementInvalid)
+          cv = ChorusView.new params
+          cv.save!
+        }.to change(ChorusView, :count).by(1)
       end
     end
 
-    it "returns the cause" do
-      chorus_view = described_class.new(
-          {
-              :name => 'multiple result sets',
-              :schema => schema,
-              :query => "select potato"
-          },
-          :without_protection => true)
-      chorus_view.validate_query
-      chorus_view.errors[:query][0][1][:message].should_not =~ /postgres/
+    context 'with a greenplum schema' do
+      let(:schema) { schemas(:default) }
+
+      it 'can be created' do
+        expect {
+          cv = ChorusView.new params
+          cv.save!
+        }.to change(ChorusView, :count).by(1)
+      end
+    end
+  end
+
+  describe "update" do
+    let(:chorus_view) { datasets(:chorus_view) }
+
+    it "prevents schema from being updated" do
+      new_schema = schemas(:public)
+      chorus_view.schema.should_not == new_schema
+      chorus_view.schema = new_schema
+      chorus_view.schema_id = new_schema.id
+      chorus_view.save!
+      chorus_view.reload
+      chorus_view.schema.should_not == new_schema
     end
 
-    it "should be invalid if it references a nonexistent table" do
-      described_class.new({:name => "invalid_query",
-                           :schema => schema,
-                           :query => "select * from nonexistent_table;"},
-                          :without_protection => true).should_not be_valid
-    end
-
-    it "should start with select or with" do
-      chorus_view = described_class.new({:name => "invalid_query",
-                                         :schema => schema,
-                                         :query => "create table query_not_starting_with_keyword_table();"},
-                                        :without_protection => true)
-      chorus_view.should_not be_valid
-      chorus_view.errors[:query][0][0].should == :start_with_keywords
-
+    it "prevents workspace from being updated" do
+      new_workspace = workspaces(:public_with_no_collaborators)
+      chorus_view.workspace.should_not == new_workspace
+      chorus_view.workspace = new_workspace
+      chorus_view.workspace_id = new_workspace.id
+      chorus_view.save!
+      chorus_view.reload
+      chorus_view.workspace.should_not == new_workspace
     end
   end
 
   describe "#preview_sql" do
     let(:chorus_view) do
       ChorusView.new({:name => "query",
-                      :schema => gpdb_schemas(:default),
+                      :schema => schemas(:default),
                       :query => "select 1"},
                      :without_protection => true)
     end
@@ -89,7 +171,7 @@ describe ChorusView do
   describe "#all_row_sql" do
     let(:chorus_view) do
       ChorusView.new({:name => "query",
-                      :schema => gpdb_schemas(:default),
+                      :schema => schemas(:default),
                       :query => "select 1"},
                      :without_protection => true)
     end
@@ -110,59 +192,122 @@ describe ChorusView do
     end
   end
 
-  describe "#convert_to_database_view", :database_integration => true do
-    let(:chorus_view) do
-      ChorusView.new({:name => "query",
-                      :schema => schema,
-                      :query => "select 1"},
-                     :without_protection => true)
-    end
-    let(:gpdb_instance) { GpdbIntegration.real_gpdb_instance }
-    let(:database) { GpdbIntegration.real_database }
-    let(:schema) { database.schemas.find_by_name('test_schema') }
-    let(:account) { gpdb_instance.owner_account }
+  describe '#convert_to_database_view' do
+    let(:schema) { chorus_view.schema }
+    let(:database) { schema.database }
+    let(:data_source) { database.data_source }
+    let(:account) { data_source.owner_account }
     let(:user) { account.owner }
+    let(:connection) { Object.new }
+    let(:view_name) { 'a_new_database_view' }
 
     before do
-      Gpdb::ConnectionBuilder.connect!(gpdb_instance, account, database.name) do |connection|
-        connection.exec_query("DROP VIEW IF EXISTS \"test_schema\".\"henry\"")
+      stub(schema).connect_as(user) { connection }
+      stub(connection).view_exists?(anything) { false }
+      stub(connection).create_view(anything, anything)
+    end
+
+    shared_examples :convertable_to_a_database_view do
+      let(:view_class) { schema.class_for_type('v') }
+
+      it 'creates a database view' do
+        expect {
+          chorus_view.convert_to_database_view(view_name, user)
+        }.to change(view_class, :count).by(1)
+
+        created = view_class.last
+        created.query.should == chorus_view.query
+        created.name.should == view_name
+      end
+
+      it 'creates the view in greenplum db' do
+        mock(connection).create_view(view_name, chorus_view.query)
+
+        chorus_view.convert_to_database_view(view_name, user)
+      end
+
+      it 'raises if a view with the same name already exists' do
+        stub(connection).view_exists?(anything) { true }
+
+        expect {
+          chorus_view.convert_to_database_view(view_name, user)
+        }.to raise_error(ActiveRecord::RecordInvalid)
+      end
+
+      it 'raises if it cant create the view' do
+        stub(connection).create_view(view_name, anything) { raise PostgresLikeConnection::DatabaseError.new(StandardError.new()) }
+
+        expect {
+          chorus_view.convert_to_database_view(view_name, user)
+        }.to raise_error(ActiveRecord::RecordInvalid)
       end
     end
 
-    it "creates a database view" do
-      expect {
-        chorus_view.convert_to_database_view("henry", user)
-      }.to change(GpdbView, :count).by(1)
-    end
-
-    it "sets the right query" do
-      chorus_view.convert_to_database_view("henry", user)
-      GpdbView.last.query.should == chorus_view.query
-      GpdbView.last.name.should == "henry"
-    end
-
-    it "creates the view in greenplum db" do
-      chorus_view.convert_to_database_view("henry", user)
-      Gpdb::ConnectionBuilder.connect!(gpdb_instance, account, database.name) do |connection|
-        connection.exec_query("SELECT viewname FROM pg_views WHERE viewname = 'henry'").should_not be_empty
+    context 'for greenplum', :greenplum_integration do
+      it_behaves_like :convertable_to_a_database_view do
+        let(:chorus_view) { datasets(:executable_chorus_view) }
       end
     end
 
-    it "doesn't create the view twice" do
-      chorus_view.convert_to_database_view("henry", user)
-      expect {
-        chorus_view.convert_to_database_view("henry", user)
-      }.to raise_error(Gpdb::ViewAlreadyExists)
-    end
-
-    it "throws an exception if it can't create the view" do
-      any_instance_of(::ActiveRecord::ConnectionAdapters::JdbcAdapter) do |conn|
-        stub(conn).exec_query { raise ActiveRecord::StatementInvalid }
+    context 'for postgres' do
+      it_behaves_like :convertable_to_a_database_view do
+        let(:chorus_view) { FactoryGirl.create(:chorus_view, :schema => schemas(:pg), :query => 'select 2;') }
       end
+    end
+  end
+
+  describe '#check_duplicate_column', :greenplum_integration do
+    let(:user) { users(:admin) }
+    let(:chorus_view) { datasets(:executable_chorus_view) }
+
+    it 'raises with duplicate column names' do
+      chorus_view.update_attribute :query, 'select 1 as colname, 2 as colname, 3 as colname;'
+      expect {
+        chorus_view.check_duplicate_column(user)
+      }.to raise_error(PostgresLikeConnection::DatabaseError, /column \"colname\" duplicated/)
+    end
+
+    it 'returns true when the column names are unique' do
+      chorus_view.check_duplicate_column(user).should be_true
+    end
+  end
+
+  describe "counter cache" do
+    let(:schema) { schemas(:default) }
+
+    it "should not affect the execution schema's active_tables_and_views counter cache" do
+      expect {
+        FactoryGirl.create(:chorus_view, :schema => schema)
+        schema.reload
+      }.not_to change(schema, :active_tables_and_views_count)
+
+      cv = FactoryGirl.create(:chorus_view, :schema => schema)
 
       expect {
-        chorus_view.convert_to_database_view("henry", user)
-      }.to raise_error(Gpdb::CantCreateView)
+        cv.delete
+        schema.reload
+      }.not_to change(schema, :active_tables_and_views_count)
     end
+  end
+
+  describe "in_workspace?" do
+    let(:chorus_view) { datasets(:chorus_view) }
+
+    context "when the chorus view is not in the workspace" do
+      let(:workspace) { workspaces(:empty_workspace) }
+
+      it "returns false" do
+          chorus_view.in_workspace?(workspace).should be_false
+      end
+    end
+
+    context "when the chorus view is in the workspace" do
+      let(:workspace) { chorus_view.workspace }
+
+      it "returns false" do
+        chorus_view.in_workspace?(workspace).should be_true
+      end
+    end
+
   end
 end

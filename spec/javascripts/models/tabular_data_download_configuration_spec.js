@@ -22,7 +22,7 @@ describe("chorus.models.DatasetDownloadConfiguration", function() {
 
             it("does fail validation", function() {
                 expect(model.performValidation()).toBeFalsy();
-                expect(model.errors.rowLimit).toMatchTranslation('import.validation.sampleCount.positive')
+                expect(model.errors.rowLimit).toMatchTranslation('import.validation.sampleCount.positive');
             });
         });
 
@@ -33,7 +33,7 @@ describe("chorus.models.DatasetDownloadConfiguration", function() {
 
             it("does fail validation", function() {
                 expect(model.performValidation()).toBeFalsy();
-                expect(model.errors.rowLimit).toMatchTranslation('import.validation.sampleCount.positive')
+                expect(model.errors.rowLimit).toMatchTranslation('import.validation.sampleCount.positive');
             });
         });
     });

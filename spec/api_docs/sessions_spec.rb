@@ -21,7 +21,7 @@ resource "Sessions" do
     end
 
     example_request "Logout", :document => false do
-      status.should == 204
+      status.should == 200
     end
   end
 

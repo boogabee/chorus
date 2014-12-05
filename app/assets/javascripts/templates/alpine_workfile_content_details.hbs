@@ -1,0 +1,19 @@
+<ul class="list_horizontal">
+    <li>
+        {{#if canOpen}}
+        <button class="button button_action open_file" {{#unless executionLocations}}disabled="disabled"{{/unless}}>{{t "work_flows.show.open"}}</button>
+        {{else}}
+        <button class="invisible button_action"></button>
+        {{/if}}
+    </li>
+    <li>
+        {{#if locationNames}}
+            <span class="execution_locations">{{t "work_flows.show.execution_locations" locationNames=locationNames}}</span>
+        {{else}}
+            <span class="execution_location">{{t "work_flows.show.no_execution_location"}}</span>
+        {{/if}}
+    </li>
+    {{#if canUpdate}}<li>
+        <a class="change_workfile_database" href="#">Change</a>
+    </li>{{/if}}
+</ul>

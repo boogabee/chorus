@@ -1,9 +1,10 @@
 module AuthHelper
   def log_in(user)
-    session[:user_id] = user.id
-    session[:expires_at] = 2.hours.from_now
-
-    return user
+    session_object = Session.new
+    session_object.user = user
+    session_object.save(:validate => false)
+    session[:chorus_session_id] = session_object.session_id
+    session_object
   end
 
   def log_out

@@ -2,7 +2,7 @@ describe("chorus.Mixins.VisHelpers", function() {
     describe("#labelFormat", function() {
         beforeEach(function() {
             this.hostView = _.extend(chorus.views.visualizations.XAxis, chorus.Mixins.VisHelpers);
-        })
+        });
 
         describe("when given a number", function() {
             it("returns the same number as a string if it is short enough", function() {
@@ -24,7 +24,7 @@ describe("chorus.Mixins.VisHelpers", function() {
             });
 
             it("truncates the string to the length if it is too long", function() {
-                expect(this.hostView.labelFormat("abcdef", 4)).toBe("abc...")
+                expect(this.hostView.labelFormat("abcdef", 4)).toBe("abc...");
             });
 
             it("truncates the string to 15 characters if no limit is specified", function() {
@@ -34,9 +34,9 @@ describe("chorus.Mixins.VisHelpers", function() {
 
         describe("when given a null", function() {
             it("returns an empty string", function() {
-                expect(this.hostView.labelFormat(null, 5)).toBe("")
+                expect(this.hostView.labelFormat(null, 5)).toBe("");
             });
         });
     });
-})
+});
 

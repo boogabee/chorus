@@ -1,4 +1,6 @@
-chorus.models.Schema = chorus.models.Base.extend({
+chorus.models.Schema = chorus.models.Base.include(
+    chorus.Mixins.DataSourceCredentials.model
+).extend({
     constructorName: "Schema",
     showUrlTemplate: "schemas/{{id}}",
     urlTemplate: "schemas/{{id}}",
@@ -12,18 +14,48 @@ chorus.models.Schema = chorus.models.Base.extend({
     },
 
     datasets: function() {
-        if (!this._datasets) {
-            this._datasets = new chorus.collections.DatasetSet([], { schemaId: this.id });
+        if(!this._datasets) {
+            this._datasets = new chorus.collections.SchemaDatasetSet([], { schemaId: this.id });
         }
         return this._datasets;
     },
 
+    tables: function() {
+        if(!this._tables) {
+            this._tables = new chorus.collections.SchemaDatasetSet([], {schemaId: this.id, tablesOnly: "true"});
+        }
+        return this._tables;
+    },
+
+    parent: function() {
+        return this.database() || this.dataSource();
+    },
+
     database: function() {
-        return new chorus.models.Database(this.get("database"));
+        var database = this._database || (this.get("database") && new chorus.models.Database(this.get("database")));
+        if(this.loaded) {
+            this._database = database;
+        }
+        return database;
+    },
+
+    dataSource: function() {
+        var dataSource = this._dataSource;
+        if(!this._dataSource) {
+            if(this.has('dataSource')) {
+                dataSource = new chorus.models.DynamicDataSource(this.get('dataSource'));
+            } else {
+                dataSource = this.database().dataSource();
+            }
+        }
+        if(this.loaded) {
+            this._dataSource = dataSource;
+        }
+        return dataSource;
     },
 
     canonicalName: function() {
-        return [this.database().instance().name(), this.database().name(), this.name()].join(".");
+        return _.compact([this.dataSource().name(), this.database() && this.database().name(), this.name()]).join(".");
     },
 
     isEqualToSchema: function(other) {

@@ -1,5 +1,5 @@
 chorus.collections.SchemaSet = chorus.collections.Base.include(
-    chorus.Mixins.InstanceCredentials.model
+    chorus.Mixins.DataSourceCredentials.model
 ).extend({
     constructorName: "SchemaSet",
     model:chorus.models.Schema,

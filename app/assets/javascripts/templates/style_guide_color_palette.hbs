@@ -1,0 +1,23 @@
+<div class="list_section_heading vertical_padding">Background Colors</div>
+
+{{#keyValue backgroundColors}}
+    <div class="color-swatch-item">
+        <div class="color-swatch" style="background-color:{{value}}"></div>
+        <span class="color-swatch-name">{{key}}</span>
+    </div>
+{{/keyValue}}
+
+<div class="list_section_heading vertical_padding">Border Colors</div>
+
+{{#keyValue borderColors}}
+    <div class="color-swatch-item">
+        <div class="color-swatch" style="border-color:{{value}}"></div>
+        <span class="color-swatch-name">{{key}}</span>
+    </div>
+{{/keyValue}}
+
+<div class="list_section_heading vertical_padding">Text Colors</div>
+
+{{#keyValue textColors}}
+    <div class="color-swatch-item" style="color:{{value}}">{{key}}</div>
+{{/keyValue}}

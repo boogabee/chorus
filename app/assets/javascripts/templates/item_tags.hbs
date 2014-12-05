@@ -1,0 +1,8 @@
+{{#if tags}}
+<div class="item_tag_list">
+    {{t "tag_list.title"}}:
+    {{#each tags}}
+        <a class="tag_name" href="{{tagLink}}">{{displayTagMatch .. tagName}}</a>
+    {{/each}}
+</div>
+{{/if}}

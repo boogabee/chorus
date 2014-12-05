@@ -14,7 +14,7 @@ resource "Workfiles: drafts" do
 
   get "/workfiles/:workfile_id/draft" do
     before do
-      workfile_drafts(:default).tap { |d| d.workfile = workfile; d.save! }
+      workfile_drafts(:draft_default).tap { |d| d.workfile = workfile; d.save! }
     end
 
     parameter :workfile_id, "ID of the workfile for which the draft should be shown"
@@ -28,7 +28,7 @@ resource "Workfiles: drafts" do
 
   put "/workfiles/:workfile_id/draft" do
     before do
-      workfile_drafts(:default).tap { |d| d.workfile = workfile; d.save! }
+      workfile_drafts(:draft_default).tap { |d| d.workfile = workfile; d.save! }
     end
     let(:content) { "This is the updated content." }
 
@@ -59,7 +59,7 @@ resource "Workfiles: drafts" do
 
   delete "/workfiles/:workfile_id/draft" do
     before do
-      workfile_drafts(:default).tap { |d| d.workfile = workfile; d.save! }
+      workfile_drafts(:draft_default).tap { |d| d.workfile = workfile; d.save! }
     end
 
     parameter :workfile_id, "ID of the workfile for which the draft should be deleted"

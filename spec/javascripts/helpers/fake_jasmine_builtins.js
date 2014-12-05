@@ -17,7 +17,7 @@
         toThrow: function(){},
 
         createSpy: function(){}
-    }
+    };
 });
 
 var beforeEach = window.beforeEach;

@@ -1,27 +1,24 @@
 describe("chorus.views.visualizations.FrequencyView", function() {
-    var leftX = chorus.svgHelpers.leftX,
-        rightX = chorus.svgHelpers.rightX,
-        width = chorus.svgHelpers.width,
+    var width = chorus.svgHelpers.width,
         height = chorus.svgHelpers.height,
-        centerX = chorus.svgHelpers.centerX,
         topY = chorus.svgHelpers.topY,
         bottomY = chorus.svgHelpers.bottomY,
         centerY = chorus.svgHelpers.centerY;
 
     beforeEach(function() {
-        var dataset = rspecFixtures.dataset();
+        var dataset = backboneFixtures.dataset();
         this.task = dataset.makeFrequencyTask({"bins": 3, "yAxis": "fruits"});
         this.task.save();
-        this.server.lastCreate().succeed(rspecFixtures.frequencyTaskJson({response: {"bins": 3, "y_axis": "fruits"}}).response);
+        this.server.lastCreate().succeed(backboneFixtures.frequencyTaskJson({response: {"bins": 3, "y_axis": "fruits"}}).response);
 
         this.view = new chorus.views.visualizations.Frequency({ model: this.task });
-        this.addMatchers(chorus.svgHelpers.matchers);
+        window.addCompatibilityShimmedMatchers(chorus.svgHelpers.matchers);
     });
 
     describe("changing model", function() {
         it("does not cause render to be called", function() {
             spyOn(chorus.views.visualizations.Frequency.prototype, 'render');
-            var task = rspecFixtures.dataset().makeFrequencyTask({"bins": 3, "yAxis": "fruits"});
+            var task = backboneFixtures.dataset().makeFrequencyTask({"bins": 3, "yAxis": "fruits"});
             var view = new chorus.views.visualizations.Frequency({ model: task });
 
             task.set({rows: []});
@@ -38,8 +35,8 @@ describe("chorus.views.visualizations.FrequencyView", function() {
         });
 
         it("has the correct axis labels", function() {
-            expect(this.view.$('.xaxis .axis_label').text()).toBe("count")
-            expect(this.view.$('.yaxis .axis_label').text()).toBe("fruits")
+            expect(this.view.$('.xaxis .axis_label').text()).toBe("count");
+            expect(this.view.$('.yaxis .axis_label').text()).toBe("fruits");
         });
 
         describe("re-rendering", function() {
@@ -69,12 +66,12 @@ describe("chorus.views.visualizations.FrequencyView", function() {
             it("have the wider boxes at the top", function() {
                 expect(width(this.boxes[2])).toBeGreaterThan(width(this.boxes[1]));
                 expect(width(this.boxes[1])).toBeGreaterThan(width(this.boxes[0]));
-            })
+            });
 
             it("have the same heights", function() {
                 expect(height(this.boxes[2])).toEqual(height(this.boxes[1]));
                 expect(height(this.boxes[1])).toEqual(height(this.boxes[0]));
-            })
+            });
 
             it("draws them with some padding in between", function() {
                 _.each(this.boxes, function(rect, i) {
@@ -92,17 +89,17 @@ describe("chorus.views.visualizations.FrequencyView", function() {
         });
 
         it("draws vertical grid lines", function() {
-            expect(this.view.$(".xaxis line.grid").length).toBeGreaterThan(1)
-        })
+            expect(this.view.$(".xaxis line.grid").length).toBeGreaterThan(1);
+        });
 
         it("does not draw horizontal grid lines", function() {
-            expect(this.view.$(".yaxis line.grid").length).toBe(0)
-        })
+            expect(this.view.$(".yaxis line.grid").length).toBe(0);
+        });
 
         it("draws the grid lines after the rectangles", function() {
             var gridRect = this.view.$(".plot rect, line.grid");
-            expect($(gridRect[0]).attr("class")).not.toBe("grid")
-            expect($(gridRect[gridRect.length-1]).attr("class")).toBe("grid")
-        })
+            expect($(gridRect[0]).attr("class")).not.toBe("grid");
+            expect($(gridRect[gridRect.length-1]).attr("class")).toBe("grid");
+        });
     });
 });

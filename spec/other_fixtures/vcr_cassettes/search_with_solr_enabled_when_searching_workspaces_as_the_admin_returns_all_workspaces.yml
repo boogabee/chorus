@@ -5,12 +5,10 @@ http_interactions:
     uri: http://localhost:8981/solr/select?wt=ruby
     body:
       encoding: US-ASCII
-      string: fq=type%3A%28Workspace+OR+Events%5C%3A%5C%3ANote%29&fq=type_name_s%3A%28Workspace%29&q=searchquery&fl=%2A+score&qf=name_texts+summary_texts+body_texts&defType=edismax&hl=on&hl.simple.pre=%40%40%40hl%40%40%40&hl.simple.post=%40%40%40endhl%40%40%40&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true
+      string: fq=type%3A%28Workspace+OR+Events%5C%3A%5C%3ANote+OR+Comment%29&fq=type_name_s%3A%28Workspace%29&q=searchquery&fl=%2A+score&qf=name_texts+summary_texts+tag_names_texts+body_texts+name_stemmed_texts+summary_stemmed_texts+tag_names_stemmed_texts+body_stemmed_texts&defType=edismax&hl=on&hl.simple.pre=%40%40%40hl%40%40%40&hl.simple.post=%40%40%40endhl%40%40%40&hl.snippets=100&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true
     headers:
       content-type:
       - application/x-www-form-urlencoded; charset=UTF-8
-      connection:
-      - close
   response:
     status:
       code: 200
@@ -24,31 +22,37 @@ http_interactions:
       - Jetty(6.1-SNAPSHOT)
     body:
       encoding: US-ASCII
-      string: ! '{''responseHeader''=>{''status''=>0,''QTime''=>2,''params''=>{''group.ngroups''=>''true'',''group.limit''=>''3'',''qf''=>''name_texts
-        summary_texts body_texts'',''hl.simple.pre''=>''@@@hl@@@'',''wt''=>''ruby'',''hl''=>''on'',''rows''=>''50'',''defType''=>''edismax'',''fl''=>''*
-        score'',''start''=>''0'',''q''=>''searchquery'',''group.truncate''=>''true'',''group.field''=>''grouping_id_s'',''hl.simple.post''=>''@@@endhl@@@'',''group''=>''true'',''fq''=>[''type:(Workspace
-        OR Events\\:\\:Note)'',''type_name_s:(Workspace)'']}},''grouped''=>{''grouping_id_s''=>{''matches''=>6,''ngroups''=>6,''groups''=>[{''groupValue''=>''Workspace
-        1000008'',''doclist''=>{''numFound''=>1,''start''=>0,''maxScore''=>2806.2437,''docs''=>[{''id''=>''Workspace
-        1000008'',''name_texts''=>[''Public''],''summary_texts''=>[''searchquery''],''score''=>2806.2437}]}},{''groupValue''=>''Workspace
-        1000009'',''doclist''=>{''numFound''=>1,''start''=>0,''maxScore''=>2806.2437,''docs''=>[{''id''=>''Workspace
-        1000009'',''name_texts''=>[''Private''],''summary_texts''=>[''searchquery''],''score''=>2806.2437}]}},{''groupValue''=>''Workspace
-        1000010'',''doclist''=>{''numFound''=>1,''start''=>0,''maxScore''=>2806.2437,''docs''=>[{''id''=>''Workspace
-        1000010'',''name_texts''=>[''Search Public''],''summary_texts''=>[''searchquery''],''score''=>2806.2437}]}},{''groupValue''=>''Workspace
-        1000011'',''doclist''=>{''numFound''=>1,''start''=>0,''maxScore''=>2806.2437,''docs''=>[{''id''=>''Workspace
-        1000011'',''name_texts''=>[''Search Private''],''summary_texts''=>[''searchquery''],''score''=>2806.2437}]}},{''groupValue''=>''Workspace
-        1000005'',''doclist''=>{''numFound''=>1,''start''=>0,''maxScore''=>1202.6759,''docs''=>[{''id''=>''Workspace
-        1000005'',''name_texts''=>[''Public with no collaborators except collaborator''],''summary_texts''=>[''searchquery
-        can see I guess''],''score''=>1202.6759}]}},{''groupValue''=>''Workspace 1000006'',''doclist''=>{''numFound''=>1,''start''=>0,''maxScore''=>1202.6759,''docs''=>[{''id''=>''Workspace
-        1000006'',''name_texts''=>[''Private with no collaborators''],''summary_texts''=>[''Not
-        for searchquery, ha ha''],''score''=>1202.6759}]}}]}},''highlighting''=>{''Workspace
-        1000008''=>{''summary_texts''=>[''@@@hl@@@searchquery@@@endhl@@@'']},''Workspace
-        1000009''=>{''summary_texts''=>[''@@@hl@@@searchquery@@@endhl@@@'']},''Workspace
-        1000010''=>{''summary_texts''=>[''@@@hl@@@searchquery@@@endhl@@@'']},''Workspace
-        1000011''=>{''summary_texts''=>[''@@@hl@@@searchquery@@@endhl@@@'']},''Workspace
-        1000005''=>{''summary_texts''=>[''@@@hl@@@searchquery@@@endhl@@@ can see I
-        guess'']},''Workspace 1000006''=>{''summary_texts''=>[''Not for @@@hl@@@searchquery@@@endhl@@@,
-        ha ha'']}}}'
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>7,'params'=>{'group.ngroups'=>'true','group.limit'=>'3','qf'=>'name_texts\
+        \ summary_texts tag_names_texts body_texts name_stemmed_texts summary_stemmed_texts\
+        \ tag_names_stemmed_texts body_stemmed_texts','hl.simple.pre'=>'@@@hl@@@','wt'=>'ruby','hl'=>'on','rows'=>'50','defType'=>'edismax','fl'=>'*\
+        \ score','hl.snippets'=>'100','start'=>'0','q'=>'searchquery','group.truncate'=>'true','group.field'=>'grouping_id_s','hl.simple.post'=>'@@@endhl@@@','group'=>'true','fq'=>['type:(Workspace\
+        \ OR Events\\\\:\\\\:Note OR Comment)','type_name_s:(Workspace)']}},'grouped'=>{'grouping_id_s'=>{'matches'=>6,'ngroups'=>6,'groups'=>[{'groupValue'=>'Workspace\
+        \ 1000008','doclist'=>{'numFound'=>1,'start'=>0,'maxScore'=>9534.37,'docs'=>[{'id'=>'Workspace\
+        \ 1000008','name_texts'=>['Public'],'name_stemmed_texts'=>['Public'],'summary_stemmed_texts'=>['searchquery'],'summary_texts'=>['searchquery'],'score'=>9534.37}]}},{'groupValue'=>'Workspace\
+        \ 1000009','doclist'=>{'numFound'=>1,'start'=>0,'maxScore'=>9534.37,'docs'=>[{'id'=>'Workspace\
+        \ 1000009','name_texts'=>['Private'],'name_stemmed_texts'=>['Private'],'summary_stemmed_texts'=>['searchquery'],'summary_texts'=>['searchquery'],'score'=>9534.37}]}},{'groupValue'=>'Workspace\
+        \ 1000010','doclist'=>{'numFound'=>1,'start'=>0,'maxScore'=>9534.37,'docs'=>[{'id'=>'Workspace\
+        \ 1000010','name_texts'=>['Search Public'],'name_stemmed_texts'=>['Search\
+        \ Public'],'summary_stemmed_texts'=>['searchquery'],'summary_texts'=>['searchquery'],'score'=>9534.37}]}},{'groupValue'=>'Workspace\
+        \ 1000011','doclist'=>{'numFound'=>1,'start'=>0,'maxScore'=>9534.37,'docs'=>[{'id'=>'Workspace\
+        \ 1000011','name_texts'=>['Search Private'],'name_stemmed_texts'=>['Search\
+        \ Private'],'summary_stemmed_texts'=>['searchquery'],'summary_texts'=>['searchquery'],'score'=>9534.37}]}},{'groupValue'=>'Workspace\
+        \ 1000005','doclist'=>{'numFound'=>1,'start'=>0,'maxScore'=>7150.7773,'docs'=>[{'id'=>'Workspace\
+        \ 1000005','name_texts'=>['Public with no collaborators except collaborator'],'name_stemmed_texts'=>['Public\
+        \ with no collaborators except collaborator'],'summary_stemmed_texts'=>['searchquery\
+        \ can see I guess'],'summary_texts'=>['searchquery can see I guess'],'score'=>7150.7773}]}},{'groupValue'=>'Workspace\
+        \ 1000006','doclist'=>{'numFound'=>1,'start'=>0,'maxScore'=>7150.7773,'docs'=>[{'id'=>'Workspace\
+        \ 1000006','name_texts'=>['Private with no collaborators'],'name_stemmed_texts'=>['Private\
+        \ with no collaborators'],'summary_stemmed_texts'=>['Not for searchquery,\
+        \ ha ha'],'summary_texts'=>['Not for searchquery, ha ha'],'score'=>7150.7773}]}}]}},'highlighting'=>{'Workspace\
+        \ 1000008'=>{'summary_stemmed_texts'=>['@@@hl@@@searchquery@@@endhl@@@'],'summary_texts'=>['@@@hl@@@searchquery@@@endhl@@@']},'Workspace\
+        \ 1000009'=>{'summary_stemmed_texts'=>['@@@hl@@@searchquery@@@endhl@@@'],'summary_texts'=>['@@@hl@@@searchquery@@@endhl@@@']},'Workspace\
+        \ 1000010'=>{'summary_stemmed_texts'=>['@@@hl@@@searchquery@@@endhl@@@'],'summary_texts'=>['@@@hl@@@searchquery@@@endhl@@@']},'Workspace\
+        \ 1000011'=>{'summary_stemmed_texts'=>['@@@hl@@@searchquery@@@endhl@@@'],'summary_texts'=>['@@@hl@@@searchquery@@@endhl@@@']},'Workspace\
+        \ 1000005'=>{'summary_stemmed_texts'=>['@@@hl@@@searchquery@@@endhl@@@ can\
+        \ see I guess'],'summary_texts'=>['@@@hl@@@searchquery@@@endhl@@@ can see\
+        \ I guess']},'Workspace 1000006'=>{'summary_stemmed_texts'=>['Not for @@@hl@@@searchquery@@@endhl@@@,\
+        \ ha ha'],'summary_texts'=>['Not for @@@hl@@@searchquery@@@endhl@@@, ha ha']}}}"
     http_version: '1.1'
-  recorded_at: Mon, 15 Oct 2012 22:19:19 GMT
-recorded_with: VCR 2.1.1
-...
+  recorded_at: Mon, 16 Jun 2014 20:55:02 GMT
+recorded_with: VCR 2.3.0

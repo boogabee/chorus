@@ -1,6 +1,6 @@
 describe("chorus.models.ChartTask", function() {
     beforeEach(function() {
-        this.dataset = newFixtures.workspaceDataset.sandboxTable({ id: 5, schema: {name: 'animals'}, objectName: 'dog_breeds'});
+        this.dataset = backboneFixtures.workspaceDataset.datasetTable({ id: 5, schema: {name: 'animals'}, objectName: 'dog_breeds'});
         var chartSubclass = chorus.models.ChartTask.extend({});
         chartSubclass.prototype.chartType = "fantastic";
         this.model = new chartSubclass({ dataset: this.dataset });
@@ -24,6 +24,23 @@ describe("chorus.models.ChartTask", function() {
     });
 
     it("mixes in SQLResults", function() {
-        expect(this.model.columnOrientedData).toBeDefined();
+        expect(this.model.hasResults).toBeDefined();
+    });
+
+    describe("getRows", function() {
+        beforeEach(function() {
+            this.model = backboneFixtures.boxplotTask();
+        });
+
+        it("includes unique and original names", function() {
+            var rows = this.model.getRows();
+            var columns = this.model.getColumns();
+            expect(columns.length).toBeGreaterThan(0);
+
+            var originalColumnNames = _.pluck(columns, "name");
+            var uniqueColumnNames = _.pluck(columns, "uniqueName");
+            expect(_.intersection(_.keys(rows[0]), originalColumnNames).sort()).toEqual(originalColumnNames.sort());
+            expect(_.intersection(_.keys(rows[0]), uniqueColumnNames).sort()).toEqual(uniqueColumnNames.sort());
+        });
     });
 });

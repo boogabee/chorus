@@ -1,0 +1,26 @@
+.import_gnip_stream {
+  font-size: 13px;
+
+  fieldset {
+    .to_table {
+      margin-top: 15px;
+
+      label {
+        @include dialog-label;
+      }
+
+      input {
+        width: 275px;
+        margin-left: 15px;
+      }
+    }
+
+    a {
+      margin-left: 5px;
+      font-size: 13px;
+      display: inline-block;
+      max-width: 290px;
+      @include ellipsis;
+    }
+  }
+}

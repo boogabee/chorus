@@ -1,0 +1,35 @@
+<div>
+    <div class="line">
+        <div class="col cols-8 started_at"><strong>{{t 'job.result_details.started'}}: </strong>{{displayTimestamp startedAt}}</div>
+        <div class="col cols-8 finished_at"><strong>{{t 'job.result_details.finished'}}: </strong>{{displayTimestamp finishedAt}}</div>
+        <div class="col cols-ext duration"><strong>{{t 'job.result_details.duration'}}: </strong>{{displayDuration finishedAt startedAt}}</div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+            <th>{{t 'job.result_details.name'}}</th>
+            <th>{{t 'job.result_details.started'}}</th>
+            <th>{{t 'job.result_details.finished'}}</th>
+            <th>{{t 'job.result_details.duration'}}</th>
+            <th>{{t 'job.result_details.status'}}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {{#each jobTaskResults}}
+        <tr>
+            <td>{{name}}</td>
+            <td>{{displayTimestamp startedAt}}</td>
+            <td>{{displayTimestamp finishedAt}}</td>
+            <td>{{displayDuration finishedAt startedAt}}</td>
+            <td>
+                {{#if payloadResultId}}
+                    {{workflowResultLink this}}
+                {{else}}
+                    {{status}}
+                    {{#if message}} - {{message}}{{/if}}</td>
+                {{/if}}
+        </tr>
+        {{/each}}
+        </tbody>
+    </table>
+</div>

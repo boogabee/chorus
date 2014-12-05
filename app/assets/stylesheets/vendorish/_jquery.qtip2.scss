@@ -54,7 +54,7 @@
 		border: 1px solid #000001;
 		border-width: 1px 1px 0;
 
-		font-weight: bold;
+		font-weight: $semibold;
 	}
 
 	.ui-tooltip-titlebar + .ui-tooltip-content{ border-top-width: 0px !important; }
@@ -476,7 +476,7 @@
 
 		font-size: 11px;
 		font-family: 'Lucida Grande', sans-serif;
-		font-weight: bold;
+		font-weight: $semibold;
 		line-height: 16px;
 		text-shadow: 0 1px black;
 	}

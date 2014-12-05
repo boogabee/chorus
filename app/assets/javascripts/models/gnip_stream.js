@@ -1,6 +1,6 @@
 chorus.models.GnipStream = chorus.models.Base.extend({
-    constructorName: "GnipInstance",
-    urlTemplate: "gnip_instances/{{gnip_instance_id}}/imports",
+    constructorName: "GnipDataSource",
+    urlTemplate: "gnip_data_sources/{{gnip_data_source_id}}/imports",
     parameterWrapper: "import",
 
     declareValidations: function(newAttrs) {

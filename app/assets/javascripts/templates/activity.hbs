@@ -1,0 +1,97 @@
+<div class="media activity_item">
+    {{#if isInsight}}
+        <div class="insight_ribbon">
+            <span class="left" /><span class="center">{{t "insight.title"}}</span><span class="right" />
+        </div>
+    {{/if}}
+
+    <div class="icon">
+        <a href="{{iconHref}}"><img src="{{iconSrc}}" class="{{iconClass}}" /></a>
+    </div>
+
+    <div class="activity_content bd">
+        <div class="activity_header">
+            {{headerHtml}}
+        </div>
+        {{#if isWorkfileImage}}
+            {{#if imageSrc}}
+                <div class="workfile_image">
+                    <a class="image_link dialog" href="#">
+                        <span class="image"><img src="{{imageSrc}}" /></span>
+                    </a>
+                </div>
+            {{/if}}
+        {{/if}}
+        {{#if isUserGenerated }}
+            <div class="truncated_text"></div>
+        {{else}}
+            {{#if hasCommitMessage }}
+                <div class="truncated_text"></div>
+            {{else}}
+                {{#if body}}
+                    <div class="body">{{body}}</div>
+                {{/if}}
+            {{/if}}
+        {{/if}}
+
+        <ul class='attachments'>
+        {{#eachFunctionResult attachments}}
+            <li>
+                {{#if isImage}}
+                    <span class="image image_attachment_link"><img src="{{iconSrc}}" /></span>
+                {{else}}
+                    <a href="{{url}}" {{#if useExternalLink}}target="_blank"{{/if}}>
+                        <span class="image"><img src="{{iconSrc}}" /></span>
+                        <span class="name" title="{{name}}">{{name}}</span>
+                    </a>
+                {{/if}}
+            </li>
+        {{/eachFunctionResult}}
+        </ul>
+        <div class="actions">
+            {{#if hasError}}
+                <div class="error_details"></div>
+            {{/if}}
+            <span class="timestamp">{{timestamp}}</span>
+            {{#if isNotification}}
+                <a class="delete_link alert delete_notification" href="#"><i class='oi' data-glyph="trash"></i><span>{{t "actions.delete"}}</span> </a>
+            {{else}}
+                {{#if isNote}}
+                    {{#unless isReadOnly}}
+                        {{#if canEdit}}
+                            <a class="edit_link dialog edit_note" href="#">{{t "actions.edit"}}</a>
+                        {{/if}}
+                        {{#if canDelete}}
+                            <a class="delete_link alert delete_note" href="#"><i class='oi' data-glyph="trash"></i> {{t "actions.delete"}} </a>
+                        {{/if}}
+                    {{/unless}}
+                {{/if}}
+            {{/if}}
+        </div>
+        {{#unless isReadOnly}}
+            <div class="links">
+                <a class="comment dialog" href="#">{{t "activity.comment"}}</a>
+                {{#if canBePromotedToInsight}}
+                    <span class="separator">|</span> <a class="promote" href="#">{{t "activity.promote"}}</a>
+                {{/if}}
+                {{#if isInsight}}
+                    {{#if canPublish}}
+                        {{#if isPublished}}
+                            <span class="separator">|</span> <a href="#" class="unpublish">{{t "insight.unpublish.link"}}</a>
+                        {{else}}
+                            <span class="separator">|</span> <a href="#" class="publish">{{t "insight.publish.link"}}</a>
+                        {{/if}}
+                    {{/if}}
+                    {{#if currentUserCanDemoteFromInsight}}
+                        <span class="separator">|</span> <a class="demote" href="#">{{t "activity.demote"}}</a>
+                    {{/if}}
+                    <span class="separator">|</span> <span class="promoted_by">{{promotionDetails}}</span>
+                {{/if}}
+            </div>
+        {{/unless}}
+    </div>
+</div>
+
+{{#unless isReadOnly}}
+    <ul class="comment_list"></ul>
+{{/unless}}

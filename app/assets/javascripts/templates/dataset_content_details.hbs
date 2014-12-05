@@ -1,0 +1,127 @@
+<div class="definition action_bar_highlighted">
+    <div class="line">
+        <div class="col cols-16">
+            <span class="sql">{{sqlDefinition definition}}</span>
+        </div>
+
+        <div class="col-ext">
+            {{#if showEdit}}
+                <button class="edit button_action">{{t "dataset.content_details.edit"}}</button>
+            {{/if}}
+            {{#if showPublish}}
+                <button class="publish button_action">Publish to Tableau</button>
+            {{/if}}
+            {{#if showDerive}}
+                <button class="derive button_action">{{t "dataset.content_details.derive"}}</button>
+            {{/if}}
+            {{#if showVisualize}}
+                <button class="visualize button_action">{{t "dataset.content_details.visualize"}}</button>
+            {{/if}}
+        </div>
+    </div>
+</div>
+<div class="create_chart action_bar_highlighted pennant_bar hidden">
+    <div class="line">
+        <div class="col cols-3">
+            <span class="action_bar_pennant">{{t "dataset.content_details.create"}}</span><span class="triangle_right"></span>
+        </div>
+        <div class="col col-ext">
+            <a href="#" class="cancel">{{t "actions.cancel"}}</a>
+        </div>
+        <div class="col cols-16">
+            <ul class="list_horizontal_divided list_action_highlighted">
+                <li><span data-chart_type="frequency"  class="chart_icon action_bar_icon action_bar_hoverable_item frequency"><span class="triangle"></span></span></li>
+                <li><span data-chart_type="histogram"  class="chart_icon action_bar_icon action_bar_hoverable_item histogram"><span class="triangle"></span></span></li>
+                <li><span data-chart_type="heatmap"    class="chart_icon action_bar_icon action_bar_hoverable_item heatmap"><span class="triangle"></span></span></li>
+                <li><span data-chart_type="timeseries" class="chart_icon action_bar_icon action_bar_hoverable_item timeseries"><span class="triangle"></span></span></li>
+                <li><span data-chart_type="boxplot"    class="chart_icon action_bar_icon action_bar_hoverable_item boxplot"><span class="triangle"></span></span></li>
+                <li>
+                    <span class="frequency chart_type_title hidden">{{t "dataset.visualization.names.frequency"}}</span>
+                    <span class="histogram chart_type_title hidden">{{t "dataset.visualization.names.histogram"}}</span>
+                    <span class="heatmap chart_type_title hidden">{{t "dataset.visualization.names.heatmap"}}</span>
+                    <span class="timeseries chart_type_title hidden">{{t "dataset.visualization.names.timeseries"}}</span>
+                    <span class="boxplot chart_type_title hidden">{{t "dataset.visualization.names.boxplot"}}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="create_chorus_view action_bar_highlighted pennant_bar hidden">
+    <div class="line">
+        <div class="col col-ext">
+            <a href="#" class="cancel">{{t "actions.cancel"}}</a>
+        </div>
+
+        <div class="col cols-16">
+            <span class="action_bar_pennant">{{t "dataset.content_details.create"}}</span><span class="triangle_right"></span>
+            <span class="chorusview action_bar_icon"><span class="triangle"></span></span>
+            <span class="title mlm">{{t "dataset.chorusview.title"}}</span>
+        </div>
+    </div>
+</div>
+<div class="edit_chorus_view action_bar_highlighted pennant_bar hidden">
+    <div class="line">
+        <div class="col col-ext">
+            <ul class="list_horizontal">
+            <li><button class="save button_action">{{t "dataset.content_details.edit_chorus_view.save"}}</button></li>
+            <li><a href="#" class="cancel">{{t "actions.cancel"}}</a></li>
+            </ul>
+        </div>
+        <div class="col col-last">
+            <ul class="list_horizontal">
+                <li>
+                    <span class="action_bar_pennant">{{t "dataset.content_details.edit_as_workfile"}}</span><span
+                    class="triangle_right"></span>
+                </li>
+                <li><button class="preview button_action">{{t "dataset.run_sql"}}</button></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="info_bar hidden action_bar_secondary">
+{{t "dataset.visualization.info_bar"}}
+</div>
+
+<div class="column_count action_bar_secondary">
+    <div class="line">
+        <div class="col col-ext">
+            <button class="preview button_action">{{t "dataset.data_preview"}}</button>
+        </div>
+        <div class="col cols-16">
+            <span class="explore">{{t "actions.explore"}}</span>
+            <input class="search" placeholder="{{t "dataset.search"}}"/>
+            <span class="count">{{t "dataset.column_count" count=models.length}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="chorus_view_info action_bar_secondary hidden">
+    <ul class="list_horizontal select_all_or_none mrm">
+        <li><span class="select">{{t "actions.select"}}</span></li>
+        <li><a href="#" class="select_all">{{t "actions.select_all"}}</a></li>
+        <li>|</li>
+        <li><a href="#" class="select_none">{{t "actions.select_none"}}</a></li>
+    </ul>
+
+    <input class="search" placeholder="{{t "dataset.search"}}"/>
+    <span class="count">{{t "dataset.column_count" count=models.length}}</span>
+</div>
+
+<div class="edit_chorus_view_info hidden action_bar_secondary">
+    <span class="left">{{t "dataset.content_details.edit_chorus_view.info"}}</span>
+</div>
+
+<div class="dataset_errors hidden">
+    <ul>
+        <li>{{t "results_console_view.there_was_an_error"}}</li>
+    </ul>
+    <div class="actions">
+        <a href="#" class="action view_error_details">{{t "actions.view_details"}}</a> | <a href="#" class="action close_errors">{{t "actions.close"}}</a>
+    </div>
+</div>
+
+<div class="chart_config hidden"/>
+
+<div class="data_preview hidden"/>
+<div class="filters hidden"/>
+<div class="errors hidden"/>

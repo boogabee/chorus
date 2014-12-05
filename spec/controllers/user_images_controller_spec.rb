@@ -34,6 +34,13 @@ describe UserImagesController do
         decoded_response.icon.should == user.image.url(:icon)
       end
 
+      it "uses authorization" do
+        #mock(subject).authorize! :update, user
+        log_in( users(:the_collaborator) )
+        post :create, :user_id => user.id, :files => files
+        response.should be_forbidden
+      end
+
       generate_fixture "image.json" do
         post :create, :user_id => user.id, :files => files
       end
@@ -48,8 +55,6 @@ describe UserImagesController do
         controller.head :ok
       }
       get :show, :user_id => user.id
-      response.code.should == "200"
-      decoded_response.type == "image/gif"
     end
 
     context "when no image exists for the user" do

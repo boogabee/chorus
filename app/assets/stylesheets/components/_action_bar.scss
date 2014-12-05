@@ -1,0 +1,48 @@
+@mixin button-theme($border, $font) {
+  button, a.button {
+    border-color: $border;
+    color: $font;
+  }
+}
+
+.action_bar_highlighted {
+  background-color: $action-bar-highlighted-background-color;
+  padding: 3px 10px;
+
+  color: $fiji-green;
+
+  a { color: $fiji-green; }
+
+  @include button-theme($button-border-color-highlighted, $fiji-green);
+}
+
+.action_bar_hoverable_item {
+  cursor: pointer;
+
+  &:hover {
+    background-color: $action-bar-hovered-item-background-color;
+  }
+}
+
+.action_bar_primary {
+  padding: 3px 10px;
+  @include button-theme($button-border-color, $default-font-color);
+
+}
+
+.action_bar_secondary {
+  padding: 3px 10px;
+  border-top: $border-canon;
+  background-color: $action-bar-secondary-background-color;
+  @include button-theme($button-border-color-secondary, $default-font-color);
+
+}
+
+.action_bar_limited {
+  padding: 3px 10px;
+  line-height: 2;
+  background-image: url("/images/binary_workfile_action_bar_tile.png");
+
+  @include button-theme($button-border-color-limited, $default-font-color);
+
+}

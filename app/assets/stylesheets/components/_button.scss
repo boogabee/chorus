@@ -1,0 +1,173 @@
+@import "compass/css3/opacity";
+
+// These are the button colors from the Workflow IDE.
+$border-blue: rgb(0,140,200);
+$another-blue: rgb(38,174,233);
+$third-blue: rgb(67,184,236);
+$another-shade-of-gray: rgb(215,223,231);
+$bone-offwhite: rgb(233,234,238);
+$bone-white: rgb(243,244,247);
+$warm-bones: rgb(241,242,245);
+$nearly-white: rgb(250,252,253);
+$wet-concrete: rgb(117,117,117);
+$dry-concrete: rgb(198,205,213);
+$button-shade: rgba(10,117,163,0.118);
+
+@mixin button-canon {
+    text-overflow: ellipsis;
+    font-size: 14px;
+    min-width: 86px;
+    border-radius: 3px;
+    height: 30px;
+
+    &:disabled {
+        color: $dry-concrete;
+        opacity: 0.7;
+    }
+}
+
+@mixin button-primary-coloring {
+    background-image: linear-gradient(0deg, $bone-offwhite 0%, $brand 0%, $another-blue 100%);
+    color: $nearly-white;
+    border: 1px solid $border-blue;
+    box-shadow: inset 0px 1px 1px 0px rgba(255,255,255,0.192);
+
+    &:disabled, &:disabled:hover {
+        background-image: linear-gradient(0deg, $bone-offwhite 0%, $bone-white 100%);
+        border: 1px solid $another-shade-of-gray;
+    }
+
+    &:hover {
+        background-image: linear-gradient(0deg, $another-blue  0%, $third-blue 99%);
+    }
+
+    &:active {
+        background-image: linear-gradient(0deg, $another-blue 0%, $brand 100%, $bone-offwhite 100%);
+        box-shadow: inset 0px 1px 1px 0px $button-shade;
+    }
+}
+
+
+@mixin button-secondary-coloring {
+    background-image: linear-gradient(0deg, $bone-offwhite 0%, $bone-white 100%);
+    color: $wet-concrete;
+    border: 1px solid $another-shade-of-gray;
+    /* box-shadow: inset 0px 1px 1px 0px rgba(255,255,255,0.192); */
+
+    &:disabled, &:disabled:hover {
+        background-image: linear-gradient(0deg, $bone-white 0%, $nearly-white 100%);
+    }
+
+    &:hover {
+        background-image: linear-gradient(0deg, $warm-bones 0%, $nearly-white 100%);
+    }
+
+    &:active {
+        background-image: linear-gradient(0deg, $bone-white 0%, $bone-offwhite 100%);
+        box-shadow: inset 0px 1px 1px 0px $button-shade;
+    }
+}
+
+
+@mixin button-dashboard-coloring {
+    background-image: linear-gradient(0deg, $bone-offwhite 0%, $bone-white 100%);
+    color: $wet-concrete;
+    border: 1px solid $another-shade-of-gray;
+
+    &:disabled, &:disabled:hover {
+        background-image: linear-gradient(0deg, $bone-white 0%, $nearly-white 100%);
+    }
+
+    &:hover {
+        background-image: linear-gradient(0deg, $warm-bones 0%, $nearly-white 100%);
+    }
+
+    &:active {
+        background-image: linear-gradient(0deg, $bone-white 0%, $bone-offwhite 100%);
+        box-shadow: inset 0px 1px 1px 0px $button-shade;
+    }
+}
+
+
+@mixin primary-button {
+    @include button-canon;
+    @include button-primary-coloring; 
+}
+
+@mixin secondary-button {
+    @include button-canon;
+    @include button-secondary-coloring;    
+}
+
+@mixin configure-button {
+    // that are NOT submit or form buttons, 
+    // but used as configuration or action elements in the app
+    
+    @include button-dashboard-coloring;   
+}
+
+@mixin panel-button($height) {
+    text-align: center;
+
+    line-height: $height;
+    height: $height;
+
+    @include border-radius($default-border-radius);
+    @include button-dashboard-coloring;
+}
+
+
+a.button, button, input[type=submit] {
+    -webkit-appearance: initial;
+    display: inline-block;
+    color: $default-font-color;
+    line-height: $button-height;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0 14px;
+    vertical-align: middle;
+    cursor: pointer;
+    outline-color: $button-border-color;
+    font-family: $font-family;
+
+    &:disabled {
+        cursor: initial;
+    }
+}
+
+button.modalish, .button_modalish {
+    @include secondary-button;
+
+    &.cancel, &.close_dialog {
+        color: $default-link-color;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+
+        &:disabled { background: transparent; }
+    }
+    
+    /* override min-width for the cancel button/link so that it is closer to the other buttons */
+    &.cancel {
+        min-width: 70px;
+    }
+
+    &[type='submit'], &.submit, &.save {
+        @include primary-button;
+    }
+
+    &:disabled {
+        color: $low-light-type;
+    }
+}
+
+.button_action {
+    border: 1px solid $button-border-color;
+    background: none;
+    font-size: inherit;
+    border-radius: 3px;
+
+    &:disabled {
+        @include opacity(0.5);
+    }
+}

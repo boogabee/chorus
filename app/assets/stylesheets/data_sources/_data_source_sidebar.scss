@@ -1,0 +1,49 @@
+.data_source_list_sidebar {
+    .info {
+        margin-bottom: 10px;
+    }
+
+    .account_info {
+        vertical-align: middle;
+        margin-bottom: 10px;
+
+        img {
+            vertical-align: middle;
+            padding-right: 4px;
+        }
+    }
+
+    .data_source_name {
+        @include ellipsis;
+        @include heading-sidebar;
+    }
+
+    .data_source_type {
+        @include secondary-text-small;
+    }
+
+    .data_source_configuration_details {
+        dl {
+            padding-right: 8px;
+            font-size: 14px;
+            line-height: 19px;
+        }
+
+        dt {
+            @include font-normal-alpha;
+            float: left;
+            clear: left;
+        }
+
+        dd {
+            float: right;
+            width: 142px;
+            text-align: right;
+            @include ellipsis;
+        }
+    }
+
+    .tabbed_area .selected {
+        display: block;
+    }
+}

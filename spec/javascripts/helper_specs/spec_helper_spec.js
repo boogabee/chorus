@@ -77,8 +77,8 @@ describe("spec_helper", function() {
 
         context("when passed a function", function() {
             it("does an 'instanceof' check", function() {
-                expect(rspecFixtures.user()).toBeA(chorus.models.User);
-                expect(rspecFixtures.user()).not.toBeA(chorus.models.BoxplotTask);
+                expect(backboneFixtures.user()).toBeA(chorus.models.User);
+                expect(backboneFixtures.user()).not.toBeA(chorus.models.BoxplotTask);
             });
         });
     });
@@ -113,11 +113,11 @@ describe("spec_helper", function() {
 
     describe("#toHaveUrlPath", function() {
         it("should match against the path of the url", function() {
-            expect("/foo/bar").toHaveUrlPath("/foo/bar")
+            expect("/foo/bar").toHaveUrlPath("/foo/bar");
         });
 
         it("should ignore query parameters", function() {
-            expect("/foo/bar?option1=foo").toHaveUrlPath("/foo/bar")
+            expect("/foo/bar?option1=foo").toHaveUrlPath("/foo/bar");
         });
     });
 
@@ -138,18 +138,18 @@ describe("spec_helper", function() {
 
     describe("#toHaveBeenCalledOn", function() {
         beforeEach(function() {
-            this.model1 = rspecFixtures.user()
-            this.model2 = rspecFixtures.user()
-            spyOn(chorus.models.User.prototype, 'fetch')
-            spyOn(chorus.models.User.prototype, 'save')
+            this.model1 = backboneFixtures.user();
+            this.model2 = backboneFixtures.user();
+            spyOn(chorus.models.User.prototype, 'fetch');
+            spyOn(chorus.models.User.prototype, 'save');
         });
 
         it("passes if the given spy was ever called on the given object", function() {
-            this.model1.fetch()
-            this.model2.fetch()
-            expect(chorus.models.User.prototype.fetch).toHaveBeenCalledOn(this.model1)
-            this.model2.save()
-            expect(chorus.models.User.prototype.save).not.toHaveBeenCalledOn(this.model1)
+            this.model1.fetch();
+            this.model2.fetch();
+            expect(chorus.models.User.prototype.fetch).toHaveBeenCalledOn(this.model1);
+            this.model2.save();
+            expect(chorus.models.User.prototype.save).not.toHaveBeenCalledOn(this.model1);
         });
     });
 
@@ -228,18 +228,18 @@ describe("spec_helper", function() {
 
     describe("#toHaveHref", function() {
         it("passes if the element has the href", function() {
-            var elem = $("<a/>").attr("href", "http://example.com/foo/bar")
-            expect(elem).toHaveHref("http://example.com/foo/bar")
+            var elem = $("<a/>").attr("href", "http://example.com/foo/bar");
+            expect(elem).toHaveHref("http://example.com/foo/bar");
         });
 
         it("decodes the expected and actual before comparison", function() {
-            var elem = $("<a/>").attr("href", "http://example.com/foo|bar%7Cbaz")
-            expect(elem).toHaveHref("http://example.com/foo%7Cbar|baz")
+            var elem = $("<a/>").attr("href", "http://example.com/foo|bar%7Cbaz");
+            expect(elem).toHaveHref("http://example.com/foo%7Cbar|baz");
         });
 
         it("fails if element does not have the href", function() {
-            var elem = $("<a/>").attr("href", "http://example.com/foo/bar")
-            expect(elem).not.toHaveHref("http://yahoo.com")
+            var elem = $("<a/>").attr("href", "http://example.com/foo/bar");
+            expect(elem).not.toHaveHref("http://yahoo.com");
         });
     });
 

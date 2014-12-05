@@ -11,20 +11,20 @@ describe("chorus.pages.UserEditPage", function() {
         });
 
         it("has a helpId", function() {
-            expect(this.view.helpId).toBe("user_edit")
-        })
+            expect(this.view.helpId).toBe("user_edit");
+        });
     });
 
     describe("#render", function() {
         beforeEach(function() {
-            this.user = rspecFixtures.user()
+            this.user = backboneFixtures.user();
             setLoggedInUser(this.user.attributes);
 
             this.view = new chorus.pages.UserEditPage(this.user.get("id"));
 
             this.server.completeFetchFor(this.user);
             this.server.completeFetchFor(this.user.activities());
-            this.server.completeFetchFor(chorus.models.Config.instance());
+            this.view.render();
         });
 
         it("displays the first + last name in the header", function() {

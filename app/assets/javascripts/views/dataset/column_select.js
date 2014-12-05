@@ -9,16 +9,17 @@ chorus.views.ColumnSelect = chorus.views.Base.extend({
 
     setup: function() {
         if(this.collection) {
-        this.bindings.add(this.collection, "join:added", this.render);
+            this.listenTo(this.collection, "join:added", this.render);
         }
     },
 
     postRender: function() {
-        var self = this;
+        var selectEl = this.$("select");
+        var showAliasedName = this.options.showAliasedName;
         _.defer(function() {
-            chorus.styleSelect(self.$('select'), {format: function(text, option) {
+            chorus.styleSelect(selectEl, {format: function(text, option) {
                 var aliasedName = $(option).data('aliasedName');
-                if (aliasedName && self.options.showAliasedName) {
+                if (aliasedName && showAliasedName) {
                     return '<span class="aliased_name"><span class="letter">' + aliasedName + '</span></span>' + text;
                 } else {
                     return text;
@@ -30,14 +31,14 @@ chorus.views.ColumnSelect = chorus.views.Base.extend({
     collectionModelContext: function(model) {
         return {
             quotedName: (model.quotedName && model.quotedName()) || model.get('name'),
-            disable: model.get("typeCategory") == "OTHER" && this.options.disableOtherTypeCategory,
-            selected: model == this.selectedColumn
-        }
+            disable: model.get("typeCategory") === "OTHER" && this.options.disableOtherTypeCategory,
+            selected: model === this.selectedColumn
+        };
     },
 
     getSelectedColumn: function() {
         var selectedCid = this.$('select option:selected').data('cid');
-        return this.collection.getByCid(selectedCid);
+        return this.collection.get(selectedCid);
     },
 
     selectColumn: function(column) {
@@ -66,4 +67,4 @@ chorus.views.ColumnSelect = chorus.views.Base.extend({
         }
         return this.collection.include(this.selectedColumn);
     }
-})
+});

@@ -1,0 +1,14 @@
+{{#if models.length}}
+    <!-- See DashboardProjectList -->
+{{else}}
+    <div class="empty_state">
+        <div class="empty_message">
+            <p>{{t "dashboard.project_card_list.no_workspaces.text" }}</p>
+        </div>
+        <div class="text_tip">
+            <p>{{t "dashboard.project_card_list.no_workspaces.text_tip.text" }}</p>
+
+            <p><a href="#/workspaces">{{t "dashboard.project_card_list.no_workspaces.text_tip.link.text" }}</a> {{t "dashboard.project_card_list.no_workspaces.text_tip.link_more" }}</p>
+        </div>
+    </div>
+{{/if}}

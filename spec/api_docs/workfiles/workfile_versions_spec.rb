@@ -69,7 +69,7 @@ resource "Workfiles: versions" do
     parameter :workfile_id, "Id of a workfile"
     parameter :owner_id, "Workfile owner"
     parameter :commit_message, "Commit message"
-    parameter :modifier_id, "Workfile modifier"
+    parameter :modifier_id, "Id of the user modifying the workfile"
     parameter :content, "Content of the file"
 
     required_parameters :owner_id, :workfile_id, :modifier_id
@@ -80,7 +80,7 @@ resource "Workfiles: versions" do
     let(:content) { workfile_version.contents }
 
     example_request "Create a new version of a workfile" do
-      status.should == 200
+      status.should == 201
     end
   end
 
@@ -101,8 +101,13 @@ resource "Workfiles: versions" do
     parameter :workfile_id, "Id of a workfile"
 
     required_parameters :workfile_id, :id
-    let!(:another_version) { workfile.build_new_version(owner, test_file('some.txt'), "commit message - 1")}
-    let!(:id) { another_version.to_param }
+    let!(:another_version) {
+      workfile.build_new_version(owner, test_file('some.txt'), "commit message - 1").tap do |file|
+        file.save!
+      end
+    }
+    let!(:id) { another_version.id }
+    let!(:workfile_id) { workfile.id }
 
 
     example_request "Delete a version of a workfile" do

@@ -6,8 +6,8 @@ describe WorkspaceSearchPresenter, :type => :view do
   let(:workspace) { workspaces(:search_public) }
 
   before(:each) do
-    reindex_solr_fixtures
-    stub(ActiveRecord::Base).current_user { user }
+    index_solr_fixtures_once
+    set_current_user(user)
   end
 
   describe "#to_hash" do

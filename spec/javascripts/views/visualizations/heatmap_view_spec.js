@@ -1,23 +1,16 @@
 describe("chorus.views.visualizations.Heatmap", function() {
+    function relativeLightness(color) {
+        return color.r + color.g + color.b;
+    }
+
     var leftX   = chorus.svgHelpers.leftX,
         rightX  = chorus.svgHelpers.rightX,
-        width   = chorus.svgHelpers.width,
-        height  = chorus.svgHelpers.height,
-        centerX = chorus.svgHelpers.centerX,
         topY    = chorus.svgHelpers.topY,
-        bottomY = chorus.svgHelpers.bottomY,
-        centerY = chorus.svgHelpers.centerY;
+        bottomY = chorus.svgHelpers.bottomY;
 
     beforeEach(function() {
-        this.addMatchers(chorus.svgHelpers.matchers);
-        this.addMatchers({
-            toAllBeEqual: function() {
-                var firstValue = this.actual[0];
-                return _.all(this.actual, function(element) {
-                    return _.isEqual(element, firstValue);
-                });
-            },
-
+        window.addCompatibilityShimmedMatchers(chorus.svgHelpers.matchers);
+        window.addCompatibilityShimmedMatchers({
             toBeDarkerThan: function(el) {
                 var fill1 = $.color.extract($(this.actual), "fill"),
                     fill2 = $.color.extract($(el), "fill");
@@ -27,9 +20,9 @@ describe("chorus.views.visualizations.Heatmap", function() {
     });
 
     beforeEach(function() {
-        this.task = rspecFixtures.dataset().makeHeatmapTask({xAxis: "hair_length", yAxis: "kill_count"});
+        this.task = backboneFixtures.dataset().makeHeatmapTask({xAxis: "hair_length", yAxis: "kill_count"});
         this.task.save();
-        this.server.lastCreate().succeed(rspecFixtures.heatmapTaskJson({response: {x_axis: "hair_length", y_axis: "kill_count"}}).response);
+        this.server.lastCreate().succeed(backboneFixtures.heatmapTaskJson({response: {x_axis: "hair_length", y_axis: "kill_count"}}).response);
 
         this.width = 925;
         this.height = 340;
@@ -100,7 +93,6 @@ describe("chorus.views.visualizations.Heatmap", function() {
                 }, this);
 
                 _.each(rows, function(row, i) {
-                    var bin = this.bins.eq(i);
                     var x = row.x,
                         y = row.y;
 
@@ -120,9 +112,9 @@ describe("chorus.views.visualizations.Heatmap", function() {
 
     context("when some bins have zero width", function() {
         beforeEach(function() {
-            this.task = rspecFixtures.dataset().makeHeatmapTask({xAxis: "hair_length", yAxis: "kill_count"});
+            this.task = backboneFixtures.dataset().makeHeatmapTask({xAxis: "hair_length", yAxis: "kill_count"});
             this.task.save();
-            this.server.lastCreate().succeed(rspecFixtures.heatmapTaskJson().response);
+            this.server.lastCreate().succeed(backboneFixtures.heatmapTaskJson().response);
 
 
             this.task.set({
@@ -155,10 +147,6 @@ describe("chorus.views.visualizations.Heatmap", function() {
             });
         });
     });
-
-    function relativeLightness(color) {
-        return color.r + color.g + color.b;
-    }
 });
 
 

@@ -17,6 +17,6 @@ chorus.views.FrequencyChartConfiguration = chorus.views.ChartConfiguration.exten
             name: this.model.get("objectName"),
             yAxis: this.$(".category select option:selected").text(),
             bins: this.$(".limiter .selected_value").text()
-        }
+        };
     }
 });

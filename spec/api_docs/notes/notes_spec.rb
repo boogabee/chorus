@@ -17,9 +17,9 @@ resource "Notes" do
     parameter :is_insight, "Promote this note to an insight?"
 
     let(:body) { note.body }
-    let(:gpdb_instance) { gpdb_instances(:owners) }
-    let(:entity_type) { "gpdb_instance" }
-    let(:entity_id) { gpdb_instance.id }
+    let(:gpdb_data_source) { data_sources(:owners) }
+    let(:entity_type) { "gpdb_data_source" }
+    let(:entity_id) { gpdb_data_source.id }
 
     example_request "Post a new note/insight on an entity" do
       status.should == 201

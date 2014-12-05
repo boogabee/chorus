@@ -2,15 +2,15 @@ describe("chorus.views.Filter", function() {
     beforeEach(function() {
         this.collection = new chorus.collections.DatabaseColumnSet([
             new chorus.models.DatabaseColumn({name: "mycolumn1"}),
-            new chorus.models.DatabaseColumn({name: "mycolumn2"})]);
+            new chorus.models.DatabaseColumn({name: "mycolumn2"})
+        ]);
         this.model = new chorus.models.DatasetFilter();
-        this.view = new chorus.views.Filter({model: this.model, collection: this.collection})
+        this.view = new chorus.views.Filter({model: this.model, collection: this.collection});
     });
 
 
     describe("render", function() {
         beforeEach(function() {
-            stubDefer();
             this.selectMenuStub = stubSelectMenu();
             spyOn(chorus, "styleSelect").andCallThrough();
             this.view.render();
@@ -55,7 +55,7 @@ describe("chorus.views.Filter", function() {
         });
 
         it("gives long comparators enough room", function() {
-            expect(chorus.styleSelect.mostRecentCall.args[1].menuWidth).toBe(240);
+            expect(chorus.styleSelect.lastCall().args[1].menuWidth).toBe(240);
         });
 
         it("displays remove button", function() {
@@ -90,7 +90,7 @@ describe("chorus.views.Filter", function() {
                 context("when the model does not have a comparator", function() {
                     beforeEach(function() {
                         this.model.unset("comparator");
-                        this.view.selectComparator()
+                        this.view.selectComparator();
                     });
 
                     it("selects the first comparator", function() {
@@ -122,7 +122,7 @@ describe("chorus.views.Filter", function() {
 
                     it("fills in the values", function() {
                         this.view.$("select.comparator option[value=not_equal]").prop('selected', true).change();
-                        expect(this.view.$('.filter.default input').val()).toBe("jellyfish")
+                        expect(this.view.$('.filter.default input').val()).toBe("jellyfish");
                     });
 
                     context("when a user types in the input field", function() {

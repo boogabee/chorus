@@ -1,6 +1,15 @@
 require "spec_helper"
+
 describe Search do
   let(:user) { users(:owner) }
+  let(:add_stemmed_fields) do
+    lambda do |params|
+      return unless params[:qf]
+      fields = params[:qf].split
+      new_fields = fields.map {|field| field.sub /_texts$/, "_stemmed_texts" }
+      params[:qf] = (fields + new_fields).join(" ")
+    end
+  end
 
   describe ".new" do
     it "takes current user and search params" do
@@ -13,8 +22,7 @@ describe Search do
   describe "#valid" do
     it "is not valid without a valid entity_type" do
       search = Search.new(user, :query => 'fries', :entity_type => 'potato')
-      search.should_not be_valid
-      search.errors[:entity_type].should include [:invalid_entity_type, {}]
+      search.should have_error_on(:entity_type).with_message(:invalid_entity_type)
     end
 
     it "raises ApiValidationError when search is invalid" do
@@ -31,22 +39,30 @@ describe Search do
       search = Search.new(user, :query => 'bob')
       search.search
       Sunspot.session.should be_a_search_for(User)
-      Sunspot.session.should be_a_search_for(GpdbInstance)
-      Sunspot.session.should be_a_search_for(HadoopInstance)
-      Sunspot.session.should be_a_search_for(GnipInstance)
+      Sunspot.session.should be_a_search_for(GpdbDataSource)
+      Sunspot.session.should be_a_search_for(OracleDataSource)
+      Sunspot.session.should be_a_search_for(HdfsDataSource)
+      Sunspot.session.should be_a_search_for(GnipDataSource)
+      Sunspot.session.should be_a_search_for(JdbcDataSource)
+      Sunspot.session.should be_a_search_for(PgDataSource)
       Sunspot.session.should be_a_search_for(Workspace)
       Sunspot.session.should be_a_search_for(Workfile)
       Sunspot.session.should be_a_search_for(Dataset)
       Sunspot.session.should be_a_search_for(HdfsEntry)
       Sunspot.session.should be_a_search_for(Attachment)
-      Sunspot.session.should have_search_params(:fulltext, 'bob')
+      Sunspot.session.should be_a_search_for(Events::Note)
+      Sunspot.session.should be_a_search_for(Comment)
+      Sunspot.session.should have_search_params(:fulltext) {
+        fulltext "bob"
+        adjust_solr_params &add_stemmed_fields
+      }
       Sunspot.session.should have_search_params(:facet, :type_name)
-      Sunspot.session.should have_search_params(:group, Proc.new {
+      Sunspot.session.should have_search_params(:group) {
         group :grouping_id do
           truncate
           limit 3
         end
-      })
+      }
     end
 
     it "supports pagination" do
@@ -63,7 +79,7 @@ describe Search do
         search = Search.new(user, :query => 'bob', :per_type => 3)
         stub(search).num_found do
           hsh = Hash.new(0)
-          hsh.merge({:users => 100, :instances => 100, :workspaces => 100, :workfiles => 100, :datasets => 100, :hdfs_entries => 100, :attachments => 100})
+          hsh.merge({:users => 100, :data_sources => 100, :workspaces => 100, :workfiles => 100, :datasets => 100, :hdfs_entries => 100, :attachments => 100})
         end
         stub(search.search).each_hit_with_result { [] }
         search.models
@@ -82,7 +98,10 @@ describe Search do
           (search.models_to_search - models).each do |other_model|
             sunspot_search.should_not be_a_search_for(other_model)
           end
-          sunspot_search.should have_search_params(:fulltext, 'bob')
+          sunspot_search.should have_search_params(:fulltext) {
+            fulltext "bob"
+            adjust_solr_params &add_stemmed_fields
+          }
           sunspot_search.should have_search_params(:paginate, :page => 1, :per_page => 3)
           sunspot_search.should_not have_search_params(:facet, :type_name)
         end
@@ -93,37 +112,51 @@ describe Search do
         search.search
         Sunspot.session.should have_search_params(:paginate, :page => 1, :per_page => 100)
       end
+
+      it "raises an error if solr does not work properly" do
+        search = Search.new(user, :query => 'bob', :per_type => 3, :page => 2, :per_page => 5)
+        stub(search).build_search {
+          raise SunspotError.new("error")
+        }
+        expect { search.search }.to raise_error(SunspotError)
+      end
     end
 
     context "when limiting the type of model searched" do
       it "searches only the specified model type" do
-        search = Search.new(user, :query => 'bob', :entity_type => 'instance')
+        search = Search.new(user, :query => 'bob', :entity_type => 'data_source')
         search.search
         Sunspot.session.should_not be_a_search_for(User)
-        Sunspot.session.should be_a_search_for(GpdbInstance)
-        Sunspot.session.should be_a_search_for(HadoopInstance)
-        Sunspot.session.should be_a_search_for(GnipInstance)
+        Sunspot.session.should be_a_search_for(GpdbDataSource)
+        Sunspot.session.should be_a_search_for(OracleDataSource)
+        Sunspot.session.should be_a_search_for(HdfsDataSource)
+        Sunspot.session.should be_a_search_for(GnipDataSource)
+        Sunspot.session.should be_a_search_for(JdbcDataSource)
+        Sunspot.session.should be_a_search_for(PgDataSource)
       end
 
       it "creates a search session just for that model" do
         search = Search.new(user, :query => 'bob', :entity_type => 'user')
         search.search
         Sunspot.session.should be_a_search_for(User)
-        Sunspot.session.should_not be_a_search_for(GpdbInstance)
-        Sunspot.session.should have_search_params(:fulltext, 'bob')
+        Sunspot.session.should_not be_a_search_for(GpdbDataSource)
+        Sunspot.session.should have_search_params(:fulltext) {
+          fulltext "bob"
+          adjust_solr_params &add_stemmed_fields
+        }
         Sunspot.session.should_not have_search_params(:facet, :type_name)
       end
     end
 
-    context "when searching datasets with no instance accounts accessible to the user" do
-      it "does not include the condition for instance accounts" do
+    context "when searching datasets with no data source accounts accessible to the user" do
+      it "does not include the condition for data source accounts" do
         stub(user).accessible_account_ids { [] }
         Search.new(user, :query => 'whatever', :entity_type => :dataset).search
-        Sunspot.session.should have_search_params(:with, Proc.new {
+        Sunspot.session.should have_search_params(:with) {
           any_of do
-            without :security_type_name, Dataset.security_type_name
+            without :security_type_name, RelationalDataset.name
           end
-        })
+        }
       end
     end
 
@@ -133,8 +166,11 @@ describe Search do
         search.search
         session = Sunspot.session
         session.should be_a_search_for(User)
-        session.should_not be_a_search_for(GpdbInstance)
-        session.should have_search_params(:fulltext, 'bob')
+        session.should_not be_a_search_for(GpdbDataSource)
+        session.should have_search_params(:fulltext) {
+          fulltext "bob"
+          adjust_solr_params &add_stemmed_fields
+        }
         session.should_not have_search_params(:facet, :type_name)
       end
     end
@@ -164,12 +200,75 @@ describe Search do
       end
 
       it "searches for the same query" do
-        Sunspot.session.searches.last.should have_search_params(:fulltext, 'bob')
+        Sunspot.session.searches.last.should have_search_params(:fulltext) {
+          fulltext "bob"
+          adjust_solr_params &add_stemmed_fields
+        }
       end
 
       it "does not perform the workspace search more than once" do
         search.num_found
         Sunspot.session.searches.length.should == 2
+      end
+
+      context "when filtering by some entity type" do
+        let(:search) { Search.new(user, :query => 'view', :workspace_id => 7, :entity_type => 'dataset') }
+
+        it "limits the results to a specific entity_type" do
+          last_search = Sunspot.session.searches.last
+          last_search.should be_a_search_for(Dataset)
+          last_search.should_not be_a_search_for(Workspace)
+        end
+      end
+    end
+
+    describe "tag search" do
+      let(:tag) { Tag.find_by_name("alpha") }
+      let(:params) { { :tag => true, :query => tag.name } }
+      let(:search) { Search.new(user, params) }
+
+      before do
+        any_instance_of(Sunspot::Search::AbstractSearch) do |search|
+          stub(search).group_response { {} }
+        end
+      end
+
+      it "filters by tag_id" do
+        search.models
+        Sunspot.session.should have_search_params(:with, :tag_ids, tag.id)
+        Sunspot.session.should_not have_search_params(:fulltext) {
+          fulltext tag.name
+          adjust_solr_params &add_stemmed_fields
+        }
+      end
+
+      it "orders by sort_name" do
+        search.models
+        Sunspot.session.should have_search_params(:order_by, :sort_name)
+      end
+
+      describe "with a workspace_id" do
+        let(:search) { Search.new(user, params.merge(:workspace_id => 7)) }
+
+        it "performs a secondary search to pull back workfiles and datasets within the workspace" do
+          search.models
+          Sunspot.session.searches.length.should == 2
+          last_search = Sunspot.session.searches.last
+          last_search.should have_search_params(:with, :workspace_id, 7)
+          last_search.should have_search_params(:with, :tag_ids, tag.id)
+          last_search.should_not have_search_params(:fulltext) {
+            fulltext tag.name
+            adjust_solr_params &add_stemmed_fields
+          }
+        end
+      end
+
+      context "when tag does not exist" do
+        let(:search) { Search.new(user, :tag => true, :query => 'i am not a tag') }
+
+        it "returns empty results" do
+          search.models.values.flatten.should be_empty
+        end
       end
     end
   end
@@ -178,9 +277,11 @@ describe Search do
     let(:admin) { users(:admin) }
     let(:owner) { users(:owner) }
     let(:the_collaborator) { users(:the_collaborator) }
-    let(:gpdb_instance) { gpdb_instances(:default) }
-    let(:hadoop_instance) { hadoop_instances(:hadoop) }
-    let(:gnip_instance) { gnip_instances(:default) }
+    let(:gpdb_data_source) { data_sources(:default) }
+    let(:hdfs_data_source) { hdfs_data_sources(:hadoop) }
+    let(:gnip_data_source) { gnip_data_sources(:default) }
+    let(:jdbc_data_source) { data_sources(:searchquery_jdbc) }
+    let(:pg_data_source) { data_sources(:searchquery_pg) }
     let(:hdfs_entry) { HdfsEntry.find_by_path("/searchquery/result.txt") }
     let(:attachment) { attachments(:attachment) }
     let(:public_workspace) { workspaces(:public_with_no_collaborators) }
@@ -190,12 +291,14 @@ describe Search do
     let(:private_workfile) { workfiles(:private) }
     let(:public_workfile) { workfiles(:public) }
     let(:dataset) { datasets(:searchquery_table) }
-    let(:typeahead_dataset) { datasets(:typeahead) }
+    let(:hadoop_dataset) { datasets(:searchquery_hadoop) }
+    let(:typeahead_dataset) { datasets(:typeahead_gpdb_table) }
     let(:shared_dataset) { datasets(:searchquery_shared_table) }
     let(:chorus_view) { datasets(:searchquery_chorus_view) }
 
     before do
-      reindex_solr_fixtures
+      stub(DatasetColumn).columns_for.with_any_args { [] } # don't ask databases for columns in test
+      index_solr_fixtures_once
     end
 
     def create_and_record_search(*args)
@@ -213,35 +316,47 @@ describe Search do
       it "returns an empty array" do
         create_and_record_search(owner, :query => "") do |search|
           search.models.should be {}
+          search.num_found.values.should == []
         end
       end
     end
 
-    describe "#num_found" do
+    describe "when the search string is a single special character" do
+      %w{+ -}.each do | character |
+        it "returns empty results for strings that are just '#{character}'" do
+          create_and_record_search owner, {:query => character } do |search|
+            search.models.should be {}
+            search.num_found.values.should == []
+          end
+        end
+      end
+    end
+
+    describe "num_found" do
       it "returns a hash with the number found of each type" do
         create_and_record_search do |search|
           search.num_found[:users].should == 1
-          search.num_found[:instances].should == 3
-          search.num_found[:datasets].should == 5
+          search.num_found[:data_sources].should == 5
+          search.num_found[:datasets].should == 8
         end
       end
 
       it "returns a hash with the total count for the given type" do
         create_and_record_search(owner, :query => 'searchquery', :entity_type => 'user') do |search|
           search.num_found[:users].should == 1
-          search.num_found[:instances].should == 0
+          search.num_found[:data_sources].should == 0
         end
       end
 
       it "includes the number of workspace specific results found" do
         workspace = workspaces(:search_public)
         create_and_record_search(owner, :query => 'searchquery', :workspace_id => workspace.id) do |search|
-          search.num_found[:this_workspace].should == 6
+          search.num_found[:this_workspace].should == 9
         end
       end
     end
 
-    describe "#users" do
+    describe "users" do
       it "includes the highlighted attributes" do
         create_and_record_search do |search|
           user = search.users.first
@@ -257,36 +372,40 @@ describe Search do
       end
     end
 
-    describe "#instances" do
-      it "should include Gpdb, Hadoop, and Gnip" do
+    describe "data_sources" do
+      it "should include Gpdb, Hadoop, Jdbc, and Gnip" do
         create_and_record_search do |search|
-          search.instances.should include(gpdb_instance)
-          search.instances.should include(hadoop_instance)
-          search.instances.should include(gnip_instance)
+          search.data_sources.should include(gpdb_data_source)
+          search.data_sources.should include(hdfs_data_source)
+          search.data_sources.should include(gnip_data_source)
+          search.data_sources.should include(jdbc_data_source)
         end
       end
 
       context "including highlighted attributes" do
-        [GpdbInstance, HadoopInstance, GnipInstance].each do |instance_type|
-          it "should include highlighted attributes for #{instance_type.name}" do
+        [GpdbDataSource, HdfsDataSource, GnipDataSource, JdbcDataSource, PgDataSource].each do |data_source_type|
+          it "should include highlighted attributes for #{data_source_type.name}" do
             create_and_record_search do |search|
-              instance = search.instances.select { |instance| instance.is_a?(instance_type) }.first
-              instance.highlighted_attributes.length.should > 0
-              instance.highlighted_attributes[:description][0].should =~ /<em>searchquery<\/em>/
+              data_source = search.data_sources.select { |data_source| data_source.is_a?(data_source_type) }.first
+              data_source.highlighted_attributes.length.should > 0
+              data_source.highlighted_attributes[:description][0].should =~ /<em>searchquery<\/em>/
             end
           end
         end
       end
     end
 
-    describe "#datasets" do
+    describe "datasets" do
       it "includes the highlighted attributes" do
         create_and_record_search do |search|
-          dataset = search.datasets.first
-          dataset.highlighted_attributes.length.should == 4
+          dataset = search.datasets.find { |dataset| dataset.name == 'searchquery_table' }
           dataset.highlighted_attributes[:name][0].should == "<em>searchquery</em>_table"
           dataset.highlighted_attributes[:database_name][0].should == "<em>searchquery</em>_database"
           dataset.highlighted_attributes[:schema_name][0].should == "<em>searchquery</em>_schema"
+          dataset.highlighted_attributes.should have_key(:table_description)
+          dataset.highlighted_attributes.should have_key(:column_name)
+          dataset.highlighted_attributes.should have_key(:column_description)
+          dataset.highlighted_attributes.length.should == 6
         end
       end
 
@@ -299,14 +418,20 @@ describe Search do
 
       it "returns the Dataset objects found" do
         create_and_record_search do |search|
-          search.datasets.should =~ [dataset, shared_dataset, chorus_view, typeahead_dataset, datasets(:typeahead_chorus_view)]
+          search.datasets.should =~ [
+            dataset, shared_dataset, chorus_view,
+            typeahead_dataset, datasets(:typeahead_chorus_view),
+            datasets(:searchquery_chorus_view_private), datasets(:searchable_tag),
+            hadoop_dataset
+          ]
         end
       end
 
       it "excludes datasets you don't have permissions to" do
-        the_collaborator.instance_accounts.joins(:gpdb_databases).should be_empty
-        create_and_record_search(the_collaborator, :query => 'searchquery', :entity_type => :dataset) do |search|
-          search.datasets.should == [shared_dataset]
+        user = users(:no_collaborators)
+        user.data_source_accounts.joins(:data_source_account_permissions).should be_empty
+        create_and_record_search(user, :query => 'searchquery', :entity_type => :dataset) do |search|
+          search.datasets.should =~ [shared_dataset, hadoop_dataset]
         end
       end
 
@@ -315,6 +440,62 @@ describe Search do
         create_and_record_search(owner, :query => 'notesearch') do |search|
           dataset = search.datasets.first
           dataset.search_result_notes[0][:highlighted_attributes][:body][0].should == "<em>notesearch</em> ftw"
+        end
+      end
+
+      it "removes tags from the note body" do
+        create_and_record_search(owner, :query => 'searchwithhtml') do |search|
+          restore_solr_index_after [Events::Note] do
+            note = events(:note_on_dataset)
+            note.update_attribute(:body, 'sometext <b>searchwithhtml</b> ftw')
+            Sunspot.commit
+            dataset = search.datasets.first
+            dataset.search_result_notes[0][:highlighted_attributes][:body][0].should match %r{sometext\s+<em>searchwithhtml</em>\s+ftw}
+          end
+        end
+      end
+
+      context "when the search results include note that has been deleted (i.e. the search index is stale)" do
+        it "doesn't raise an error" do
+          note = events(:note_on_dataset)
+          note.body.should == "notesearch ftw"
+          create_and_record_search(owner, :query => 'notesearch') do |search|
+            expect {
+              note.delete
+              search.datasets
+            }.to_not raise_error
+          end
+        end
+      end
+
+      it "includes insights" do
+        events(:insight_on_dataset).body.should == "insightsearch ftw"
+        create_and_record_search(owner, :query => 'insightsearch') do |search|
+          dataset = search.datasets.first
+          dataset.search_result_notes[0][:highlighted_attributes][:body][0].should == "<em>insightsearch</em> ftw"
+          dataset.search_result_notes[0][:is_insight].should be_true
+        end
+      end
+
+      it "includes comments on notes" do
+        comment = comments(:comment_on_note_on_dataset)
+        comment.body.should == "commentsearch ftw"
+        create_and_record_search(owner, :query => 'commentsearch') do |search|
+          dataset = search.datasets.find { |dataset| comment.event.target1 == dataset }
+          dataset.search_result_notes[0][:highlighted_attributes][:body][0].should == "<em>commentsearch</em> ftw"
+          dataset.search_result_notes[0][:is_comment].should be_true
+        end
+      end
+
+      it "removes tags from the comment body" do
+        create_and_record_search(owner, :query => 'searchwithhtml') do |search|
+          restore_solr_index_after [Events::Note] do
+            comment = comments(:comment_on_note_on_dataset)
+            comment.update_attribute(:body, 'sometext <b>searchwithhtml</b> ftw')
+            Sunspot.commit
+            dataset = search.datasets.first
+            dataset.search_result_notes[0][:highlighted_attributes][:body][0].should match %r{sometext\s+<em>searchwithhtml</em>\s+ftw}
+          end
         end
       end
 
@@ -334,7 +515,64 @@ describe Search do
       end
     end
 
-    describe "#hdfs_entries" do
+    describe "chorus_views" do
+      let(:chorus_view) { datasets(:searchquery_chorus_view_private) }
+
+      context "when the user has access to the workspace" do
+        let(:user) { owner }
+
+        it "is included in search results" do
+          create_and_record_search(user, :query => 'searchquery', :entity_type => 'Dataset') do |search|
+            search.datasets.should include(chorus_view)
+          end
+        end
+
+        it "includes chorus views associated with matching notes" do
+          create_and_record_search(user, :query => 'workspacedatasetnotesearch', :entity_type => 'Dataset') do |search|
+            search.datasets.should include(chorus_view)
+          end
+        end
+
+        it "includes chorus views associated with matching comments" do
+          create_and_record_search(user, :query => 'commentsearch', :entity_type => 'Dataset') do |search|
+            search.datasets.should include(chorus_view)
+          end
+        end
+      end
+
+      context "when the user does not have access to the workspace" do
+        let(:user) { users(:not_a_member) }
+
+        it "is excluded from search results" do
+          create_and_record_search(user, :query => 'searchquery', :entity_type => 'Dataset') do |search|
+            data_source_account = FactoryGirl.build(:data_source_account, :data_source => chorus_view.data_source, :owner => user).tap { |a| a.save(:validate => false)}
+            chorus_view.schema.database.data_source_accounts << data_source_account
+            chorus_view.solr_index!
+            search.datasets.should_not include(chorus_view)
+          end
+        end
+
+        it "excludes results with matching notes on the chorus view" do
+          create_and_record_search(user, :query => 'workspacedatasetnotesearch', :entity_type => 'Dataset') do |search|
+            data_source_account = FactoryGirl.build(:data_source_account, :data_source => chorus_view.data_source, :owner => user).tap { |a| a.save(:validate => false)}
+            chorus_view.schema.database.data_source_accounts << data_source_account
+            chorus_view.solr_index!
+            search.datasets.should_not include(chorus_view)
+          end
+        end
+
+        it "excludes results with matching comments on the chorus view" do
+          create_and_record_search(user, :query => 'commentsearch', :entity_type => 'Dataset') do |search|
+            data_source_account = FactoryGirl.build(:data_source_account, :data_source => chorus_view.data_source, :owner => user).tap { |a| a.save(:validate => false)}
+            chorus_view.schema.database.data_source_accounts << data_source_account
+            chorus_view.solr_index!
+            search.datasets.should_not include(chorus_view)
+          end
+        end
+      end
+    end
+
+    describe "hdfs_entries" do
       it "includes the highlighted attributes" do
         create_and_record_search do |search|
           hdfs = search.hdfs_entries.first
@@ -344,15 +582,15 @@ describe Search do
         end
       end
 
-      it "returns the HadoopInstance objects found" do
+      it "returns the HdfsDataSource objects found" do
         create_and_record_search do |search|
-          search.hdfs_entries.length.should == 1
-          search.hdfs_entries.first.should == hdfs_entry
+          search.hdfs_entries.length.should == 2
+          search.hdfs_entries.should include(hdfs_entry)
         end
       end
     end
 
-    describe "#attachments" do
+    describe "attachments" do
       it "includes the highlighted attributes" do
         create_and_record_search do |search|
           attachment = search.attachments.first
@@ -406,24 +644,90 @@ describe Search do
           end
         end
       end
-    end
 
-    describe "#highlighted notes" do
-      it "includes highlighted notes in the highlighted_attributes" do
-        create_and_record_search(owner, :query => 'greenplumsearch') do |search|
-          search.instances.length.should == 2
-          gpdb_instance_with_notes = search.instances[1]
-          gpdb_instance_with_notes.search_result_notes.length.should == 2
-          gpdb_instance_with_notes.search_result_notes[0][:highlighted_attributes][:body][0].should == "no, not <em>greenplumsearch</em>"
+      context "when the attachment belongs on a chorus view" do
+        let(:chorus_view) { datasets(:searchquery_chorus_view_private) }
+        let(:attachment) { attachments(:attachment_on_chorus_view) }
+
+        context "when the user has access to the workspace" do
+          let(:user) { owner }
+
+          it "includes attachments where the chorus_view is accessible" do
+            create_and_record_search(user, :query => 'attachmentsearch', :entity_type => 'Attachment') do |search|
+              search.attachments.should include(attachment)
+            end
+          end
+        end
+
+        context "when the user does not have access to the workspace" do
+          let(:user) { users(:not_a_member) }
+
+          it "excludes attachments when the chorus view is not accessible" do
+            create_and_record_search(user, :query => 'attachmentsearch', :entity_type => 'Attachment') do |search|
+              data_source_account = FactoryGirl.build(:data_source_account, :data_source => chorus_view.data_source, :owner => user).tap { |a| a.save(:validate => false)}
+              chorus_view.schema.database.data_source_accounts << data_source_account
+              chorus_view.solr_index!
+              search.attachments.should_not include(attachment)
+            end
+          end
         end
       end
     end
 
-    describe "#per_type=" do
+    describe "highlighted notes" do
+      it "includes highlighted notes in the highlighted_attributes" do
+        create_and_record_search(owner, :query => 'greenplumsearch') do |search|
+          search.data_sources.length.should == 2
+          gpdb_data_source_with_notes = search.data_sources[1]
+          gpdb_data_source_with_notes.search_result_notes.length.should == 2
+          gpdb_data_source_with_notes.search_result_notes[0][:highlighted_attributes][:body][0].should == "no, not <em>greenplumsearch</em>"
+        end
+      end
+    end
+
+    describe "per_type=" do
       it "limits the search to not return more than some number of models" do
-        create_and_record_search(owner, :query => 'alphasearch', :per_type => 1) do |search|
+        create_and_record_search(owner, :query => 'alpha search', :per_type => 1) do |search|
           search.users.length.should == 1
           search.num_found[:users].should > 1
+        end
+      end
+    end
+
+    describe "tag search" do
+      let(:tag) { Tag.find_by_name("alpha") }
+
+      it "returns models with the specified tag" do
+        create_and_record_search(owner, :query => tag.name, :tag => true, :per_type => 1) do |search|
+          search.models[:workfiles].first.tags.should include tag
+          search.models[:datasets].first.tags.should include tag
+          search.models[:workspaces].first.tags.should include tag
+        end
+      end
+
+      it "returns workfiles sorted by file_name" do
+        query_params = { :query => "tagSort", :tag => true }
+        record_with_vcr do
+          restore_solr_index_after [Workfile, Tag] do
+            public_workfile = workfiles(:public)
+            tagged_workfile = workfiles(:tagged)
+
+            [public_workfile, tagged_workfile].each do |w|
+              w.tag_list = ["tagSort"]
+              w.save!
+            end
+            Sunspot.commit
+
+            search = Search.new(owner, query_params)
+            search.workfiles.should be_sorted_by :file_name, true
+
+            # changing the file names changes the order
+            search.workfiles.second.update_attributes(:file_name => "aaa_" + search.workfiles.second.file_name)
+            Sunspot.commit
+
+            search = Search.new(owner, query_params)
+            search.workfiles.should be_sorted_by :file_name, true
+          end
         end
       end
     end
@@ -473,6 +777,18 @@ describe Search do
           search.workspaces.should include(private_workspace_not_a_member)
         end
       end
+    end
+  end
+end
+
+describe "SearchExtensions" do
+  describe "security_type_name" do
+    it "returns an array including the type_name of all ancestors" do
+      ChorusView.security_type_name.should =~ [ChorusView.type_name, GpdbDataset.type_name, Dataset.type_name, RelationalDataset.type_name]
+    end
+
+    it "data_sources behave the same way" do
+      ChorusView.first.security_type_name.should =~ ChorusView.security_type_name
     end
   end
 end

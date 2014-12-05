@@ -5,16 +5,21 @@ chorus.dialogs.NotesNew = chorus.dialogs.MemoNew.extend({
     submitButton: t("notes.button.create"),
 
     makeModel: function() {
-        this.model = new chorus.models.Note({
-            entityId:    this.options.entityId,
-            entityType:  this.options.entityType,
-            workspaceId: this.options.workspaceId
-        });
-
         this.pageModel = this.options.pageModel;
 
-        var subject = this.options.displayEntityType || this.options.entityType;
-        this.placeholder = t("notes.placeholder", {noteSubject: subject});
+        var sqlDB = this.pageModel.entityType.match(/data_source/) && !this.pageModel.entityType.match(/hdfs/);
+        var entityType = sqlDB ? 'data_source' : this.pageModel.entityType;
+//        var entityType = false ? 'data_source' : this.pageModel.entityType;
+        var workspaceId = this.pageModel.workspace && this.pageModel.workspace() && this.pageModel.workspace().id;
+
+        this.model = new chorus.models.Note({
+            entityId:    this.pageModel.id,
+            entityType: entityType,
+            workspaceId: workspaceId
+        });
+
+        var displayType = this.pageModel.displayEntityType || entityType;
+        this.placeholder = t("notes.placeholder", {noteSubject: displayType});
         this._super("makeModel", arguments);
     }
 });

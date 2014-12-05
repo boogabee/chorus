@@ -16,19 +16,19 @@ chorus.views.visualizations.Boxplot = chorus.views.Base.include(
             .attr("height", 340);
 
 
-        var buckets = _.pluck(data, "bucket")
+        var buckets = _.pluck(data, "bucket");
         var percentages = _.pluck(data, "percentage");
         percentages = _.map(percentages, function(percent){
             return parseInt(percent, 10) + '%';
-        })
+        });
 
         var xLabels = _.map(buckets, function(bucket, i){
             return this.labelFormat(bucket, 6) + " (" + percentages[i]+ ")";
-        }, this)
+        }, this);
 
         var xLongLabels = _.map(buckets, function(bucket, i){
             return this.labelFormat(bucket, 1000) + " (" + percentages[i]+ ")";
-        }, this)
+        }, this);
 
         this.axes = new chorus.views.visualizations.Axes({
             el: svg,
@@ -56,25 +56,20 @@ chorus.views.visualizations.Boxplot = chorus.views.Base.include(
 
         var scales = this.axes.scales();
         var boxWidth = 0.4 * scales.x.rangeBand();
-        var centerScale = function(d) { return scales.x(d) + scales.x.rangeBand() / 2 };
-
-        quartileRectangles(boxes);
-        medianline(boxes);
-        midline(boxes);
-        whiskers(boxes);
+        var centerScale = function(d) { return scales.x(d) + scales.x.rangeBand() / 2; };
 
         function quartileRectangles(boxes) {
             boxes.append("rect")
                 .attr("width", boxWidth)
                 .attr("class", "quartile")
                 .attr("height", function(d) {
-                    return Math.abs(scales.y(d.thirdQuartile) - scales.y(d.firstQuartile))
+                    return Math.abs(scales.y(d.thirdQuartile) - scales.y(d.firstQuartile));
                 })
                 .attr("x", function(d) {
                     return centerScale(d.bucket) - boxWidth / 2;
                 })
                 .attr("y", function(d) {
-                    return scales.y(d.thirdQuartile)
+                    return scales.y(d.thirdQuartile);
                 });
         }
 
@@ -89,10 +84,10 @@ chorus.views.visualizations.Boxplot = chorus.views.Base.include(
                     return centerScale(d.bucket);
                 })
                 .attr("y1", function(d) {
-                    return scales.y(d.max)
+                    return scales.y(d.max);
                 })
                 .attr("y2", function(d) {
-                    return scales.y(d.min)
+                    return scales.y(d.min);
                 });
         }
 
@@ -147,6 +142,11 @@ chorus.views.visualizations.Boxplot = chorus.views.Base.include(
                     return scales.y(d.min);
                 });
         }
+
+        quartileRectangles(boxes);
+        medianline(boxes);
+        midline(boxes);
+        whiskers(boxes);
     }
 });
 

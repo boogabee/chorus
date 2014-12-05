@@ -1,7 +1,7 @@
 chorus.Mixins.ClEditor = {
     makeEditor: function($container, controlSelector, inputName, options) {
         var controls = ["bold", "italic", "bullets", "numbers", "link", "unlink"];
-
+        $container.find(controlSelector).empty();
         _.each(controls, function(control, i) {
             var $controlContainer = $container.find(controlSelector);
             $controlContainer.append($('<a class="'+ control +'" href="#"></a>').text(t("workspace.settings.toolbar."+ control)));
@@ -13,8 +13,9 @@ chorus.Mixins.ClEditor = {
 
         options = options || {};
         var editorOptions = _.extend(options, {controls: "bold italic | bullets numbering | link unlink"});
-        return $container.find("textarea[name='"+ inputName +"']").cleditor(editorOptions)[0];
-
+        var editor = $container.find("textarea[name='"+ inputName +"']").cleditor(editorOptions)[0];
+        $(editor.doc).find("body").focus();
+        return editor;
     },
 
     onClickToolbarBold: function(e) {

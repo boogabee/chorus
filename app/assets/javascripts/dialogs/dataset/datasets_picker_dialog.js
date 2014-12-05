@@ -1,5 +1,5 @@
 chorus.dialogs.DatasetsPicker = chorus.dialogs.PickItems.extend({
-    title: t("dataset.pick"),
+    title: t("dataset.pick_destination"),
     constructorName: "DatasetsPickerDialog",
     additionalClass: "with_sub_header pick_dataset_with_action",
     submitButtonTranslationKey: "actions.dataset_select",
@@ -9,7 +9,6 @@ chorus.dialogs.DatasetsPicker = chorus.dialogs.PickItems.extend({
     modelClass: "Table",
     pagination: true,
     multiSelection: false,
-    serverSideSearch: true,
 
     events: _.extend({
         "click a.preview_columns": "clickPreviewColumns"
@@ -17,17 +16,9 @@ chorus.dialogs.DatasetsPicker = chorus.dialogs.PickItems.extend({
 
     setup: function() {
         this._super("setup");
+        this.title = this.options.title || this.title;
         this.pickItemsList.templateName = "datasets_picker_list";
         this.pickItemsList.className = "datasets_picker_list";
-    },
-
-    makeModel: function() {
-        this._super("makeModel", arguments);
-        this.collection = new chorus.collections.WorkspaceDatasetSet([], {
-            workspaceId: this.options.workspaceId,
-            type: "SANDBOX_TABLE",
-            objectType: "TABLE"
-        });
         this.collection.sortAsc("objectName");
         this.collection.fetch();
     },
@@ -36,8 +27,8 @@ chorus.dialogs.DatasetsPicker = chorus.dialogs.PickItems.extend({
         return {
             id: model.get("id"),
             name: model.get("objectName"),
-            imageUrl: model.iconUrl({size: 'medium'})
-        }
+            imageUrl: model.iconUrl({size: 'icon'})
+        };
     },
 
     clickPreviewColumns: function(e) {
@@ -49,5 +40,10 @@ chorus.dialogs.DatasetsPicker = chorus.dialogs.PickItems.extend({
         var previewColumnsDialog = new chorus.dialogs.PreviewColumns({model: dataset});
         previewColumnsDialog.title = this.title;
         this.launchSubModal(previewColumnsDialog);
+    },
+
+    modalClosed: function() {
+        this._super("modalClosed", arguments);
+        this.collection.search("");
     }
 });

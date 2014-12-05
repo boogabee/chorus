@@ -14,6 +14,11 @@ describe("chorus.Mixins.Fetching", function() {
             beforeEach(function() {
                 this.collection.fetchAllIfNotLoaded();
             });
+
+            it("clears the status code", function() {
+                expect(this.collection.statusCode).toBeUndefined();
+            });
+
             context("when there is less than a single page of results", function() {
                 beforeEach(function() {
                     this.server.completeFetchAllFor(this.collection, undefined, undefined, {page: 1, total: 1, records: 1});
@@ -49,7 +54,10 @@ describe("chorus.Mixins.Fetching", function() {
             context("and there are no more results to fetch", function() {
                 beforeEach(function() {
                     this.collection.fetch();
-                    this.server.completeFetchFor(this.collection, [{}, {}], undefined, {page: 1, total: 1, records: 2});
+                    this.server.completeFetchFor(this.collection, [
+                        {},
+                        {}
+                    ], undefined, {page: 1, total: 1, records: 2});
                     this.server.reset();
                     this.collection.fetchAllIfNotLoaded();
                 });
@@ -62,7 +70,10 @@ describe("chorus.Mixins.Fetching", function() {
             context("and there are more results to fetch", function() {
                 beforeEach(function() {
                     this.collection.fetch();
-                    this.server.completeFetchFor(this.collection, [{}, {}], undefined, {page: 1, total: 2, records: 4});
+                    this.server.completeFetchFor(this.collection, [
+                        {},
+                        {}
+                    ], undefined, {page: 1, total: 2, records: 4});
                     this.server.reset();
                     this.collection.fetchAllIfNotLoaded();
                 });
@@ -73,10 +84,16 @@ describe("chorus.Mixins.Fetching", function() {
                 });
 
                 it("finishes once there are more pages", function() {
-                    this.server.completeFetchAllFor(this.collection, [{}, {}], {page: 1}, {page: 1, total: 2, records: 4});
+                    this.server.completeFetchAllFor(this.collection, [
+                        {},
+                        {}
+                    ], {page: 1}, {page: 1, total: 2, records: 4});
                     expect(this.collection.loaded).toBeFalsy();
 
-                    this.server.completeFetchAllFor(this.collection, [{}, {}], {page: 2}, {page: 2, total: 2, records: 4});
+                    this.server.completeFetchAllFor(this.collection, [
+                        {},
+                        {}
+                    ], {page: 2}, {page: 2, total: 2, records: 4});
                     expect(this.collection.loaded).toBeTruthy();
                     expect(this.server.lastFetchAllFor(this.collection, {page: 3})).toBeUndefined();
                 });
@@ -93,6 +110,11 @@ describe("chorus.Mixins.Fetching", function() {
             it("starts a fetch", function() {
                 this.resource.fetchIfNotLoaded();
                 expect(this.resource.fetch).toHaveBeenCalled();
+            });
+
+            it("clears the status code", function() {
+                this.resource.fetchIfNotLoaded();
+                expect(this.resource.statusCode).toBeUndefined();
             });
         });
 
@@ -169,7 +191,7 @@ describe("chorus.Mixins.Fetching", function() {
                 this.resource.fetchIfNotLoaded({per_page: 10});
             });
             it("should pass options to fetch", function() {
-                expect(this.resource.fetch.mostRecentCall.args[0].per_page).toBe(10);
+                expect(this.resource.fetch.lastCall().args[0].per_page).toBe(10);
             });
         });
     });
@@ -180,8 +202,6 @@ describe("chorus.Mixins.Fetching", function() {
                 status: "ok",
                 foo: "bar",
                 response: { hi_there: { youre_cool: true } }
-            }, {
-                status: 200
             })).toEqual({
                     hiThere: { youreCool: true }
                 });
@@ -221,6 +241,10 @@ describe("chorus.Mixins.Fetching", function() {
             var arrayProperty = this.resource.camelizeKeys(params).twoWords.doubleNested;
             expect(_.isArray(arrayProperty)).toBeTruthy();
         });
+
+        it("does not camelize children of errorObjects", function() {
+            expect(this.resource.camelizeKeys({error_objects: {i_am_not_camelized: true}})).toEqual({errorObjects: {i_am_not_camelized: true}});
+        });
     });
 
     describe("#underscoreKeys", function() {
@@ -259,25 +283,11 @@ describe("chorus.Mixins.Fetching", function() {
         });
     });
 
-    describe("#parseErrors", function() {
-        beforeEach(function() {
-            this.things = [
-                {hi: "there"},
-                {go: "away"}
-            ];
-        });
-
+    describe("#respondToErrors", function() {
         context("when the response is '401 unauthorized'", function() {
             beforeEach(function() {
                 spyOnEvent(chorus.session, "needsLogin");
-
-                this.data = {
-                    response: { foo: "bar" },
-                    errors: { record: "bad" }
-                };
             });
-
-            itHandlesFailure();
 
             it("triggers the 'needsLogin' event on the session", function() {
                 this.resource.respondToErrors(401);
@@ -285,17 +295,10 @@ describe("chorus.Mixins.Fetching", function() {
             });
         });
 
-
         context("when the response is '403 forbidden'", function() {
             beforeEach(function() {
                 spyOn(this.resource, "trigger");
-                this.data = {
-                    response: { instanceId: 1 },
-                    errors: { record: "no" }
-                };
             });
-
-            itHandlesFailure();
 
             it("triggers resourceForbidden on the resource", function() {
                 this.resource.respondToErrors(403);
@@ -306,139 +309,218 @@ describe("chorus.Mixins.Fetching", function() {
         context("when the response is '404 not found'", function() {
             beforeEach(function() {
                 spyOn(this.resource, "trigger");
-                this.data = {};
             });
-
-            itHandlesFailure();
 
             it("triggers resourceNotFound on the resource", function() {
                 this.resource.respondToErrors(404);
                 expect(this.resource.trigger).toHaveBeenCalledWith("resourceNotFound");
+            });
+
+            context("when passing a 'notFound' error handler", function() {
+                it("executes the 'notFound' handler", function() {
+                    this.spy = jasmine.createSpy();
+                    this.resource.respondToErrors(404, { notFound: this.spy });
+                    expect(this.spy).toHaveBeenCalled();
+                });
+
+                it("should not trigger the 'resourceNotFound' event", function() {
+                    this.resource.respondToErrors(404, { notFound: function() {
+                    } });
+                    expect(this.resource.trigger).not.toHaveBeenCalledWith("resourceNotFound");
+                });
             });
         });
 
         context("when the response is '422 unprocessable entity'", function() {
             beforeEach(function() {
                 spyOn(this.resource, "trigger");
-                this.data = {};
             });
-
-            itHandlesFailure();
 
             it("triggers unprocessableEntity on the resource", function() {
                 this.resource.respondToErrors(422);
                 expect(this.resource.trigger).toHaveBeenCalledWith("unprocessableEntity");
             });
+
+            context("when passing a 'unprocessableEntity' error handler", function() {
+                it("executes the 'unprocessableEntity' handler", function() {
+                    this.spy = jasmine.createSpy();
+                    this.resource.respondToErrors(422, { unprocessableEntity: this.spy });
+                    expect(this.spy).toHaveBeenCalled();
+                });
+
+                it("should not trigger the 'unprocessableEntity' event", function() {
+                    this.resource.respondToErrors(422, { unprocessableEntity: function() {
+                    } });
+                    expect(this.resource.trigger).not.toHaveBeenCalledWith("unprocessableEntity");
+                });
+            });
         });
 
-        context("when the response is any other error", function() {
+        context("when the response is 500", function() {
             beforeEach(function() {
                 spyOn(chorus, "toast");
-                this.data = {};
             });
-
-            itHandlesFailure();
 
             it("shows a toast message", function() {
                 this.resource.respondToErrors(500);
-                expect(chorus.toast).toHaveBeenCalledWith("server_error");
+                expect(chorus.toast).toHaveBeenCalledWith("server_error", {toastOpts: {}});
             });
         });
-
-        function itHandlesFailure() {
-            it("does not set loaded", function() {
-                this.resource.parseErrors(this.data);
-                expect(this.resource.loaded).toBeFalsy();
-            });
-
-            it("stores the errors as the resource's 'serverErrors'", function() {
-                this.resource.parseErrors(this.data);
-                expect(this.resource.serverErrors).toBe(this.data.errors);
-            });
-
-            it("stores the returned response as the resource's errorData", function() {
-                this.resource.parseErrors(this.data);
-                expect(this.resource.errorData).toEqual(this.data.response);
-            });
-        }
     });
 
-    describe("#fetch", function() {
+    describe('#fetch', function() {
         beforeEach(function() {
             this.errorSpy = jasmine.createSpy("error");
             this.successSpy = jasmine.createSpy("success");
             this.fetchFailedSpy = jasmine.createSpy("fetchFailed");
             this.loadedSpy = jasmine.createSpy("loaded");
+            this.serverRespondedSpy = jasmine.createSpy("serverResponded");
 
             this.resource.bind("fetchFailed", this.fetchFailedSpy);
             this.resource.bind("loaded", this.loadedSpy);
-
-            this.resource.fetch({
-                success: this.successSpy,
-                error: this.errorSpy
-            });
+            this.resource.bind("serverResponded", this.serverRespondedSpy);
         });
 
-        context("when there is a server error", function() {
-            it("triggers the 'fetchFailed' event on the resource", function() {
-                this.server.lastFetch().failUnprocessableEntity();
-                expect(this.fetchFailedSpy).toHaveBeenCalled();
-                expect(this.fetchFailedSpy.mostRecentCall.args[0]).toBe(this.resource);
-            });
-        });
-
-        context("when the response is '403 forbidden'", function() {
-            it("does not trigger 'loaded", function() {
-                this.server.lastFetch().failForbidden({custom: "error"});
-                expect(this.loadedSpy).not.toHaveBeenCalled();
+        context("with silent: false", function() {
+            beforeEach(function() {
+                this.resource.fetch({
+                    success: this.successSpy,
+                    error: this.errorSpy
+                });
             });
 
-            it("fills serverErrors from the errors key", function() {
-                this.server.lastFetch().failForbidden({custom: "error"});
-                expect(this.resource.serverErrors).toEqual({custom: "error"});
-            });
-
-            it("calls the 'error' callback if one is provided", function() {
-                this.server.lastFetch().failForbidden({custom: "error"});
-                expect(this.errorSpy).toHaveBeenCalled();
-            });
-
-            it("triggers the 'fetchFailed' event on the resource after populating the data", function() {
-                var resource = this.resource;
-                this.fetchFailedSpy.andCallFake(function() {
-                    expect(resource.serverErrors).toEqual({custom: "error"});
+            var itShouldTriggerServerRespondedAndSetStatusCodeTo = function(code) {
+                it("triggers serverResponded and loaded", function() {
+                    expect(this.serverRespondedSpy).toHaveBeenCalled();
                 });
 
-                this.server.lastFetch().failForbidden({custom: "error"});
+                it("sets statusCode on the resource", function() {
+                    expect(this.resource.statusCode).toBe(code);
+                });
+            };
 
-                expect(this.fetchFailedSpy).toHaveBeenCalled();
-                expect(this.fetchFailedSpy.mostRecentCall.args[0]).toBe(this.resource);
+            context('when the fetch succeeds', function() {
+                beforeEach(function() {
+                    this.server.lastFetchFor(this.resource).respondJson(200, { response: {someResponse: 'OK'}});
+                });
+
+                it('sets the attributes on the resource', function() {
+                    expect(this.resource.get('someResponse')).toEqual('OK');
+                });
+
+                it("triggers loaded", function() {
+                    expect(this.loadedSpy).toHaveBeenCalled();
+                });
+
+                itShouldTriggerServerRespondedAndSetStatusCodeTo(200);
             });
+
+            context('when the xhr only includes errors', function() {
+                beforeEach(function() {
+                    this.server.lastFetch().failUnprocessableEntity({ record: 'MISSING_DB_OBJECT' });
+                });
+
+                it('populates the server errors', function() {
+                    expect(this.resource.serverErrors).not.toBeEmpty();
+                });
+
+                it("triggers the 'fetchFailed' event on the resource", function() {
+                    expect(this.fetchFailedSpy).toHaveBeenCalled();
+                    expect(this.fetchFailedSpy.lastCall().args[0]).toBe(this.resource);
+                });
+
+                it('doesnt set loaded on the model', function() {
+                    expect(this.resource.loaded).toBeFalsy();
+                });
+
+                itShouldTriggerServerRespondedAndSetStatusCodeTo(422);
+
+            });
+
+            context('when the xhr includes errors with model data', function() {
+                beforeEach(function() {
+                    this.server.lastFetch().failUnprocessableEntity({ record: 'MISSING_DB_OBJECT', model_data: {attribute_name: 'value' }});
+                });
+
+                it('populates the server errors', function() {
+                    expect(this.resource.serverErrors).not.toBeEmpty();
+                });
+
+                it("includes object data", function() {
+                    expect(this.resource.serverErrors.modelData.attributeName).toEqual('value');
+                });
+            });
+
+            context("when there is an error with a single space in the response text", function() {
+                beforeEach(function() {
+                    this.server.lastFetch().respond(401, {'Content-Type': 'application/json'}, " ");
+                });
+
+                it("does not crash", function() {
+                    expect(this.fetchFailedSpy).toHaveBeenCalled();
+                });
+
+                itShouldTriggerServerRespondedAndSetStatusCodeTo(401);
+            });
+
         });
 
-        context("when the fetch succeeds", function() {
+        context("with silent: true", function() {
             beforeEach(function() {
-                this.server.lastFetch().succeed();
+                this.resource.fetch({
+                    success: this.successSpy,
+                    error: this.errorSpy,
+                    silent: true
+                });
             });
 
-            it("triggers the 'loaded' event on the resource", function() {
-                expect(this.loadedSpy).toHaveBeenCalled();
+            context('when the fetch succeeds', function() {
+                beforeEach(function() {
+                    spyOnEvent(this.resource, "serverResponded");
+                    this.server.lastFetchFor(this.resource).respondJson(200, { response: {someResponse: 'OK'}});
+                });
+
+                it('sets the attributes on the resource', function() {
+                    expect(this.resource.get('someResponse')).toEqual('OK');
+                });
+
+                it("doesn't trigger anything", function() {
+                    expect(this.serverRespondedSpy).not.toHaveBeenCalled();
+                    expect(this.loadedSpy).not.toHaveBeenCalled();
+                });
+
+                it("sets statusCode on the model", function() {
+                    expect(this.resource.statusCode).toBe(200);
+                });
             });
 
-            it("calls the 'success' callback if one is provided", function() {
-                expect(this.successSpy).toHaveBeenCalled();
-            });
-        });
+            context('when the fetch fails', function() {
+                beforeEach(function() {
+                    this.server.lastFetch().failUnprocessableEntity({ record: 'MISSING_DB_OBJECT' });
+                });
 
-        context("when there is an error with a single space in the response text", function() {
-            beforeEach(function() {
-                this.fetchFailedSpy.reset();
-                this.server.lastFetch().respond(401, {'Content-Type': 'application/json'}, " ");
+                it('populates the server errors', function() {
+                    expect(this.resource.serverErrors).not.toBeEmpty();
+                });
+
+                it("triggers the 'fetchFailed' event on the resource", function() {
+                    expect(this.fetchFailedSpy).toHaveBeenCalled();
+                    expect(this.fetchFailedSpy.lastCall().args[0]).toBe(this.resource);
+                });
+
+                it('doesnt set loaded on the model', function() {
+                    expect(this.resource.loaded).toBeFalsy();
+                });
+
+                it("does not trigger 'serverResponded'", function() {
+                    expect(this.serverRespondedSpy).not.toHaveBeenCalled();
+                });
+
+                it("sets the statusCode on the resource", function() {
+                    expect(this.resource.statusCode).toBe(422);
+                });
             });
 
-            it("does not crash", function() {
-                expect(this.fetchFailedSpy).toHaveBeenCalled();
-            });
         });
     });
 });

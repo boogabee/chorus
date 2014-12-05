@@ -1,11 +1,13 @@
 describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
     beforeEach(function() {
         setLoggedInUser({id: '54321'});
+        spyOn(chorus.views.NewTableImportDataGrid.prototype, "initializeDataGrid");
+
         chorus.page = {};
-        chorus.page.workspace = rspecFixtures.workspace({
+        chorus.page.workspace = backboneFixtures.workspace({
             sandboxInfo: {
                 name: "mySchema",
-                database: { name: "myDatabase", instance: { name: "myInstance" } }
+                database: { name: "myDatabase", dataSource: { name: "myDataSource" } }
             }
         });
         this.sandbox = chorus.page.workspace.sandbox();
@@ -39,7 +41,7 @@ describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
     it("fetches the list of workspaces for the logged in user", function() {
         var workspaces = new chorus.collections.WorkspaceSet([], {userId: "54321"});
         expect(workspaces).toHaveBeenFetched();
-    })
+    });
 
     context("when the workspace fetch completes and there are no workspaces", function() {
         beforeEach(function() {
@@ -54,16 +56,25 @@ describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
             expect(this.dialog.$('button.submit')).toBeDisabled();
         });
 
-    })
+        context("when sandboxes are disabled", function () {
+            it("populates the dialog's errors div", function() {
+                spyOn(chorus.models.Config.instance().license(), "limitSandboxes").andReturn(true);
+                this.dialog.render();
+                expect(this.dialog.$(".errors")).toContainTranslation("not_licensed.for_explorer");
+            });
+        });
+
+    });
 
     context("when the workspace fetch completes and there are workspaces", function() {
         beforeEach(function() {
-            spyOn(chorus, "styleSelect")
-            this.workspace1 = rspecFixtures.workspace();
-            this.workspace2 = rspecFixtures.workspace();
+            spyOn(chorus, "styleSelect");
+            this.workspace1 = backboneFixtures.workspace();
+            this.workspace2 = backboneFixtures.workspace();
             this.workspace2.unset("sandboxInfo");
-            this.workspace3 = rspecFixtures.workspace();
-            this.server.completeFetchAllFor(new chorus.collections.WorkspaceSet([], {userId: "54321"}), [this.workspace1, this.workspace2, this.workspace3]);
+            this.workspace3 = backboneFixtures.workspace();
+            this.server.completeFetchAllFor(new chorus.collections.WorkspaceSet([], {userId: "54321"}),
+                [this.workspace1, this.workspace2, this.workspace3]);
         });
 
         it("has a select with the workspaces containing sandboxes as options", function() {
@@ -73,7 +84,7 @@ describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
 
             expect(this.dialog.$(".directions option").eq(0).val()).toBe(this.workspace1.id);
             expect(this.dialog.$(".directions option").eq(1).val()).toBe(this.workspace3.id);
-        })
+        });
 
         it("styles the select", function() {
             expect(chorus.styleSelect).toHaveBeenCalled();
@@ -86,12 +97,17 @@ describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
 
         context("changing the workspace", function() {
             beforeEach(function() {
+                spyOn(this.dialog, 'postRender').andCallThrough();
                 this.dialog.$("select").val(this.workspace3.id).change();
             });
 
             it("populates the select when refresh happens", function() {
                 this.dialog.render();
                 expect(this.dialog.$("select")).toHaveValue(this.workspace3.id);
+            });
+
+            it("does not re-render the dialog", function() {
+                expect(this.dialog.postRender).not.toHaveBeenCalled();
             });
         });
 
@@ -107,6 +123,42 @@ describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
                 });
             });
 
+            context("with a workspace with a sandbox that is not GPDB 4.1+", function() {
+                beforeEach(function() {
+                    this.dialog.workspaces.get(this.dialog.$("select").val()).sandbox().dataSource().set('version', '4.0');
+                    this.dialog.$("button.submit").click();
+                });
+
+                it("shows an error about an unsupported version", function() {
+                    expect(this.dialog.$(".errors").text()).toContainTranslation("hdfs_data_source.gpdb_version.too_old_41");
+                });
+            });
+
+            context("with a workspace with a sandbox that is GPDB 4.1+", function() {
+                beforeEach(function() {
+                    this.dialog.workspaces.get(this.dialog.$("select").val()).sandbox().dataSource().set('version', '4.1');
+                    this.dialog.$("button.submit").click();
+                });
+
+                it("shows no error", function() {
+                    expect(this.dialog.$(".errors").text()).toBe("");
+                });
+            });
+
+            context("when the user submits and they dont have the credentials to access the sandbox", function() {
+                beforeEach(function() {
+                    this.dialog.workspaces.get(this.dialog.$("select").val()).sandbox().dataSource().set('version', '4.1');
+                    spyOn(this.dialog, "showDialogError");
+                    this.dialog.$("button.submit").click();
+                });
+
+                it("should display an 'invalid credentials' error in the dialog", function() {
+                    this.server.lastCreate().failForbidden();
+                    expect(this.dialog.showDialogError).toHaveBeenCalledWith(t("hdfs_data_source.create_external.invalid_sandbox_credentials"));
+                });
+
+            });
+
             context("with valid values", function() {
                 beforeEach(function() {
                     this.dialog.$("select").val(this.workspace3.id);
@@ -115,7 +167,7 @@ describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
 
                 it("starts the loading spinner", function() {
                     expect(this.dialog.$("button.submit").isLoading()).toBeTruthy();
-                    expect(this.dialog.$("button.submit")).toContainTranslation("hdfs.create_external.creating")
+                    expect(this.dialog.$("button.submit")).toContainTranslation("hdfs.create_external.creating");
                 });
 
                 it("posts to the right URL", function() {
@@ -123,18 +175,16 @@ describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
                     var request = this.server.lastCreate();
 
                     expect(request.url).toMatchUrl("/workspaces/" + workspaceId + "/external_tables");
-                    expect(request.params()["fake_model[table_name]"]).toBe("hi");
-                    expect(request.params()["fake_model[types][]"]).toEqual(['text','text','text','text','text']);
-                    expect(request.params()["fake_model[delimiter]"]).toBe(",");
-                    expect(request.params()["fake_model[hdfs_entry_id]"]).toBe("234");
-                    expect(request.params()["fake_model[column_names][]"]).toEqual(['column_1', 'column_2', 'column_3', 'column_4', 'column_5']);
+                    expect(request.json()["fake_model"]["table_name"]).toBe("hi");
+                    expect(request.json()["fake_model"]["delimiter"]).toBe(",");
+                    expect(request.json()["fake_model"]["hdfs_entry_id"]).toBe("234");
                 });
 
                 context("when the post to import responds with success", function() {
                     beforeEach(function() {
                         spyOn(this.dialog, "closeModal");
                         spyOn(chorus, 'toast');
-                        spyOn(chorus.PageEvents, 'broadcast');
+                        spyOn(chorus.PageEvents, 'trigger');
                         this.server.lastCreate().succeed();
                     });
 
@@ -144,39 +194,8 @@ describe("chorus.dialogs.CreateExternalTableFromHdfs", function() {
                     });
 
                     it("triggers csv_import:started", function() {
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("csv_import:started");
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("csv_import:started");
                     });
-                });
-            });
-
-            context("when the server responds with errors", function() {
-                beforeEach(function() {
-                    this.$type = this.dialog.$(".th .type").eq(1);
-                    this.$type.find(".chosen").click();
-                    this.$type.find(".popup_filter li").eq(3).find("a").click();
-                    this.dialog.$("input[name=tableName]").val("testisgreat").change();
-                    this.dialog.$(".field_name input").eq(0).val("gobbledigook").change();
-
-                    this.dialog.$("button.submit").click();
-                    this.server.lastCreate().failUnprocessableEntity({ fields: { a: { BLANK: {} } } });
-                });
-
-                it("has no validation errors", function() {
-                    expect(this.dialog.$(".has_error").length).toBe(0)
-                });
-
-                it("retains column names", function() {
-                    expect(this.dialog.$(".field_name input").eq(0).val()).toBe("gobbledigook");
-                });
-
-                it("retains the table name", function() {
-                    expect(this.dialog.$("input[name=tableName]").val()).toBe("testisgreat");
-                });
-
-                it("retains the data types", function() {
-                    this.$type = this.dialog.$(".th .type").eq(1);
-                    expect(this.$type.find(".chosen")).toHaveText("date");
-                    expect(this.$type).toHaveClass("date");
                 });
             });
         });

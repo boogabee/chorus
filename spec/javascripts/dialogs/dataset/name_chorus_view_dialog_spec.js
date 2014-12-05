@@ -1,8 +1,7 @@
 describe("chorus.dialogs.NameChorusView", function() {
     beforeEach(function() {
         stubModals();
-        stubDefer();
-        this.chorusView = newFixtures.workspaceDataset.chorusView({ query: "select name, quantity from shipments;" });
+        this.chorusView = backboneFixtures.workspaceDataset.chorusView({ query: "select name, quantity from shipments;" });
         this.dialog = new chorus.dialogs.NameChorusView({ model: this.chorusView });
         this.dialog.launchModal();
     });
@@ -80,7 +79,7 @@ describe("chorus.dialogs.NameChorusView", function() {
             beforeEach(function() {
                 spyOn(chorus.router, "navigate");
                 spyOnEvent($(document), "close.facebox");
-                this.dialog.model.set({serverErrors : { fields: { a: { BLANK: {} } } }});
+                this.dialog.model.set({serverErrors : { fields: { a: { BLANK: {} } } }}, {silent: true});
                 this.dialog.model.trigger("saveFailed");
             });
 

@@ -1,0 +1,65 @@
+@import "compass/utilities/general/hacks";
+@import "compass/css3";
+
+$grids-debug: false;
+$grids-debug-position: false;
+//TODO: make params into variables instead, so they can easily be updated w out changing this file.
+//TODO: Take different units into account, what if gutters are in rems? ems? percentage?
+
+@mixin oogrids($cols: (2,3,4,5,6), $gutter: $guttersH){
+  @each $col in $cols {
+    @for $i from 1 through $col {
+      .cols-#{$i} {
+        width: percentage($i/$col);
+      }
+    }
+  }
+  .line{
+    @include clearfix-me(micro);
+    margin-left: -$gutter;
+
+    .col{
+      float:left;
+      zoom:1;
+      @if $gutter {
+        @include box-sizing(border-box);
+        padding-left: $gutter;
+      }
+
+      &.col-last {
+        @include clearfix-me(facebook);
+        float: none;
+      }
+    }
+    .col-ext { // TODO: handle case where there are two (or more) unitExt in a line.
+      float:right;
+      zoom:1;
+    }
+  }
+}
+
+@if $grids-debug {
+  .col:before {
+    content: "unit";
+    display:block;
+    min-height: 40px;
+    line-height: 40px;
+    background-color: #EEE;
+    text-align: center;
+    border-radius: 3px;
+  }
+}
+
+@if $grids-debug-position {
+  .line{background-color: #e2e2e2;}
+  .col{background-color:#da0000; border-radius: 7px;}
+  .col:first-child{background-color:green;}
+  .col:first-child, .firstUnit{background-color:blue;}
+  .col-ext ~ [class*=size]:last-child,.col-last{background-color:purple;}
+  .col-ext ~ .col-ext{ background-color: gray;}
+}
+
+// if gutters were true they would need to be % based, so you would need to know page width
+// e.g. 15px gutters / 960px page width = 0.015625 or 1.5625%
+
+// or have them be pixel based and set padding box thingy

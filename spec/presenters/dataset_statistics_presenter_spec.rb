@@ -14,7 +14,7 @@ describe DatasetStatisticsPresenter, :type => :view do
       hash[:columns].should == 5
       hash[:description].should == 'This is a nice table.'
       hash[:last_analyzed_time].to_s.should == "2012-06-06 23:02:42 UTC"
-      hash[:on_disk_size].should == "2048 kB"
+      hash[:on_disk_size].should == 2097152
       hash[:partitions].should == 0
       hash[:definition].should == "SELECT * FROM foo"
     end

@@ -1,4 +1,4 @@
-.tag {
+.tag.administrator, .tag.import_frequency, .tag.developer {
     line-height: 12px;
     vertical-align: top;
     display: inline-block;
@@ -25,14 +25,12 @@
         line-height:0px;
         vertical-align: top;
     }
-}
 
-.tag.administrator, .tag.import_frequency {
     .tag_name {
-        background: $administrator-background-color;
+        background: $brand-dark;
     }
 
     .arrow_left {
-        border-right-color: $administrator-background-color;
+        border-right-color: $brand-dark;
     }
 }

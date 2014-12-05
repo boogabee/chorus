@@ -1,8 +1,8 @@
 chorus.collections.DatabaseSet = chorus.collections.Base.include(
-    chorus.Mixins.InstanceCredentials.model
+    chorus.Mixins.DataSourceCredentials.model
 ).extend({
     constructorName: "DatabaseSet",
     model:chorus.models.Database,
-    urlTemplate: "gpdb_instances/{{instanceId}}/databases",
-    showUrlTemplate: "instances/{{instanceId}}/databases"
+    urlTemplate: "data_sources/{{dataSourceId}}/databases",
+    showUrlTemplate: "data_sources/{{dataSourceId}}/databases"
 });

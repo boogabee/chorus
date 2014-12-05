@@ -1,0 +1,123 @@
+{{#if objectName}}
+    <div class="last_import low_light">
+        {{#if importFailed}}
+            <div class="icon">
+                <img src="/images/message_error_small.png" />
+            </div>
+        {{/if}}
+
+        {{#if importInProgress}}
+            <div class="icon">
+                <img src="/images/in_progress.png" />
+            </div>
+            <div class="import_in_progress right">
+                {{inProgressText}}
+            </div>
+        {{/if}}
+        <div class="last_import_text {{#if importInProgress}}right{{/if}}">
+            {{lastImport}}
+        </div>
+    </div>
+
+    {{#if noCredentials}}
+        <div class="notice no_credentials"><span class="bottom">{{noCredentialsWarning}}</span></div>
+    {{else}}
+        {{#if invalidCredentials}}
+            <div class="notice invalid_credentials"><span class="bottom">{{{invalidCredentialsMsg}}}</span></div>
+        {{/if}}
+    {{/if}}
+
+    <div class="next_import low_light">
+        {{nextImport}}
+    </div>
+
+    <div class="actions">
+        <label>{{t "sidebar.selected.one"}}</label>
+        <ul>
+            {{#if realWorkspace}}
+                {{#unless workspaceArchived}}
+                    <li><a class="new_note dialog" href="#">{{t "actions.add_note"}}</a></li>
+                    {{#if isHdfsDataset}}
+                        <li><a class="create_external_table">{{t "hdfs.create_external_table"}}</a></li>
+                    {{/if}}
+
+                    {{#if isChorusView}}
+                        {{#unless noValidCredentials}}
+                            <li><a class="create_database_view dialog" href="#">{{t "actions.create_database_view"}}</a></li>
+                            {{#if currentUserCanDuplicateChorusViews}}
+                                <li><a class="duplicate" href="#">{{t "dataset.chorusview.duplicate"}}</a></li>
+                            {{/if}}
+                        {{/unless}}
+                    {{/if}}
+                {{/unless}}
+            {{else}}
+                <li><a class="new_note dialog" href="#">{{t "actions.add_note"}}</a></li>
+            {{/if}}
+
+            {{#if canAssociate}}
+                <li><a class="associate" href="#">{{t "actions.associate"}}</a></li>
+            {{/if}}
+
+            <li><a class="edit_tags">{{t "sidebar.edit_tags"}}</a></li>
+            {{#unless workspaceArchived}}
+                {{#if isHdfsDataset}}
+                    <li><a class="edit_hdfs_dataset">{{t "actions.edit_hdfs_dataset"}}</a></li>
+                {{/if}}
+                {{#if canExport}}
+                    {{#if importsEnabled}}
+                        <li><a class="import_now dialog" href="#">{{t "actions.import_now"}}</a></li>
+                    {{else}}
+                        <li><span class="import_now disabled">{{t "actions.import_now"}}</span></li>
+                    {{/if}}
+                {{/if}}
+            {{/unless}}
+
+            {{#if currentUserCanCreateWorkFlow}}
+                <li>
+                    {{#if stale}}
+                        <span class="new_work_flow disabled">{{t "sidebar.new_work_flow"}}</span>
+                    {{else}}
+                        <a class="new_work_flow">{{t "sidebar.new_work_flow"}}</a>
+                    {{/if}}
+                </li>
+            {{/if}}
+
+            {{#unless isHdfsDataset}}
+                {{#unless noValidCredentials}}
+                    {{#if listMode}}
+                        <li>
+                        {{#if stale}}
+                            <span class="dataset_preview disabled" href="#">{{t "actions.dataset_preview"}}</span>
+                        {{else}}
+                            <a class="dataset_preview" href="#">{{t "actions.dataset_preview"}}</a>
+                        {{/if}}
+                        </li>
+                    {{/if}}
+
+                    <li>
+                        {{#if stale}}
+                            <span class="download disabled" href="#">{{t "actions.download"}}</span>
+                        {{else}}
+                            <a class="download dialog" href="#">{{t "actions.download"}}</a>
+                        {{/if}}
+                    </li>
+                    {{#if canAnalyze}}
+                       <li>
+                           {{#if stale}}
+                               <span class="analyze disabled" href="#">{{t "dataset.actions.analyze"}}</span>
+                           {{else}}
+                               <a class="analyze" href="#">{{t "dataset.actions.analyze"}}</a>
+                           {{/if}}
+                       </li>
+                    {{/if}}
+                {{/unless}}
+            {{/unless}}
+
+            {{#unless workspaceArchived}}
+                {{#if isDeleteable}}<li><a href="#" class="delete_dataset alert" data-key-prefix="{{deleteMsgKey}}">{{t deleteTextKey functionCallContext=this}}</a></li>{{/if}}
+            {{/unless}}
+        </ul>
+    </div>
+
+    <div class="tab_control"></div>
+{{/if}}

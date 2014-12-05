@@ -10,6 +10,10 @@ chorus.dialogs.AssociateWithWorkspace = chorus.dialogs.PickWorkspace.extend({
     },
 
     resourcesLoaded: function() {
+        this.collection.reset(this.collection.reject(function (workspace) {
+            return ( ( (workspace.get('showSandboxDatasets') && workspace.sandbox() && this.model.schema().get('id') === workspace.sandbox().get('id'))));
+        }, this));
+
         if (this.model.has("workspace")) {
             this.collection.remove(this.collection.get(this.model.workspace().id));
         }
@@ -22,13 +26,10 @@ chorus.dialogs.AssociateWithWorkspace = chorus.dialogs.PickWorkspace.extend({
     },
 
     submit: function() {
-        var self = this;
-        var url, params;
-
         var datasetSet = this.selectedItem().datasets();
         datasetSet.reset([this.model]);
-        this.bindings.add(datasetSet, "saved", this.saved);
-        this.bindings.add(datasetSet, "saveFailed", this.bulkSaveFailed);
+        this.listenTo(datasetSet, "saved", this.saved);
+        this.listenTo(datasetSet, "saveFailed", this.saveFailed);
 
         datasetSet.save();
         this.$("button.submit").startLoading("actions.associating");
@@ -36,19 +37,8 @@ chorus.dialogs.AssociateWithWorkspace = chorus.dialogs.PickWorkspace.extend({
 
     saved: function() {
         this.model.activities().fetch();
+        this.model.fetch();
         this.closeModal();
         chorus.toast("dataset.associate.toast.one", {datasetTitle: this.model.get("objectName"), workspaceNameTarget: this.selectedItem().get("name")});
-        chorus.PageEvents.broadcast("workspace:associated");
-    },
-
-    saveFailed: function(xhr) {
-        var data = JSON.parse(xhr.responseText);
-        this.serverErrors = data.errors;
-        this.render();
-    },
-
-    bulkSaveFailed: function(model) {
-        this.serverErrors = model.serverErrors;
-        this.render();
     }
 });

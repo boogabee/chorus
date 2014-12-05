@@ -1,5 +1,6 @@
 describe("chorus.models.User", function() {
     beforeEach(function() {
+        chorus.models.Config.instance().set({fileSizesMbUserIcon: 3});
         this.model = new chorus.models.User();
     });
 
@@ -59,7 +60,7 @@ describe("chorus.models.User", function() {
 
     describe("#workspaces", function() {
         beforeEach(function() {
-            this.user = rspecFixtures.user({username: "dr_charlzz", id: "457"});
+            this.user = backboneFixtures.user({username: "dr_charlzz", id: "457"});
             this.workspaces = this.user.workspaces();
         });
 
@@ -84,7 +85,7 @@ describe("chorus.models.User", function() {
                 var spy = jasmine.createSpy("changeHandler");
                 this.user.bind("change", spy);
                 this.workspaces.trigger("reset");
-                expect(spy.calls.length).toBe(1);
+                expect(spy.calls.count()).toBe(1);
             });
         });
 
@@ -102,7 +103,7 @@ describe("chorus.models.User", function() {
 
     describe("#activeWorkspaces", function() {
         beforeEach(function() {
-            this.user = rspecFixtures.user({username: "dr_charlzz", id: "457"});
+            this.user = backboneFixtures.user({username: "dr_charlzz", id: "457"});
             this.workspaces = this.user.activeWorkspaces();
         });
 
@@ -143,7 +144,7 @@ describe("chorus.models.User", function() {
         });
 
         it("should return a truthy value for a valid user", function() {
-            var model = rspecFixtures.user();
+            var model = backboneFixtures.user();
             model.set({ password: "foo", passwordConfirmation: "foo" });
             expect(model.performValidation()).toBeTruthy();
         });
@@ -157,7 +158,7 @@ describe("chorus.models.User", function() {
 
         it("requires email", function() {
             this.model.performValidation();
-            expect(this.model.requirePattern).toHaveBeenCalledWith("email", /[\w\.-]+(\+[\w-]*)?@([\w-]+\.)+[\w-]+/, undefined, undefined);
+            expect(this.model.requirePattern).toHaveBeenCalledWith("email", /[\w\.\-]+(\+[\w\-]*)?@([\w\-]+\.)+[\w\-]+/, undefined, undefined);
         });
 
         context("when the user is new", function() {
@@ -187,7 +188,7 @@ describe("chorus.models.User", function() {
 
         context("when the user is in LDAP", function() {
             beforeEach(function() {
-                this.model = rspecFixtures.user({
+                this.model = backboneFixtures.user({
                     firstName: "bob",
                     lastName: "jenkins",
                     username: "bobjenk",
@@ -208,13 +209,13 @@ describe("chorus.models.User", function() {
                     email: "bob@bob.com"
                 });
                 expect(this.model.performValidation()).toBeFalsy();
-            })
+            });
 
-        })
+        });
 
         context("when the user is already saved", function() {
             beforeEach(function() {
-                this.model = rspecFixtures.user({
+                this.model = backboneFixtures.user({
                     id: "5",
                     firstName: "bob",
                     lastName: "jenkins",
@@ -225,7 +226,7 @@ describe("chorus.models.User", function() {
                     password: "original_password",
                     passwordConfirmation: "original_password"
                 });
-                this.model.change();
+                this.model.trigger('change');
             });
 
             context("when the password has not changed", function() {
@@ -246,8 +247,8 @@ describe("chorus.models.User", function() {
         var user;
 
         beforeEach(function() {
-            spyOn(chorus, "cachebuster").andReturn(12345)
-            user = rspecFixtures.user({
+            spyOn(chorus, "cachebuster").andReturn(12345);
+            user = backboneFixtures.user({
                 username: 'foo',
                 id: "bar",
                 image: {
@@ -277,18 +278,18 @@ describe("chorus.models.User", function() {
 
     describe("#createImageUrl", function() {
         it("gives the right url back", function() {
-            var user = rspecFixtures.user({
+            var user = backboneFixtures.user({
                 username: 'elephant',
-                id: "55",
+                id: "55"
             });
-            expect(user.createImageUrl()).toHaveUrlPath("/users/55/image")
+            expect(user.createImageUrl()).toHaveUrlPath("/users/55/image");
             expect(user.createImageUrl()).toBeA("string");
         });
     });
 
     describe("#picklistImageUrl", function() {
         it("uses the right URL", function() {
-            var user = rspecFixtures.user({username: 'foo', id: "bar"});
+            var user = backboneFixtures.user({username: 'foo', id: "bar"});
             expect(user.picklistImageUrl()).toBe(user.fetchImageUrl({ size: "original" }));
         });
     });
@@ -304,14 +305,14 @@ describe("chorus.models.User", function() {
 
         context("when firstName and lastName are blank, but fullName exists", function() {
             it("uses fullName", function() {
-                var user = rspecFixtures.user({
+                var user = backboneFixtures.user({
                     firstName: '',
                     lastName: ''
                 });
                 user.set({fullName: "SomeGuy"});
                 expect(user.displayName()).toBe('SomeGuy');
             });
-        })
+        });
     });
 
     describe("#displayShortName", function() {
@@ -336,7 +337,6 @@ describe("chorus.models.User", function() {
 
     describe("#maxImageSize", function() {
         it("returns the max file size for user icons from the config", function() {
-            this.server.completeFetchFor(chorus.models.Config.instance(), rspecFixtures.config());
             var maxImgSize = chorus.models.Config.instance().get("fileSizesMbUserIcon");
             expect(maxImgSize).toBeDefined();
             expect(this.model.maxImageSize()).toBe(maxImgSize);

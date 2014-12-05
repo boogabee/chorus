@@ -1,4 +1,20 @@
 describe("chorus.views.visualizations.Timeseries", function() {
+    function pathYs(path) {
+        var pointString = $(path).attr("d");
+        var pairs = pointString.replace(/M/, "").split("L");
+        return _.map(pairs, function(pair) {
+            return parseFloat(pair.split(",")[1]);
+        });
+    }
+
+    function pathXs(path) {
+        var pointString = $(path).attr("d");
+        var pairs = pointString.replace(/M/, "").split("L");
+        return _.map(pairs, function(pair) {
+            return parseFloat(pair.split(",")[0]);
+        });
+    }
+
     var leftX   = chorus.svgHelpers.leftX,
         rightX  = chorus.svgHelpers.rightX;
 
@@ -45,9 +61,9 @@ describe("chorus.views.visualizations.Timeseries", function() {
         });
 
         it("formats the times correctly", function() {
-            var labels = this.view.$(".label")
-            expect(labels[0].textContent).toBe("2012-01-01")
-        })
+            var labels = this.view.$(".label");
+            expect(labels[0].textContent).toBe("2012-01-01");
+        });
 
         describe("re-rendering", function() {
             beforeEach(function() {
@@ -75,7 +91,7 @@ describe("chorus.views.visualizations.Timeseries", function() {
             });
 
             it("positions the points horizontally according to their time value", function() {
-                var times = _.map(this.data, function(d) { return Date.parse(d.time) });
+                var times = _.map(this.data, function(d) { return Date.parse(d.time); });
                 var deltaX = rightX(this.xAxisLine) - leftX(this.xAxisLine);
                 var deltaTime = _.last(times) - _.first(times);
 
@@ -87,36 +103,20 @@ describe("chorus.views.visualizations.Timeseries", function() {
             });
 
             it("positions the points vertically according to their y value", function() {
-                var values = _.pluck(this.data, "value")
+                var values = _.pluck(this.data, "value");
 
                 _.each(this.ys, function(y, i) {
                     if (i === 0) return;
 
                     if (values[i] > values[i-1]) {
-                        expect(y).toBeLessThan(this.ys[i-1])
+                        expect(y).toBeLessThan(this.ys[i-1]);
                     } else if (values[i] < values[i-1]) {
-                        expect(y).toBeGreaterThan(this.ys[i-1])
+                        expect(y).toBeGreaterThan(this.ys[i-1]);
                     } else {
-                        expect(y).toBe(this.ys[i-1])
+                        expect(y).toBe(this.ys[i-1]);
                     }
                 }, this);
             });
         });
     });
-
-    function pathYs(path) {
-        var pointString = $(path).attr("d");
-        var pairs = pointString.replace(/M/, "").split("L");
-        return _.map(pairs, function(pair) {
-            return parseFloat(pair.split(",")[1]);
-        });
-    }
-
-    function pathXs(path) {
-        var pointString = $(path).attr("d");
-        var pairs = pointString.replace(/M/, "").split("L");
-        return _.map(pairs, function(pair) {
-            return parseFloat(pair.split(",")[0]);
-        });
-    }
 });

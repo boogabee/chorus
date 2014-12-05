@@ -1,0 +1,38 @@
+<form>
+    <div class="girdle">
+        <label class="required">{{t "create_hdfs_dataset_dialog.mask_name"}}</label>
+        <input class="name mbm" maxlength="256" value="{{objectName}}">
+        {{#if needsDataSource}}
+            <div class="data_source mbm">
+                <div class="loading_text{{#if dataSourcesLoaded}} hidden{{/if}}"><span class="loading_spinner"></span>
+                </div>
+                <label class="required">{{t "create_hdfs_dataset_dialog.data_source_select_title"}}</label><br/>
+
+                {{#if dataSourcesLoaded}}
+                    <select class="data_sources full_dialog_horizontal{{#unless loaded}} hidden{{/unless}}">
+                        <option value="">{{t "selectbox.select_one"}}</option>
+                        {{#each dataSources}}
+                            <option value={{id}}>{{name}}</option>
+                        {{/each}}
+                    </select>
+                {{else}}
+                    <span class="unavailable_text">{{t "create_hdfs_dataset_dialog.no_data_sources"}}</span>
+                {{/if}}
+            </div>
+        {{/if}}
+        <label class="required mtm">{{t "create_hdfs_dataset_dialog.file_mask"}}</label>
+        <input class="file_mask mbm" maxlength="4096" value="{{fileMask}}"
+               placeholder="{{t "create_hdfs_dataset_dialog.placeholder"}}">
+
+        {{#if needsWorkspace}}
+            <label class="required">{{t "associate_hdfs_dataset_from_entry.workspace"}}</label><br/>
+            <a class='workspace_picked'>{{t "associate_hdfs_dataset_from_entry.select_workspace"}}</a>
+        {{/if}}
+
+    </div>
+    {{#if datasetPersisted}}
+        {{formControls "edit_hdfs_dataset.submit"}}
+    {{else}}
+        {{formControlsWithDisabledSubmit "create_hdfs_dataset_dialog.submit"}}
+    {{/if}}
+</form>

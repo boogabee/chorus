@@ -5,7 +5,7 @@ chorus.collections.DatasetFilterSet = chorus.collections.Base.extend({
     sqlStrings: function() {
         var wheres = this.map(function(filter) {
             return filter.sqlString();
-        })
+        });
 
         wheres = _.without(wheres, "");
         return wheres;
@@ -21,9 +21,9 @@ chorus.collections.DatasetFilterSet = chorus.collections.Base.extend({
     },
 
     clone: function() {
-        var clonedModels = this.models.map(function(model) {
-            return _.clone(model);
-        })
+        var clonedModels = this.map(function(model) {
+            return model.clone();
+        });
         return new chorus.collections.DatasetFilterSet(clonedModels);
     }
 });

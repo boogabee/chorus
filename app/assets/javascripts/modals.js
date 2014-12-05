@@ -1,5 +1,7 @@
 chorus.Modal = chorus.views.Base.extend({
     constructorName: "Modal",
+    verticalPadding: 30,
+    focusSelector: 'input:eq(0)',
 
     launchModal: function() {
         if (chorus.modal && this !== chorus.modal) {
@@ -11,11 +13,11 @@ chorus.Modal = chorus.views.Base.extend({
 
     launchNewModal:function () {
         this.render();
-        $(document).one('reveal.facebox', _.bind(this.revealed, this));
+        $(document).one('reveal.facebox', _.bind(this.beginReveal, this));
         $.facebox(this.el);
-
         this.previousModal = chorus.modal;
         this.restore();
+        this.showErrors();
     },
 
     launchSubModal: function(subModal) {
@@ -33,8 +35,8 @@ chorus.Modal = chorus.views.Base.extend({
 
         if (!windowHeight) windowHeight = $window.height();
 
-        $facebox.css('top', 30 + 'px');
-        var popupHeight = windowHeight - 60;
+        $facebox.css('top', this.verticalPadding + 'px');
+        var popupHeight = windowHeight - this.verticalPadding*2;
         $popup.css("max-height", popupHeight + "px");
     },
 
@@ -48,9 +50,13 @@ chorus.Modal = chorus.views.Base.extend({
         return result;
     },
 
+    centerHorizontally: function () {
+        $('#facebox').css('left', $(window).width() / 2 - ($('#facebox .popup').width() / 2));
+    },
+
     postRender: function() {
         this._super("postRender");
-        $('#facebox').css('left', $(window).width() / 2 - ($('#facebox .popup').width() / 2))
+        this.centerHorizontally();
     },
 
     makeModel:function (options) {
@@ -60,27 +66,29 @@ chorus.Modal = chorus.views.Base.extend({
         }
     },
 
-    closeModal:function () {
+    closeModal:function (success) {
         $(document).trigger("close.facebox");
+        if (success === true) {
+            $(document).trigger("close.faceboxsuccess");
+        }
     },
 
     keydownHandler:function (e) {
-        if (e.keyCode == 27) {
+        if (e.keyCode === 27) {
             this.escapePressed();
         }
     },
 
     escapePressed:function () {
-        $(document).trigger("close.facebox");
+        this.closeModal();
     },
 
     modalClosed:function () {
-        if (this == chorus.modal) {
-            this.bindings.removeAll();
+        if (this === chorus.modal) {
             this.close();
             $("#facebox").remove();
             $.facebox.settings.inited = false;
-            chorus.PageEvents.broadcast("modal:closed");
+            chorus.PageEvents.trigger("modal:closed", this);
 
             delete chorus.modal;
             this.ignoreFacebox();
@@ -91,12 +99,14 @@ chorus.Modal = chorus.views.Base.extend({
                 this.restoreScrollingBody();
             }
         }
+        this.teardown();
     },
 
     restore: function () {
         chorus.modal = this;
         this.foreground();
         this.listenToFacebox();
+        this.recalculateScrolling();
         _.defer(this.resize);
     },
 
@@ -107,7 +117,7 @@ chorus.Modal = chorus.views.Base.extend({
     },
 
     background: function () {
-        this.faceboxCacheId = "" + (new Date().getTime());
+        this.faceboxCacheId = Math.floor((Math.random()*1e8)+1).toString();
         $("#facebox").attr("id", "facebox-" + this.faceboxCacheId).addClass("hidden");
         $("#facebox_overlay").attr("id", "facebox_overlay-" + this.faceboxCacheId);
     },
@@ -135,7 +145,24 @@ chorus.Modal = chorus.views.Base.extend({
     },
 
     close:$.noop,
-    revealed:$.noop
+    revealed: $.noop,
+
+    beginReveal: function() {
+        this.revealed();
+        if (this.focusSelector) {
+            this.$(this.focusSelector).focus();
+        }
+    },
+
+    saveFailed: function(model) {
+        this.$("button.submit").stopLoading();
+        this.$("button.cancel").prop("disabled", false);
+        if(model) {
+            this.showErrors(model);
+        } else {
+            this.showErrors();
+        }
+    }
 });
 
 if (window.jasmine) {

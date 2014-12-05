@@ -1,0 +1,16 @@
+/*
+ * @provides    link
+ * @desc        sets various link styles
+ */
+
+a {
+    color: $default-link-color;
+}
+
+a:hover, a:focus, a:active {
+    text-decoration: underline;
+}
+
+.link_low_light {
+    color: $low-light-type;
+}

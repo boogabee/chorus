@@ -5,14 +5,42 @@ describe("chorus.views.DatasetSidebar", function() {
         this.view.render();
     });
 
-    context("when it is disabled", function() {
+    function itDoesNotShowDatabaseDependentActions() {
+        describe("actions", function() {
+            it("does not show preview data even when on a list page", function() {
+                this.view.options.listMode = true;
+                this.view.render();
+                expect(this.view.$('.actions .dataset_preview')).not.toExist();
+            });
+
+            it("does not have 'Import Now' even if there's a workspace", function() {
+                this.view.resource._workspace = backboneFixtures.workspace();
+                this.view.render();
+                expect(this.view.$(".actions .import_now")).not.toExist();
+            });
+
+            it("does not show analyze table", function() {
+                expect(this.view.$(".actions a.analyze")).not.toExist();
+            });
+
+            it("does not show create database view", function() {
+                expect(this.view.$(".actions a.create_database_view")).not.toExist();
+            });
+
+            it("does not show duplicate chorus view", function() {
+                expect(this.view.$(".actions a.duplicate")).not.toExist();
+            });
+        });
+    }
+
+    context("when disabled", function() {
         beforeEach(function() {
             this.view.disabled = true;
             spyOn(this.view, 'template');
             this.view.render();
         });
 
-        it("does not actually render", function() {
+        it("does not render", function() {
             expect(this.view.template).not.toHaveBeenCalled();
         });
     });
@@ -26,33 +54,39 @@ describe("chorus.views.DatasetSidebar", function() {
     context("when a dataset is selected", function() {
         beforeEach(function() {
             this.server.reset();
-            this.dataset = rspecFixtures.workspaceDataset.sourceTable();
-            chorus.PageEvents.broadcast("dataset:selected", this.dataset);
+            this.dataset = backboneFixtures.workspaceDataset.sourceTable();
+            chorus.PageEvents.trigger("dataset:selected", this.dataset);
+            chorus.page = this.view;
+            $("#jasmine_content").append(this.view.$el);
         });
 
-        it("does not display the multiple selection section", function() {
-            expect(this.view.$(".multiple_selection")).toHaveClass("hidden");
-        });
+        describe("statistics", function() {
+            context("when the dataset is stale", function () {
+                beforeEach(function () {
+                    this.dataset.set('stale', true);
+                    this.server.reset();
+                });
 
-        it("displays the selected dataset name", function() {
-            expect(this.view.$(".name").text().trim()).toBe(this.dataset.get("objectName"));
-        });
-
-        context("when the statistics has not yet loaded", function() {
-            it("displays the selected dataset type", function() {
-                expect(this.view.$(".details").text().trim()).toBe('Source Table');
-            });
-        });
-
-        context("when the statistics finish loading", function() {
-            beforeEach(function() {
-                spyOn(this.view, 'postRender');
-                this.dataset.statistics().fetch();
-                this.server.completeFetchFor(this.dataset.statistics());
+                it("do not fetch", function () {
+                    chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                    expect(this.dataset.statistics()).not.toHaveBeenFetched();
+                });
             });
 
-            it("should update the selected dataset type", function() {
-                expect(this.view.postRender).toHaveBeenCalled();
+            context("when the statistics fail with invalid credentials", function() {
+                beforeEach(function() {
+                    spyOn(this.view, 'postRender');
+                    var errors = backboneFixtures.invalidCredentialsErrorJson();
+                    this.server.lastFetchFor(this.view.resource.statistics()).failForbidden(errors);
+                });
+
+                it("rerenders the sidebar and shows the error message", function() {
+                    expect(this.view.postRender).toHaveBeenCalled();
+
+                    expect(this.view.$('.invalid_credentials')).toContainTranslation("dataset.credentials.invalid.body", {
+                        dataSourceName: this.dataset.dataSource().name()
+                    });
+                });
             });
         });
 
@@ -79,106 +113,182 @@ describe("chorus.views.DatasetSidebar", function() {
 
         describe("analyze table", function() {
             it("displays the analyze table action", function() {
-                expect(this.view.$(".actions a.analyze")).toContainTranslation("dataset.actions.analyze")
+                expect(this.view.$(".actions a.analyze")).toContainTranslation("dataset.actions.analyze");
             });
 
             it("does not display for a view", function() {
-                this.dataset = rspecFixtures.dataset({objectType: "VIEW"});
-                chorus.PageEvents.broadcast("dataset:selected", this.dataset);
+                this.dataset = backboneFixtures.workspaceDataset.datasetView();
+                chorus.PageEvents.trigger("dataset:selected", this.dataset);
                 expect(this.view.$(".actions a.analyze")).not.toExist();
             });
 
-            it("does not display the action for a external table", function() {
-                this.dataset = newFixtures.workspaceDataset.externalTable();
-                chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                expect(this.view.$(".actions a.analyze")).not.toExist();
-            });
+            itBehavesLike.aDialogLauncher(".actions a.analyze", chorus.alerts.Analyze);
 
-            it("does not display the action for a hadoop external table", function() {
-                this.dataset = fixtures.datasetHadoopExternalTable();
-                chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                expect(this.view.$(".actions a.analyze")).not.toExist();
-            });
-
-            context("when the run analyze link is clicked", function() {
-                beforeEach(function() {
-                    this.view.$(".actions a.analyze").click();
-                });
-
-                it("displays an alert dialog", function() {
-                    expect(this.modalSpy).toHaveModal(chorus.alerts.Analyze);
-                });
-            });
-
-            context("when the analyze:running event is broadcast", function() {
+            context("when the analyze:running event is trigger", function() {
                 it("re-fetches the dataset statistics", function() {
                     this.server.reset();
-                    chorus.PageEvents.broadcast("analyze:running");
+                    chorus.PageEvents.trigger("analyze:running");
                     expect(this.server.lastFetchFor(this.view.resource.statistics())).toBeDefined();
+                });
+                context("and the dataset is stale", function () {
+                    beforeEach(function () {
+                        this.dataset.set('stale', true);
+                    });
+                    it("does not refetch statistics", function () {
+                        this.server.reset();
+                        chorus.PageEvents.trigger("analyze:running");
+                        expect(this.dataset.statistics()).not.toHaveBeenFetched();
+                    });
                 });
             });
         });
 
-        context("when user does not have credentials", function() {
-            beforeEach(function() {
-                this.dataset.set({hasCredentials: false});
-                this.view.render();
+        context("when the user has valid credentials", function() {
+            it("does not display the invalid credentials message", function() {
+                expect(this.view.$('.invalid_credentials')).not.toExist();
             });
+        });
 
-            it("does not show the preview data link even when on a list page", function() {
-                this.view.options.listMode = true;
-                this.view.render();
-                expect(this.view.$('.actions .dataset_preview')).not.toExist();
-            });
-
-            it("does not have the 'Import Now' action even if there's a workspace", function() {
-                this.view.resource._workspace = rspecFixtures.workspace();
-                this.view.render();
-                expect(this.view.$(".actions .import_now")).not.toExist();
-            });
-
-            it("does not show the analyze table action", function() {
-                expect(this.view.$(".actions a.analyze")).not.toExist();
-            });
-
-            xit("shows a no-permissions message", function() {
-                this.view.render();
-                expect(this.view.$('.no_credentials')).toContainTranslation("dataset.credentials.missing.body", {
-                    linkText: t("dataset.credentials.missing.linkText"),
-                    instanceName: this.dataset.instance().name()
-                });
-            });
-
-            context("clicking on the link to add credentials", function() {
+        context("for a source dataset", function() {
+            context("when the user has invalid credentials", function() {
                 beforeEach(function() {
+                    this.user = chorus.session.user();
+                    var errors = backboneFixtures.invalidCredentialsErrorJson();
+                    this.server.lastFetchFor(this.view.resource.statistics()).failForbidden(errors);
+                });
+
+                it("displays a message explaining that the credentials are invalid", function() {
                     this.view.render();
-                    this.view.$('.no_credentials a.add_credentials').click();
+                    expect(this.view.$('.invalid_credentials')).toContainTranslation("dataset.credentials.invalid.body", {
+                        dataSourceName: this.dataset.dataSource().name()
+                    });
                 });
 
-                it("launches the InstanceAccount dialog", function() {
-                    expect(chorus.modal).toBeA(chorus.dialogs.InstanceAccount);
-                });
+                itDoesNotShowDatabaseDependentActions();
 
-                context("saving the credentials", function() {
-                    beforeEach(function() {
-                        spyOn(chorus.router, "reload");
-                        chorus.modal.$('input').val('stuff');
-                        chorus.modal.$('form').submit();
-                        this.server.completeSaveFor(chorus.modal.model);
+                function itDisplaysALinkToUpdateCredentials() {
+                    it("shows the link to update credentials", function() {
+                        this.view.render();
+
+                        expect(this.view.$('.invalid_credentials')).toContainTranslation("dataset.credentials.invalid.updateCredentials", {
+                            linkText: t("dataset.credentials.invalid.linkText")
+                        });
                     });
 
-                    it("reloads the current page", function() {
-                        expect(chorus.router.reload).toHaveBeenCalled();
+                    describe("clicking the link to update credentials", function() {
+                        beforeEach(function() {
+                            this.view.render();
+                            expect(this.view.$('.invalid_credentials a.update_credentials')).toExist();
+                            this.view.$('.invalid_credentials a.update_credentials').click();
+                        });
+
+                        it("launches the DataSourceAccount dialog", function() {
+                            expect(chorus.modal).toBeA(chorus.dialogs.DataSourceAccount);
+                        });
+
+                        describe("saving the credentials", function() {
+                            beforeEach(function() {
+                                spyOn(chorus.router, "reload");
+                                chorus.modal.$('input').val('stuff');
+                                chorus.modal.$('form').submit();
+                                this.server.completeCreateFor(chorus.modal.model);
+                            });
+
+                            it("reloads the current page", function() {
+                                expect(chorus.router.reload).toHaveBeenCalled();
+                            });
+                        });
+                    });
+                }
+
+                context("when the data source account is shared", function() {
+                    beforeEach(function() {
+                        this.dataset.dataSource().set('shared', true);
+                    });
+
+                    context("and the user is an admin", function() {
+                        beforeEach(function() {
+                            this.user.set('admin', true);
+                        });
+                        itDisplaysALinkToUpdateCredentials();
+                    });
+
+                    context("and the user is the owner of the data source", function() {
+                        beforeEach(function() {
+                            this.dataset.dataSource().set('ownerId', this.user.get('id'));
+                        });
+
+                        itDisplaysALinkToUpdateCredentials();
+                    });
+
+                    context("when the user is neither an admin nor the owner of the instance", function() {
+                        it("does not show the link to update credentials", function() {
+                            this.view.render();
+                            expect(this.view.$('.invalid_credentials')).not.toContainTranslation("dataset.credentials.invalid.updateCredentials", {
+                                linkText: t("dataset.credentials.invalid.linkText")
+                            });
+                        });
+                    });
+                });
+
+                context("when the data source account is not shared", function() {
+                    beforeEach(function() {
+                        spyOn(this.dataset.dataSource(), 'isShared').andReturn(false);
+                    });
+
+                    itDisplaysALinkToUpdateCredentials();
+                });
+            });
+
+            context("when user does not have credentials", function() {
+                beforeEach(function() {
+                    this.dataset.set({hasCredentials: false});
+                    delete this.dataset.dataSource()._accountForCurrentUser;
+                    this.view.render();
+                });
+
+                itDoesNotShowDatabaseDependentActions();
+
+                it("shows a no-permissions message", function() {
+                    this.view.render();
+                    expect(this.view.$('.no_credentials')).toContainTranslation("dataset.credentials.missing.body", {
+                        linkText: t("dataset.credentials.missing.linkText"),
+                        dataSourceName: this.dataset.dataSource().name()
+                    });
+                });
+
+                context("clicking the link to add credentials", function() {
+                    beforeEach(function() {
+                        this.view.render();
+                        this.view.$('.no_credentials a.add_credentials').click();
+                    });
+
+                    it("launches the DataSourceAccount dialog", function() {
+                        expect(chorus.modal).toBeA(chorus.dialogs.DataSourceAccount);
+                    });
+
+                    context("saving the credentials", function() {
+                        beforeEach(function() {
+                            spyOn(chorus.router, "reload");
+                            chorus.modal.$('input').val('stuff');
+                            chorus.modal.$('form').submit();
+                            this.server.completeCreateFor(chorus.modal.model);
+                        });
+
+                        it("reloads the current page", function() {
+                            expect(chorus.router.reload).toHaveBeenCalled();
+                        });
                     });
                 });
             });
         });
 
         it("displays a download link", function() {
-            expect(this.view.$("a.download")).toHaveData("dialog", "DatasetDownload");
             expect(this.view.$("a.download")).toHaveData("dataset", this.dataset);
             expect(this.view.$("a.download").text()).toMatchTranslation("actions.download");
         });
+
+        itBehavesLike.aDialogLauncher("a.download", chorus.dialogs.DatasetDownload);
 
         context("when in list mode", function() {
             beforeEach(function() {
@@ -190,13 +300,65 @@ describe("chorus.views.DatasetSidebar", function() {
                 expect(this.view.$('.actions .dataset_preview')).toContainTranslation('actions.dataset_preview');
             });
 
-            describe("when the 'Preview Data' link is clicked", function() {
-                beforeEach(function() {
-                    this.view.$(".dataset_preview").click();
+            itBehavesLike.aDialogLauncher("a.dataset_preview", chorus.dialogs.DatasetPreview);
+
+            context("for a hdfs dataset", function() {
+                beforeEach(function () {
+                    this.dataset = backboneFixtures.workspaceDataset.hdfsDataset();
+                    chorus.PageEvents.trigger("dataset:selected", this.dataset);
                 });
 
-                it("displays the preview data dialog", function() {
-                    expect(chorus.modal).toBeA(chorus.dialogs.DatasetPreview);
+                describe("creating an external table", function () {
+                    it("fetches the dataset's contents before popping up the dialog", function () {
+                        this.view.$('a.create_external_table').click();
+
+                        expect(this.modalSpy).not.toHaveModal(chorus.dialogs.CreateExternalTableFromHdfs);
+                        this.server.completeFetchFor(this.view.resource);
+                        expect(this.modalSpy).toHaveModal(chorus.dialogs.CreateExternalTableFromHdfs);
+
+                        expect(chorus.modal.options.csvOptions.tableName).toBe(this.view.resource.name());
+                    });
+
+                    it("provides the dialog with an external table model", function () {
+                        this.view.$('a.create_external_table').click();
+                        this.server.completeFetchFor(this.view.resource);
+
+                        expect(chorus.modal.model.get('hdfsDatasetId')).toEqual(this.view.resource.get('id'));
+                        expect(chorus.modal.model.get('hdfsDataSourceId')).toEqual(this.view.resource.dataSource().get('id'));
+                    });
+
+                });
+
+                itBehavesLike.aDialogLauncher("a.edit_hdfs_dataset", chorus.dialogs.EditHdfsDataset);
+
+                itBehavesLike.aDialogLauncher("a.delete_dataset", chorus.alerts.DatasetDelete);
+
+                it("does not display the 'Preview Data' link", function() {
+                    expect(this.view.$('.actions .dataset_preview')).not.toExist();
+                });
+
+                it("does not display the 'Download' link", function() {
+                    expect(this.view.$(".actions a.download")).not.toExist();
+                });
+
+                it("does not display the import links", function () {
+                    expect(this.view.$(".actions a.import_now")).not.toExist();
+                });
+
+                it("does not display the associate links", function () {
+                    expect(this.view.$(".actions a.associate")).not.toExist();
+                });
+
+                context("when the workspace is archived", function () {
+                    beforeEach(function () {
+                        spyOn(this.dataset, 'workspaceArchived').andReturn(true);
+                        this.view.render();
+                    });
+
+                    it("only shows the tags link", function () {
+                        expect(this.view.$(".actions a").length).toEqual(1);
+                        expect(this.view.$(".actions a.edit_tags")).toExist();
+                    });
                 });
             });
         });
@@ -209,560 +371,30 @@ describe("chorus.views.DatasetSidebar", function() {
 
         context("when there is an archived workspace", function() {
             beforeEach(function() {
-                this.view.resource._workspace = rspecFixtures.workspace({ archivedAt: "2012-05-08T21:40:14Z", permission: ["update", "admin"] });
+                this.view.resource._workspace = backboneFixtures.workspace({ archivedAt: "2012-05-08T21:40:14Z", permission: ["update", "admin"] });
                 this.view.options.listMode = true;
                 this.view.render();
-                this.dataset = rspecFixtures.workspaceDataset.datasetTable();
+                this.dataset = backboneFixtures.workspaceDataset.datasetTable();
                 this.dataset._workspace = this.view.resource._workspace;
-                chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                this.server.completeFetchFor(this.view.importConfiguration, []);
+                chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                this.server.completeFetchFor(this.view.imports, []);
             });
 
-            it("has no action links except for 'Preview Data' and 'Download'", function() {
-                expect(this.view.$(".actions a").length).toBe(2);
+            it("has no action links except for 'Preview Data', 'Download', and 'Tags'", function() {
+                expect(this.view.$(".actions a").length).toBe(3);
                 expect(this.view.$(".actions a.dataset_preview")).toExist();
                 expect(this.view.$(".actions a.download")).toExist();
+                expect(this.view.$(".actions a.edit_tags")).toExist();
             });
         });
 
-        context("when there is a workspace", function() {
+        context("by a workspace data tab", function() {
             beforeEach(function() {
-                this.view.resource._workspace = rspecFixtures.workspace();
+                this.view = new chorus.views.DatasetSidebar({workspace: this.dataset.workspace(), listMode: true});
                 this.view.render();
-            });
-
-            context("and no dataset is selected", function() {
-                beforeEach(function() {
-                    chorus.PageEvents.broadcast("dataset:selected");
-                });
-
-                itShowsTheAppropriateDeleteLink(false)
-                itDoesNotHaveACreateDatabaseViewLink();
-            });
-
-            it("doesn't display any import links by default", function() {
-                expect(this.view.$("a.create_schedule, a.edit_schedule, a.import_now")).not.toExist();
-            });
-
-            context("when the dataset is a sandbox table or view", function() {
-                beforeEach(function() {
-                    this.dataset = rspecFixtures.workspaceDataset.datasetTable();
-                    this.view.resource._workspace = rspecFixtures.workspace({ id: 6007, permission: ["update"] })
-                    chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                });
-
-                itDoesNotShowTheDuplicateChorusViewLink();
-                itShowsTheAppropriateDeleteLink(false);
-                itDoesNotHaveACreateDatabaseViewLink();
-
-                context("and the dataset has not received an import", function() {
-                    beforeEach(function() {
-                        this.server.completeFetchFor(this.view.importConfiguration, []);
-                    });
-
-                    it("doesn't display a 'import now' link", function() {
-                        expect(this.view.$(".import_now")).not.toExist();
-                    });
-                });
-
-                xcontext("and the dataset has received an import from a dataset", function() {
-                    beforeEach(function() {
-                        this.import = rspecFixtures.importSchedule({
-                            datasetId: this.dataset.id,
-                            workspaceId: this.dataset.workspace().id,
-                            executionInfo: {
-                                startedStamp: "2012-02-29T14:35:38Z",
-                                completedStamp: "2012-02-29T14:35:38Z",
-                                sourceId: this.dataset.id,
-                                sourceTable: "some_source_table"
-                            },
-                            id: "123"
-                        });
-                        this.server.completeFetchFor(this.dataset.getImport(), this.import);
-                    });
-
-                    it("has an 'imported xx ago' description", function() {
-                        var sourceTable = new chorus.models.WorkspaceDataset({
-                            id: '"10032"|"dca_demo"|"ddemo"|"TABLE"|"a2"',
-                            workspaceId: this.dataset.get("workspace").id
-                        });
-                        expect(this.view.$(".last_import")).toContainTranslation("import.last_imported_into", {
-                            timeAgo: chorus.helpers.relativeTimestamp("2012-02-29T14:35:38Z"),
-                            tableLink: "some_source_..."
-                        });
-                        expect(this.view.$(".last_import a")).toHaveHref(sourceTable.showUrl())
-                    });
-
-                    it("doesn't display a 'import now' link", function() {
-                        expect(this.view.$(".import_now")).not.toExist();
-                    });
-                });
-
-                context("and the dataset has received an import from a file", function() {
-                    beforeEach(function() {
-                        this.server.completeFetchFor(this.dataset.getImport(), {
-                            executionInfo: {
-                                startedStamp: "2012-02-29T14:35:38Z",
-                                completedStamp: "2012-02-29T14:35:38Z"
-                            },
-                            id: "123",
-                            sourceId: '"10032"|"dca_demo"|"ddemo"|"TABLE"|"a2"',
-                            sourceTable: "some_source_file.csv",
-                            sourceType: "upload_file"
-                        });
-                    });
-
-                    it("has an 'imported xx ago' description", function() {
-                        var sourceTable = new chorus.models.WorkspaceDataset({
-                            id: '"10032"|"dca_demo"|"ddemo"|"TABLE"|"a2"',
-                            workspaceId: this.dataset.get("workspace").id
-                        });
-                        expect(this.view.$(".last_import")).toContainTranslation("import.last_imported_into", {
-                            timeAgo: chorus.helpers.relativeTimestamp("2012-02-29T14:35:38Z"),
-                            tableLink: "some_source_..."
-                        });
-                    });
-
-                    it("renders the filename as a span with a title", function() {
-                        expect(this.view.$(".last_import a")).not.toExist();
-                        expect(this.view.$(".last_import .source_file")).toBe("span");
-                        expect(this.view.$(".last_import .source_file")).toHaveText("some_source_...");
-                        expect(this.view.$(".last_import .source_file")).toHaveAttr("title", "some_source_file.csv")
-                    });
-
-                    it("doesn't display a 'import now' link", function() {
-                        expect(this.view.$(".import_now")).not.toExist();
-                    });
-                });
-            });
-
-            context("when the dataset is the source of this import", function() {
-                beforeEach(function() {
-                    chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                });
-
-                itShowsTheAppropriateDeleteLink(true, "table");
-                itDoesNotHaveACreateDatabaseViewLink();
-
-                it("fetches the import configuration for the dataset", function() {
-                    expect(this.dataset.getImport()).toHaveBeenFetched();
-                });
-
-                describe("when the import fetch completes", function() {
-                    context("and the dataset has no import information", function() {
-                        beforeEach(function() {
-                            this.server.completeFetchFor(this.view.resource.getImport(), []);
-                        });
-
-                        context("and the current user has update permissions on the workspace", function() {
-                            beforeEach(function() {
-                                this.view.resource._workspace = rspecFixtures.workspace({ id: 6008, permission: ["update"] });
-                                this.view.render();
-                            });
-
-                            context("and the workspace has a sandbox", function() {
-                                it("shows the 'import now' link", function() {
-                                    expect(this.view.$("a.import_now")).toExist();
-                                });
-
-                                it("has a 'create import schedule' link", function() {
-                                    var createScheduleLink = this.view.$("a.create_schedule");
-                                    expect(createScheduleLink.text()).toMatchTranslation("actions.create_schedule");
-                                });
-
-                                it("should have the dataset attached as data-dataset", function() {
-                                    expect(this.view.$("a.create_schedule[data-dialog=ImportScheduler]").data("dataset")).toBe(this.dataset);
-                                });
-
-                                it("should have the workspace attached as data-workspace", function() {
-                                    expect(this.view.$("a.create_schedule[data-dialog=ImportScheduler]").data("workspace")).toBe(this.view.resource.workspace());
-                                });
-                            });
-
-                            context("and the workspace does not have a sandbox", function() {
-                                beforeEach(function() {
-                                    delete this.view.resource.workspace()._sandbox;
-                                    this.view.resource.workspace().set({
-                                        "sandboxInfo": null
-                                    })
-                                    this.view.render();
-                                });
-
-                                it("disables the 'import now' link", function() {
-                                    expect(this.view.$("a.import_now")).not.toExist();
-                                    expect(this.view.$("span.import_now")).toHaveClass('disabled');
-                                });
-
-                                it("disables 'create import schedule' link", function() {
-                                    expect(this.view.$("a.create_schedule")).not.toExist();
-                                    expect(this.view.$("span.create_schedule")).toHaveClass('disabled');
-                                });
-                            });
-                        });
-
-                        context("and the current user does not have update permissions on the workspace", function() {
-                            beforeEach(function() {
-                                this.view.resource._workspace = rspecFixtures.workspace({ id: 6009, permission: ["read"] })
-                                this.view.render();
-                            });
-
-                            it("does not have a 'create import schedule' link", function() {
-                                expect(this.view.$("a.create_schedule")).not.toExist();
-                            });
-
-                            it("does not have an 'import now' link", function() {
-                                expect(this.view.$("a.import_now.dialog")).not.toExist();
-                            });
-                        });
-
-                        it("doesn't have an 'edit import schedule' link'", function() {
-                            expect(this.view.$("a.edit_schedule")).not.toExist();
-                        });
-                    });
-
-                    context("when the dataset has an import schedule", function() {
-                        beforeEach(function() {
-                            this.importResponse = rspecFixtures.importSchedule({
-                                executionInfo: {},
-                                    endDate: "2013-06-02T00:00:00Z",
-                                    frequency: "weekly",
-                                    toTable: "our_destination",
-                                    startDatetime: "2012-02-29T14:23:58Z",
-                                    nextImportAt: Date.formatForApi(Date.today().add(1).year())
-                            });
-                            this.view.resource._workspace = rspecFixtures.workspace({ id: 6010, id: 6000, permission: ["update"] })
-                        });
-
-                        it("shows the next import time", function() {
-                            this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            expect(this.view.$(".next_import").text()).toContainTranslation("import.next_import", {
-                                nextTime: "in 1 year",
-                                tableRef: "our_destinat..."
-                            });
-                        });
-
-                        context("when the import has been successfully executed", function() {
-                            beforeEach(function() {
-                                this.importResponse.set({
-                                    executionInfo: {
-                                        startedStamp: "2012-02-29T14:23:58Z",
-                                        completedStamp: "2012-02-29T14:23:59Z",
-                                        result: {
-                                            executeResult: "success"
-                                        },
-                                        state: "success",
-                                        toTable: 'our_destination',
-                                        toTableId: '"10000"|"Analytics"|"analytics"|"TABLE"|"our_destination"',
-                                        creator: "InitialUser"
-                                    }
-                                });
-
-                                this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            });
-
-                            itHasActionLinks(["import_now", "edit_schedule"]);
-
-                            it("has an 'imported xx ago' description", function() {
-                                var execInfo = this.view.importConfiguration.get("executionInfo")
-                                var destTable = new chorus.models.WorkspaceDataset({
-                                    id: execInfo.toTableId,
-                                    workspace: {id: this.dataset.get("workspace").id}});
-                                expect(this.view.$(".last_import")).toContainTranslation("import.last_imported", {timeAgo: chorus.helpers.relativeTimestamp(execInfo.completedStamp), tableLink: "our_destinat..."})
-                                expect(this.view.$(".last_import a")).toHaveHref(destTable.showUrl())
-                            });
-                        });
-
-                        context("when the import is in progress", function() {
-                            beforeEach(function() {
-                                this.importResponse.set({
-                                    executionInfo: {
-                                        startedStamp: "2012-02-29T14:23:58Z",
-                                        toTable: 'our_destination_plus_some_more',
-                                        toTableId: '"10000"|"Analytics"|"analytics"|"TABLE"|"our_destination_plus_some_more"',
-                                        creator: "InitialUser",
-                                        state: "success"
-                                    }
-                                })
-
-                                this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            });
-
-                            itHasActionLinks(["import_now", "edit_schedule"]);
-
-                            it("has an 'import in progress' description", function() {
-                                var execInfo = this.view.importConfiguration.get("executionInfo");
-                                var destTable = new chorus.models.WorkspaceDataset({
-                                    id: execInfo.toTableId,
-                                    workspace: { id: this.dataset.get("workspace").id}});
-                                expect(this.view.$(".last_import")).toContainTranslation("import.in_progress", {tableLink: "our_destinat..."});
-                                expect(this.view.$(".last_import")).toContainTranslation("import.began", {timeAgo: chorus.helpers.relativeTimestamp(execInfo.startedStamp)});
-                                expect(this.view.$(".last_import a")).toHaveHref(destTable.showUrl());
-                                expect(this.view.$(".last_import img").attr("src")).toBe("/images/in_progress.png");
-                            });
-                        });
-
-                        context("when the import has failed to execute", function() {
-                            beforeEach(function() {
-                                this.importResponse.set({
-                                    executionInfo: {
-                                        toTable: "bad_destination_table",
-                                        toTableId: '"10000"|"Analytics"|"analytics"|"TABLE"|"bad_destination_table"',
-                                        startedStamp: "2012-02-29T14:23:58Z",
-                                        completedStamp: "2012-02-29T14:23:59Z",
-                                        result: {
-                                            executeResult: "failed"
-                                        },
-                                        state: "failed",
-                                        creator: "InitialUser"
-                                    }
-                                });
-
-                                this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            });
-
-                            it("has an 'import failed xx ago' description", function() {
-                                var execInfo = this.view.importConfiguration.get("executionInfo");
-                                var destTable = new chorus.models.WorkspaceDataset({
-                                    id: execInfo.toTableId,
-                                    workspace: { id: this.dataset.get("workspace").id}});
-                                expect(this.view.$(".last_import")).toContainTranslation("import.last_import_failed", {timeAgo: chorus.helpers.relativeTimestamp(execInfo.completedStamp), tableLink: "bad_destinat..."});
-                                expect(this.view.$(".last_import a")).toHaveHref(destTable.showUrl());
-                                expect(this.view.$(".last_import img").attr("src")).toBe("/images/message_error_small.png");
-                            });
-
-                            itHasActionLinks(["import_now", "edit_schedule"]);
-                        });
-
-                        context("when the import has not yet executed", function() {
-                            beforeEach(function() {
-                                this.importResponse.set({executionInfo: {} });
-                                this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            });
-
-                            itHasActionLinks(["import_now", "edit_schedule"]);
-                        });
-                    });
-
-                    context("when the dataset does not have an import schedule", function() {
-                        beforeEach(function() {
-                            this.importResponse = new chorus.models.DatasetImport({
-                                datasetId: this.dataset.get("id"),
-                                workspaceId: this.dataset.workspace().id
-                            });
-                        });
-
-                        context("when the import has been successfully executed", function() {
-                            beforeEach(function() {
-                                this.importResponse.set({
-                                    executionInfo: {
-                                        startedStamp: "2012-02-29T14:23:58Z",
-                                        completedStamp: "2012-02-29T14:23:59Z",
-                                        result: {
-                                            executeResult: "success"
-                                        },
-                                        toTable: 'our_destination',
-                                        toTableId: '"10000"|"Analytics"|"analytics"|"TABLE"|"our_destination"',
-                                        state: "success",
-                                        creator: "InitialUser"
-                                    }
-                                });
-                                this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            });
-
-                            itHasActionLinks(["import_now", "create_schedule"]);
-
-                            it("has an 'imported xx ago' description", function() {
-                                var execInfo = this.view.importConfiguration.get("executionInfo");
-                                var destTable = new chorus.models.WorkspaceDataset({
-                                    id: execInfo.toTableId,
-                                    workspace: {id: this.dataset.workspace().id}});
-                                expect(this.view.$(".last_import")).toContainTranslation("import.last_imported", {timeAgo: chorus.helpers.relativeTimestamp(execInfo.completedStamp), tableLink: "our_destinat..."});
-                                expect(this.view.$(".last_import a")).toHaveHref(destTable.showUrl());
-                            });
-                        });
-
-                        context("when the import has failed to execute", function() {
-                            beforeEach(function() {
-                                this.importResponse.set({
-                                    executionInfo: {
-                                        startedStamp: "2012-02-29T14:23:58Z",
-                                        completedStamp: "2012-02-29T14:23:59Z",
-                                        result: {
-                                            executeResult: "failed"
-                                        },
-                                        state: "failed",
-                                        toTable: 'our_destination',
-                                        toTableId: '"10000"|"Analytics"|"analytics"|"TABLE"|"our_destination"',
-                                        creator: "InitialUser"
-                                    }
-                                });
-
-                                this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            });
-
-                            itHasActionLinks(["import_now", "create_schedule"]);
-
-                            it("has an 'import failed xx ago' description", function() {
-                                var execInfo = this.view.importConfiguration.get("executionInfo");
-                                var destTable = new chorus.models.WorkspaceDataset({
-                                    id: execInfo.toTableId,
-                                    workspace: {id: this.dataset.workspace().id}});
-                                expect(this.view.$(".last_import")).toContainTranslation("import.last_import_failed", {timeAgo: chorus.helpers.relativeTimestamp(execInfo.completedStamp), tableLink: "our_destinat..."});
-                                expect(this.view.$(".last_import a")).toHaveHref(destTable.showUrl());
-                                expect(this.view.$(".last_import img").attr("src")).toBe("/images/message_error_small.png");
-                            });
-                        });
-
-                        context("when an Import Now is in progress", function() {
-                            beforeEach(function() {
-                                this.importResponse.set({executionInfo: {
-                                    startedStamp: "2012-02-29T14:23:58Z",
-                                    toTable: "our_destination",
-                                    toTableId: '"10000"|"Analytics"|"analytics"|"TABLE"|"bad_destination_table"'
-                                }});
-
-                                this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            });
-
-                            it("says the import is in progress", function() {
-                                var execInfo = this.view.importConfiguration.get("executionInfo");
-                                var destTable = new chorus.models.WorkspaceDataset({ id: execInfo.toTableId,
-                                    workspace: {id: this.dataset.workspace().id}});
-
-                                expect(this.view.$(".last_import")).toContainTranslation("import.in_progress", {tableLink: "our_destinat..."});
-                                expect(this.view.$(".last_import")).toContainTranslation("import.began", {timeAgo: chorus.helpers.relativeTimestamp(execInfo.startedStamp), tableLink: "our_destination..."});
-                                expect(this.view.$(".last_import a")).toHaveHref(destTable.showUrl());
-                                expect(this.view.$(".last_import img").attr("src")).toBe("/images/in_progress.png");
-                            });
-
-                            itHasActionLinks(["import_now", "create_schedule"]);
-                        });
-
-                        context("when the import has not yet executed", function() {
-                            beforeEach(function() {
-                                this.importResponse.set({ executionInfo: {} });
-                                this.server.completeFetchFor(this.view.importConfiguration, this.importResponse);
-                            });
-
-                            itHasActionLinks(["import_now", "create_schedule"]);
-                        });
-                    });
-
-                    function itHasActionLinks(linkClasses) {
-                        var possibleLinkClasses = ["import_now", "edit_schedule", "create_schedule"];
-
-                        context("when the user has permission to update in the workspace", function() {
-                            beforeEach(function() {
-                                this.view.resource._workspace = rspecFixtures.workspace({ id: 6002, permission: ["update"] })
-                                this.view.render();
-                            });
-
-                            _.each(linkClasses, function(linkClass) {
-                                it("has a '" + linkClass + "' link, which opens the import scheduler dialog", function() {
-                                    var link = this.view.$("a." + linkClass)
-                                    expect(link).toExist();
-                                    expect(link.text()).toMatchTranslation("actions." + linkClass);
-                                    expect(link.data("dialog")).toBe("ImportScheduler");
-                                });
-
-                                it("attaches the dataset to the '" + linkClass + "' link", function() {
-                                    var link = this.view.$("a." + linkClass)
-                                    expect(link.data("dataset")).toBe(this.dataset);
-                                });
-                            });
-
-                            _.each(_.difference(possibleLinkClasses, linkClasses), function(linkClass) {
-                                it("does not have a '" + linkClass + "' link", function() {
-                                    expect(this.view.$("a." + linkClass)).not.toExist();
-                                });
-                            });
-                        });
-
-                        context("when the user does not have permission to update things in the workspace", function() {
-                            beforeEach(function() {
-                                this.view.resource._workspace = rspecFixtures.workspace({ id: 6003, permission: ["read"] })
-                                this.view.render();
-                            });
-
-                            _.each(possibleLinkClasses, function(linkClass) {
-                                it("does not have a '" + linkClass + "' link", function() {
-                                    expect(this.view.$("a." + linkClass)).not.toExist();
-                                });
-                            });
-                        });
-                    }
-                });
-            });
-
-            context("when the dataset is a source view", function() {
-                beforeEach(function() {
-                    this.dataset = rspecFixtures.workspaceDataset.sourceView();
-                    chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                });
-
-                itDoesNotShowTheDuplicateChorusViewLink();
-                itShowsTheAppropriateDeleteLink(true, "view");
-                itDoesNotHaveACreateDatabaseViewLink();
-            });
-
-            context("when the dataset is a chorus view", function() {
-                beforeEach(function() {
-                    this.dataset = newFixtures.workspaceDataset.chorusView({ objectName: "annes_table", query: "select * from foos;" });
-                    chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                });
-
-                itShowsTheAppropriateDeleteLink(true, "chorus view");
-
-                it("shows the 'duplicate' link'", function() {
-                    expect(this.view.$("a.duplicate").text()).toMatchTranslation("dataset.chorusview.duplicate");
-                });
-
-                describe("clicking the 'duplicate' link", function() {
-                    beforeEach(function() {
-                        this.modalSpy.reset();
-                        this.view.$("a.duplicate").click();
-                    });
-
-                    it("launches the name chorus view dialog", function() {
-                        expect(this.modalSpy).toHaveModal(chorus.dialogs.VerifyChorusView);
-                    });
-
-                    it("passes the dialog a duplicate of the chorus view", function() {
-                        expect(this.modalSpy.lastModal().model.attributes).toEqual(this.dataset.createDuplicateChorusView().attributes);
-                    });
-                });
-
-                it("shows the 'Create as a database view' link", function() {
-                    expect(this.view.$("a.create_database_view[data-dialog=CreateDatabaseView]")).toContainTranslation("actions.create_database_view");
-                });
-            });
-
-            context("when the dataset is a source table", function() {
-                _.each(["TABLE", "EXTERNAL_TABLE", "MASTER_TABLE", "HDFS_EXTERNAL_TABLE"], function(type) {
-                    beforeEach(function() {
-                        this.dataset = rspecFixtures.workspaceDataset.sourceTable({ objectType : type});
-                        chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                    });
-
-                    itShowsTheAppropriateDeleteLink(true, type);
-                    itDoesNotHaveACreateDatabaseViewLink();
-                    itDoesNotShowTheDuplicateChorusViewLink();
-                })
-            })
-
-            it("has an associate with another workspace link", function() {
-                expect(this.view.$('.actions .associate')).toContainTranslation("actions.associate_with_another_workspace");
-                this.view.$('.actions .associate').click();
-                expect(this.modalSpy).toHaveModal(chorus.dialogs.AssociateWithWorkspace);
-            });
-
-            it("has the 'add a note' link with the correct data", function() {
-                var notesNew = this.view.$("a.dialog[data-dialog=NotesNew]");
-
-                expect(notesNew).toHaveData("entityId", this.dataset.id);
-                expect(notesNew).toHaveData("entityType", "dataset");
-                expect(notesNew).toHaveData("displayEntityType", this.dataset.metaType());
-                expect(notesNew).toHaveData("allowWorkspaceAttachments", true);
+                chorus.page = this.view;
+                chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                $("#jasmine_content").append(this.view.$el);
             });
 
             function itDoesNotHaveACreateDatabaseViewLink() {
@@ -772,41 +404,40 @@ describe("chorus.views.DatasetSidebar", function() {
             }
 
             function itShowsTheAppropriateDeleteLink(shouldBePresent, type) {
-                if (shouldBePresent) {
-                    var keyPrefix, textKey;
+                if(shouldBePresent) {
+                    var textKey;
 
-                    if (type == "chorus view") {
-                        keyPrefix = "delete";
+                    if(type === "chorus view") {
                         textKey = "actions.delete";
-                    } else if (type == "view") {
-                        keyPrefix = "disassociate_view";
+                    } else if(type === "view") {
                         textKey = "actions.delete_association";
                     } else {
-                        keyPrefix = "disassociate_table";
                         textKey = "actions.delete_association";
                     }
 
                     context("and the logged-in user has update permission on the workspace", function() {
                         beforeEach(function() {
-                            this.view.resource._workspace = rspecFixtures.workspace({ id: 6004, permission: ["update"] });
+                            this.view.resource._workspace = backboneFixtures.workspace({ id: 6004, permission: ["update"] });
                             this.view.render();
                         });
 
                         it("displays a delete link", function() {
-                            var el = this.view.$("a.alert[data-alert=DatasetDelete][data-key-prefix=" + keyPrefix + "]");
+                            var el = this.view.$("a.delete_dataset");
                             expect(el).toExist();
                             expect(el).toHaveText(t(textKey));
                         });
+
+                        itBehavesLike.aDialogLauncher("a.delete_dataset", chorus.alerts.DatasetDelete);
                     });
 
                     context("and the logged-in user does not have update permission on the workspace", function() {
                         beforeEach(function() {
-                            this.view.resource._workspace = rspecFixtures.workspace({ id: 6005, permission: ["read"] });
+                            this.view.resource._workspace = backboneFixtures.workspace({ id: 6005, permission: ["read"] });
                             this.view.render();
                         });
 
                         it("does not display a delete link", function() {
-                            expect(this.view.$("a.alert[data-alert=DatasetDelete]")).not.toExist();
+                            expect(this.view.$("a.delete_dataset")).not.toExist();
                         });
                     });
                 } else {
@@ -822,25 +453,435 @@ describe("chorus.views.DatasetSidebar", function() {
                     expect(this.view.$("a.duplicate")).not.toExist();
                 });
             }
+
+            context("and no dataset is selected", function() {
+                beforeEach(function() {
+                    chorus.PageEvents.trigger("dataset:selected");
+                });
+
+                itShowsTheAppropriateDeleteLink(false);
+                itDoesNotHaveACreateDatabaseViewLink();
+            });
+
+            it("does not display a new workflow link by default", function () {
+                expect(this.view.$("a.new_work_flow")).not.toExist();
+            });
+
+            context("and the selected dataset is a sandbox table or view", function() {
+                beforeEach(function() {
+                    this.dataset = backboneFixtures.workspaceDataset.datasetTable();
+                    this.view.resource._workspace = backboneFixtures.workspace({ id: 6007, permission: ["update"] });
+                    chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                });
+
+                itDoesNotShowTheDuplicateChorusViewLink();
+                itShowsTheAppropriateDeleteLink(false);
+                itDoesNotHaveACreateDatabaseViewLink();
+
+                context("and the dataset has not received an import", function() {
+                    beforeEach(function() {
+                        this.server.completeFetchFor(this.view.imports, []);
+                    });
+
+                    it("doesn't display a 'import now' link", function() {
+                        expect(this.view.$(".import_now")).not.toExist();
+                    });
+                });
+
+                context("when the dataset has a last import (as a destination dataset)", function() {
+                    beforeEach(function() {
+                        this.imports = backboneFixtures.workspaceImportSet();
+                        this.lastImport = this.imports.last();
+                        this.lastImport.set({
+                            startedStamp: "2012-02-29T14:23:58Z",
+                            completedStamp: "2012-02-29T14:23:59Z",
+                            success: true,
+                            toTable: this.dataset.name(),
+                            destinationDataset: {id: this.dataset.id},
+                            sourceDataset: { id: this.dataset.id + 1, objectName: "sourcey"}
+                        });
+                        this.server.completeFetchFor(this.view.imports, [this.lastImport]);
+                    });
+
+                    it("has an 'imported xx ago' description", function() {
+                        var sourceTable = this.lastImport.source();
+                        expect(this.view.$(".last_import")).toContainTranslation("import.last_imported_into", {timeAgo: Handlebars.helpers.relativeTimestamp(this.lastImport.get('completedStamp')), tableLink: "sourcey"});
+                        expect(this.view.$(".last_import a")).toHaveHref(sourceTable.showUrl());
+                    });
+
+                    it("doesn't display a 'import now' link", function() {
+                        expect(this.view.$(".import_now")).not.toExist();
+                    });
+                });
+
+                context("and the dataset has received an import from a file", function() {
+                    beforeEach(function() {
+                        this.csvImport = backboneFixtures.csvImportSet().first();
+                        this.csvImport.set({
+                            startedStamp: "2012-02-29T13:35:38Z",
+                            completedStamp: "2012-02-29T14:35:38Z",
+                            success: true,
+                            fileName: "some_source_file.csv"
+                        });
+                        this.server.completeFetchFor(this.dataset.getImports(), [this.csvImport]);
+                    });
+
+                    it("has an 'imported xx ago' description", function() {
+                        expect(this.view.$(".last_import")).toContainTranslation("import.last_imported_into", {
+                            timeAgo: Handlebars.helpers.relativeTimestamp("2012-02-29T14:35:38Z"),
+                            tableLink: "some_source_..."
+                        });
+                    });
+
+                    it("renders the filename as a span with a title", function() {
+                        expect(this.view.$(".last_import a")).not.toExist();
+                        expect(this.view.$(".last_import .source_file")).toBe("span");
+                        expect(this.view.$(".last_import .source_file")).toHaveText("some_source_...");
+                        expect(this.view.$(".last_import .source_file")).toHaveAttr("title", "some_source_file.csv");
+                    });
+
+                    it("doesn't display a 'import now' link", function() {
+                        expect(this.view.$(".import_now")).not.toExist();
+                    });
+                });
+            });
+
+            context("and the selected dataset can be the source of an import", function() {
+                function itHasActionLinks(linkClasses) {
+                    var possibleLinkClasses = ["import_now"];
+
+                    context("when the user has permission to update in the workspace", function() {
+                        beforeEach(function() {
+                            this.view.resource._workspace = backboneFixtures.workspace({ id: 6002, permission: ["update"] });
+                            this.view.render();
+                        });
+
+                        _.each(linkClasses, function(linkClass) {
+                            it("has a '" + linkClass + "' link", function() {
+                                var link = this.view.$("a." + linkClass);
+                                expect(link).toExist();
+                                expect(link.text()).toMatchTranslation("actions." + linkClass);
+                            });
+
+                            it("attaches the dataset to the '" + linkClass + "' link", function() {
+                                var link = this.view.$("a." + linkClass);
+                                expect(link.data("dataset")).toBe(this.dataset);
+                            });
+                        });
+
+                        _.each(_.difference(possibleLinkClasses, linkClasses), function(linkClass) {
+                            it("does not have a '" + linkClass + "' link", function() {
+                                expect(this.view.$("a." + linkClass)).not.toExist();
+                            });
+                        });
+                    });
+
+                    context("when the user does not have permission to update things in the workspace", function() {
+                        beforeEach(function() {
+                            this.view.resource._workspace = backboneFixtures.workspace({ id: 6003, permission: ["read"] });
+                            this.view.render();
+                        });
+
+                        _.each(possibleLinkClasses, function(linkClass) {
+                            it("does not have a '" + linkClass + "' link", function() {
+                                expect(this.view.$("a." + linkClass)).not.toExist();
+                            });
+                        });
+                    });
+                }
+
+                beforeEach(function() {
+                    chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                });
+
+                itShowsTheAppropriateDeleteLink(true, "table");
+                itDoesNotHaveACreateDatabaseViewLink();
+
+                it("fetches the imports for the dataset", function() {
+                    expect(this.dataset.getImports()).toHaveBeenFetched();
+                });
+
+                context("when the dataset has no import information", function() {
+                    beforeEach(function() {
+                        this.server.completeFetchFor(this.view.resource.getImports(), []);
+                    });
+
+                    context("and the current user has update permissions on the workspace", function() {
+                        beforeEach(function() {
+                            this.view.resource._workspace = backboneFixtures.workspace({ id: 6008, permission: ["update"] });
+                            this.view.render();
+                        });
+
+                        context("and the workspace has a sandbox", function() {
+                            it("shows the 'import now' link", function() {
+                                expect(this.view.$("a.import_now")).toExist();
+                            });
+
+                            itBehavesLike.aDialogLauncher("a.import_now", chorus.dialogs.ImportNow);
+                        });
+
+                        context("and the workspace does not have a sandbox", function() {
+                            beforeEach(function() {
+                                delete this.view.resource.workspace()._sandbox;
+                                this.view.resource.workspace().set({
+                                    "sandboxInfo": null
+                                });
+                                this.view.render();
+                            });
+
+                            it("disables the 'import now' link", function() {
+                                expect(this.view.$("a.import_now")).not.toExist();
+                                expect(this.view.$("span.import_now")).toHaveClass('disabled');
+                            });
+                        });
+                    });
+
+                    context("and the current user does not have update permissions on the workspace", function() {
+                        beforeEach(function() {
+                            this.view.resource._workspace = backboneFixtures.workspace({ id: 6009, permission: ["read"] });
+                            this.view.render();
+                        });
+
+                        it("does not have an 'import now' link", function() {
+                            expect(this.view.$("a.import_now.dialog")).not.toExist();
+                        });
+                    });
+                });
+
+                context("when the dataset has a last import", function() {
+                    beforeEach(function() {
+                        this.imports = backboneFixtures.workspaceImportSet();
+                        this.lastImport = this.imports.last();
+                        this.lastImport.set({
+                            startedStamp: "2012-02-29T14:23:58Z",
+                            completedStamp: "2012-02-29T14:23:59Z",
+                            success: true,
+                            toTable: 'our_destination',
+                            destinationDataset: {id: 12345, objectName: 'our_destination'},
+                            sourceDataset: {id: this.dataset.id}
+                        });
+                        this.server.completeFetchFor(this.view.imports, [this.lastImport]);
+                    });
+
+                    itHasActionLinks(["import_now"]);
+
+                    it("has an 'imported xx ago' description", function() {
+                        var lastImport = this.view.imports.last();
+                        var destTable = lastImport.destination();
+                        expect(this.view.$(".last_import")).toContainTranslation("import.last_imported", {timeAgo: Handlebars.helpers.relativeTimestamp(lastImport.get('completedStamp')), tableLink: "our_destinat..."});
+                        expect(this.view.$(".last_import a")).toHaveHref(destTable.showUrl());
+                    });
+                });
+
+            });
+
+            context("when the dataset is a source view", function() {
+                beforeEach(function() {
+                    this.dataset = backboneFixtures.workspaceDataset.sourceView();
+                    chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                });
+
+                itDoesNotShowTheDuplicateChorusViewLink();
+                itShowsTheAppropriateDeleteLink(true, "view");
+                itDoesNotHaveACreateDatabaseViewLink();
+            });
+
+            itBehavesLike.aDialogLauncher("a.new_note", chorus.dialogs.NotesNew);
+
+            context("when the dataset is a chorus view", function() {
+                beforeEach(function() {
+                    this.dataset = backboneFixtures.workspaceDataset.chorusView({ objectName: "annes_table", query: "select * from foos;" });
+                    chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                });
+
+                context("current user has credentials on the dataset", function() {
+                    beforeEach(function() {
+                        this.dataset.set("hasCredentials", true);
+                        this.view.render();
+                    });
+
+                    it("shows the 'Create as a database view' link", function() {
+                        expect(this.view.$("a.create_database_view")).toContainTranslation("actions.create_database_view");
+                    });
+
+                    it("does not have an associate with another workspace link", function() {
+                        expect(this.view.$('.actions .associate')).not.toExist();
+                    });
+
+                    itShowsTheAppropriateDeleteLink(true, "chorus view");
+
+                    it("shows the 'duplicate' link'", function() {
+                        expect(this.view.$("a.duplicate").text()).toMatchTranslation("dataset.chorusview.duplicate");
+                    });
+
+                    describe("clicking the 'duplicate' link", function() {
+                        beforeEach(function() {
+                            this.modalSpy.reset();
+                            this.view.$("a.duplicate").click();
+                        });
+
+                        itBehavesLike.aDialogLauncher("a.duplicate", chorus.dialogs.VerifyChorusView);
+
+                        it("passes the dialog a duplicate of the chorus view", function() {
+                            expect(this.modalSpy.lastModal().model.attributes).toEqual(this.dataset.createDuplicateChorusView().attributes);
+                        });
+                    });
+
+                    itBehavesLike.aDialogLauncher("a.create_database_view", chorus.dialogs.CreateDatabaseView);
+                });
+
+                context("current user does not have credentials on the dataset", function() {
+                    beforeEach(function() {
+                        this.dataset.set("hasCredentials", false);
+                        this.view.render();
+                    });
+
+                    itDoesNotShowDatabaseDependentActions();
+                });
+
+                context("when the user has invalid credentials", function() {
+                    beforeEach(function() {
+                        var errors = backboneFixtures.invalidCredentialsErrorJson();
+                        this.server.lastFetchFor(this.view.resource.statistics()).failForbidden(errors);
+                    });
+
+                    itDoesNotShowDatabaseDependentActions();
+                });
+
+                it("does not have a new workflow link", function () {
+                    expect(this.view.$("a.new_work_flow")).not.toExist();
+                });
+            });
+
+            context("when the dataset is a source table", function() {
+                _.each(["TABLE", "EXTERNAL_TABLE", "MASTER_TABLE", "HDFS_EXTERNAL_TABLE"], function(type) {
+                    beforeEach(function() {
+                        this.dataset = backboneFixtures.workspaceDataset.sourceTable({ objectType: type});
+                        chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                    });
+
+                    itShowsTheAppropriateDeleteLink(true, type);
+                    itDoesNotHaveACreateDatabaseViewLink();
+                    itDoesNotShowTheDuplicateChorusViewLink();
+
+                    context("when the selected dataset is stale", function () {
+                        beforeEach(function () {
+                            spyOn(chorus.models.Config.instance().license(), "workflowEnabled").andReturn(true);
+                            spyOn(this.dataset.workspace(), 'currentUserCanCreateWorkFlows').andReturn(true);
+                            this.dataset.set('stale', true);
+                            chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                        });
+
+                        it("disables inappropriate action links", function () {
+                            var badActions = ['dataset_preview', 'download', 'import_now', 'new_work_flow'];
+                            var goodActions = ['delete_dataset', 'new_note', 'edit_tags', 'associate'];
+
+                            if ( this.view.resource.canAnalyze() ) { badActions.push(['analyze']); }
+
+                            _.each(badActions, function (actionName) {
+                                expect(this.view.$('.actions a.' + actionName)).not.toExist();
+                                expect(this.view.$('.actions span.' + actionName)).toExist();
+                            }, this);
+
+                            _.each(goodActions, function (actionName) {
+                                expect(this.view.$('.actions span.' + actionName)).not.toExist();
+                                expect(this.view.$('.actions a.' + actionName)).toExist();
+                            }, this);
+                        });
+                    });
+
+                    context("when the user does not have create workflow permissions", function() {
+                        beforeEach(function() {
+                            spyOn(chorus.models.Config.instance().license(), "workflowEnabled").andReturn(true);
+                            spyOn(this.dataset.workspace(), 'currentUserCanCreateWorkFlows').andReturn(false);
+                            chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                        });
+
+                        it("does not show the workflow actions", function() {
+                            expect(this.view.$('.actions a.new_work_flow')).not.toExist();
+                            expect(this.view.$('.actions span.new_work_flow')).not.toExist();
+                        });
+                    });
+                });
+            });
+
+            it("has an 'associate with another workspace' link", function() {
+                expect(this.view.$('.actions .associate')).toContainTranslation("actions.associate");
+            });
+
+            itBehavesLike.aDialogLauncher(".actions a.associate", chorus.dialogs.AssociateWithWorkspace);
+
+            context("when work_flows are enabled", function () {
+                beforeEach(function () {
+                    spyOn(chorus.models.Config.instance().license(), "workflowEnabled").andReturn(true);
+                    this.view = new chorus.views.DatasetSidebar();
+                    this.dataset = backboneFixtures.workspaceDataset.sourceTable();
+                    chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                    this.workspace = this.view.resource.workspace();
+                });
+
+                context("when the current user is a member of the workspace", function () {
+                    beforeEach(function () {
+                        this.workspace.set({permission: ["create_workflow"]});
+                        this.view.render();
+                    });
+
+                    it("displays a new workflow link", function () {
+                        expect(this.view.$("a.new_work_flow")).toExist();
+                    });
+
+                    context("when the user's credentials -- for the dataset -- are invalid", function() {
+                        beforeEach(function() {
+                            this.user = chorus.session.user();
+                            var errors = backboneFixtures.invalidCredentialsErrorJson();
+                            this.server.lastFetchFor(this.view.resource.statistics()).failForbidden(errors);
+                        });
+
+                        it("does not display a new workflow link", function () {
+                            expect(this.view.$("a.new_work_flow")).not.toExist();
+                        });
+                    });
+
+                    itBehavesLike.aDialogLauncher("a.new_work_flow", chorus.dialogs.WorkFlowNewForDatasetList);
+                });
+
+                context("when the current user is not a member of the workspace", function () {
+                    beforeEach(function () {
+                        this.workspace.set({permission: []});
+                        this.view.render();
+                    });
+
+                    it("does not display a new workflow link", function () {
+                        expect(this.view.$("a.new_work_flow")).not.toExist();
+                    });
+                });
+            });
         });
 
         context("when there is not a workspace", function() {
             beforeEach(function() {
-                this.dataset = rspecFixtures.dataset({id: "XYZ"});
-                chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-            });
-
-            it("has the 'add a note' link with the correct data", function() {
-                var notesNew = this.view.$("a.dialog[data-dialog=NotesNew]");
-
-                expect(notesNew).toHaveData("entityId", this.dataset.id);
-                expect(notesNew).toHaveData("entityType", "dataset");
-                expect(notesNew).toHaveData("displayEntityType", this.dataset.metaType());
-                expect(notesNew).not.toHaveData("allowWorkspaceAttachments", true);
+                this.dataset = backboneFixtures.dataset({id: "XYZ"});
+                chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                chorus.page = this.view;
+                $("#jasmine_content").append(this.view.$el);
             });
 
             it("does not have the 'Import Now' action", function() {
                 expect(this.view.$(".actions .import_now")).not.toExist();
+            });
+
+            context("when workflows are enabled", function () {
+                beforeEach(function () {
+                    spyOn(chorus.models.Config.instance().license(), "workflowEnabled").andReturn(true);
+                    this.view = new chorus.views.DatasetSidebar();
+                    this.view.render();
+                    this.dataset = backboneFixtures.dataset({id: "XYZ"});
+                    chorus.PageEvents.trigger("dataset:selected", this.dataset);
+                });
+
+                it("does not have a new workflow link", function () {
+                    expect(this.view.$("a.new_work_flow")).not.toExist();
+                });
             });
 
             it("does not display a delete link", function() {
@@ -850,100 +891,19 @@ describe("chorus.views.DatasetSidebar", function() {
             });
 
             it("has a link to associate the dataset with a workspace", function() {
-                expect(this.view.$('.actions .associate')).toContainTranslation('actions.associate_with_workspace');
+                expect(this.view.$('.actions .associate')).toContainTranslation('actions.associate');
             });
 
-            describe("when the 'associate with workspace' link is clicked", function() {
-                beforeEach(function() {
-                    this.view.$("a.associate").click();
-                });
-
-                it("displays the associate with workspace dialog", function() {
-                    expect(chorus.modal).toBeA(chorus.dialogs.AssociateWithWorkspace);
-                });
-
-                it("lists only active workspaces", function() {
-                    expect(chorus.modal.options.activeOnly).toBeTruthy();
-                });
-
-                describe("when the dialog successfully associates", function() {
-                    beforeEach(function() {
-                        this.server.reset();
-                        chorus.PageEvents.broadcast("workspace:associated");
-                    });
-
-                    it("re-fetches the resource", function() {
-                        expect(this.view.resource).toHaveBeenFetched();
-                    });
-                });
-            });
-        });
-    });
-
-    describe("when a single dataset is checked", function() {
-        beforeEach(function() {
-            this.checkedDatasets = new chorus.collections.DynamicDatasetSet([
-                rspecFixtures.workspaceDataset.datasetTable()
-            ]);
-
-            this.multiSelectSection = this.view.$(".multiple_selection");
-            chorus.PageEvents.broadcast("dataset:checked", this.checkedDatasets);
+            itBehavesLike.aDialogLauncher("a.new_note", chorus.dialogs.NotesNew);
         });
 
-        it("does not display the multiple selection section", function() {
-            expect(this.multiSelectSection).toHaveClass("hidden");
-        });
-
-        context("when two datasets are checked", function() {
-            beforeEach(function() {
-                this.checkedDatasets.add(rspecFixtures.workspaceDataset.datasetTable());
-                chorus.PageEvents.broadcast("dataset:checked", this.checkedDatasets);
-            });
-
-            it("does display the multiple selection section", function() {
-                expect(this.multiSelectSection).not.toHaveClass("hidden");
-            });
-
-            it("displays the number of selected datasets", function() {
-                expect(this.multiSelectSection.find(".count").text()).toMatchTranslation("dataset.sidebar.multiple_selection.count", {count: 2});
-            });
-
-            it("displays the 'associate with workspace' link", function() {
-                expect(this.multiSelectSection.find("a.associate")).toContainTranslation("actions.associate_with_another_workspace");
-            });
-
-            describe("clicking the 'associate with workspace' link", function() {
-                beforeEach(function() {
-                    this.multiSelectSection.find("a.associate").click();
-                });
-
-                it("launches the dialog for associating multiple datasets with a workspace", function() {
-                    var dialog = this.modalSpy.lastModal();
-                    expect(dialog).toBeA(chorus.dialogs.AssociateMultipleWithWorkspace);
-                    expect(dialog.datasets).toBe(this.checkedDatasets);
-                });
-            });
-
-            context("when a dataset is selected", function() {
-                beforeEach(function() {
-                    chorus.PageEvents.broadcast("dataset:selected", rspecFixtures.workspaceDataset.datasetTable());
-                });
-
-                it("should still show the multiple selection section", function() {
-                    expect(this.view.$(".multiple_selection")).not.toHaveClass("hidden");
-                });
-
-                it("should retain the selection count when the view is re-rendered", function() {
-                    expect(this.view.$(".multiple_selection .count").text()).toMatchTranslation("dataset.sidebar.multiple_selection.count", {count: 2});
-                });
-            });
-        });
+        itBehavesLike.aDialogLauncher("a.edit_tags", chorus.dialogs.EditTags);
     });
 
     describe("column statistics", function() {
         beforeEach(function() {
-            this.dataset = rspecFixtures.workspaceDataset.datasetTable();
-            this.column = rspecFixtures.databaseColumnSet([{},{
+            this.dataset = backboneFixtures.workspaceDataset.datasetTable();
+            this.column = backboneFixtures.databaseColumnSet([{},{
                 dataType: "int8",
                 typeCategory: "WHOLE_NUMBER",
                 statistics: {
@@ -955,9 +915,9 @@ describe("chorus.views.DatasetSidebar", function() {
                 }
             }]).at(1);
 
-            chorus.PageEvents.broadcast("dataset:selected", this.dataset);
+            chorus.PageEvents.trigger("dataset:selected", this.dataset);
             this.view.resource.statistics().set({lastAnalyzedTime: "2012-01-24T12:25:11Z"});
-            chorus.PageEvents.broadcast("column:selected", this.column);
+            chorus.PageEvents.trigger("column:selected", this.column);
             this.view.render();
         });
 
@@ -973,10 +933,9 @@ describe("chorus.views.DatasetSidebar", function() {
                 expect(this.view.$(".column_statistics .pair").eq(2).find(".key")).toContainTranslation("dataset.column_statistics.min");
                 expect(this.view.$(".column_statistics .pair").eq(3).find(".key")).toContainTranslation("dataset.column_statistics.max");
                 expect(this.view.$(".column_statistics .pair").eq(4).find(".key")).toContainTranslation("dataset.column_statistics.distinct");
-                expect(this.view.$(".column_statistics .pair").eq(5).find(".key")).toContainTranslation("dataset.column_statistics.pctnull");
+                expect(this.view.$(".column_statistics .pair").eq(5).find(".key")).toContainTranslation("dataset.column_statistics.common");
+                expect(this.view.$(".column_statistics .pair").eq(6).find(".key")).toContainTranslation("dataset.column_statistics.pctnull");
                 expect(this.view.$(".column.description").find("h4")).toContainTranslation("dataset.column_statistics.description");
-
-                expect(this.view.$(".column_statistics .multiline").eq(0).find(".key")).toContainTranslation("dataset.column_statistics.common");
             });
 
             it("should display a comment for the column", function() {
@@ -1089,34 +1048,21 @@ describe("chorus.views.DatasetSidebar", function() {
         });
     });
 
-    describe("when importSchedule:changed is triggered", function() {
-        beforeEach(function() {
-            this.view.resource = rspecFixtures.workspaceDataset.datasetTable();
-            this.newImport = rspecFixtures.importSchedule();
-            spyOn(this.view, 'render').andCallThrough();
-            chorus.PageEvents.broadcast("importSchedule:changed", this.newImport);
-        });
-        it("updates the importConfiguration and renders", function() {
-            expect(this.view.resource.getImport()).toBe(this.newImport);
-            expect(this.view.render).toHaveBeenCalled();
-        });
-    });
-
-    describe("has all the translations for all objectTypes", function() {
+    describe("translations for all objectTypes", function() {
         _.each(["CHORUS_VIEW", "VIEW", "TABLE", "TABLE", "HDFS_EXTERNAL_TABLE", "EXTERNAL_TABLE"], function(type) {
             it("does not have any missing translations for" + type, function() {
-                this.dataset = rspecFixtures.workspaceDataset.datasetTable({objectType: type});
-                chorus.PageEvents.broadcast("dataset:selected", this.dataset);
+                this.dataset = backboneFixtures.workspaceDataset.datasetTable({objectType: type});
+                chorus.PageEvents.trigger("dataset:selected", this.dataset);
                 expect(this.view.tabs.activity.options.type).not.toContain("missing");
-            })
-        }, this)
+            });
+        }, this);
     });
 
     describe("event handing", function() {
         describe("start:visualization", function() {
             beforeEach(function() {
                 expect($(this.view.el)).not.toHaveClass("visualizing");
-                chorus.PageEvents.broadcast("start:visualization");
+                chorus.PageEvents.trigger("start:visualization");
             });
 
             it("adds the 'visualizing' class to sidebar_content", function() {
@@ -1125,36 +1071,13 @@ describe("chorus.views.DatasetSidebar", function() {
         });
         describe("cancel:visualization", function() {
             beforeEach(function() {
-                chorus.PageEvents.broadcast("start:visualization")
-                expect($(this.view.el)).toHaveClass("visualizing")
-                chorus.PageEvents.broadcast("cancel:visualization")
+                chorus.PageEvents.trigger("start:visualization");
+                expect($(this.view.el)).toHaveClass("visualizing");
+                chorus.PageEvents.trigger("cancel:visualization");
             });
 
             it("removes the 'visualizing' class from sidebar_content", function() {
-                expect($(this.view.el)).not.toHaveClass("visualizing")
-            });
-        });
-    });
-
-    describe("tabControl", function () {
-        context("when sidebarOptions contains defaultTab", function () {
-            beforeEach(function () {
-                this.view = new chorus.views.DatasetSidebar({ defaultTab: "statistics"});
-                this.dataset = rspecFixtures.workspaceDataset.datasetTable();
-                chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                this.view.render();
-            });
-            it("should display statistics/info tab by default", function () {
-                expect(this.view.$(".tabs .selected").text()).toContainTranslation("tabs.statistics");
-            });
-        });
-
-        context("when sidebarOptions does not contain defaultTab", function () {
-            it("should display activities tab by default", function () {
-                this.dataset = rspecFixtures.workspaceDataset.datasetTable();
-                chorus.PageEvents.broadcast("dataset:selected", this.dataset);
-                this.view.render();
-                expect(this.view.$(".tabs .selected").text()).toContainTranslation("tabs.activity");
+                expect($(this.view.el)).not.toHaveClass("visualizing");
             });
         });
     });

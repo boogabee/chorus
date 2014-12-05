@@ -1,0 +1,10 @@
+<div class="statistics_detail">
+    <div class="statistics pairs">
+        {{#each keys}}
+            <div class="pair {{this.snake}}">
+                <div class="key">{{t this.translation}}</div>
+                <div class="value" title="{{this.value}}">{{this.value}}</div>
+            </div>
+        {{/each}}
+    </div>
+</div>

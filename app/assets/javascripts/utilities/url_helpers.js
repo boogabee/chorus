@@ -37,17 +37,28 @@
         "png":"img",
         "jpg":"img",
         "jpeg":"img",
-        "twb":"tableau"
-    }
+        "twb":"tableau",
+        "pmml":"pmml",
+        "xml":"xml",
+        "js":"js",
+        "md":"md",
+        "pig":"pig",
+        "rb":"rb"
+    };
 
     chorus.urlHelpers.fileIconUrl = function fileIconUrl(key, size) {
         var fileType = key && key.toLowerCase();
         var imageName = (map[fileType] || "plain") + ".png";
         return "/images/workfiles/" + (size || "large") + "/" + imageName;
-    }
+    };
 
     chorus.urlHelpers.workspacePath = function(workspaceId) {
         return "#/workspaces/" + workspaceId;
-    }
+    };
+
+    chorus.urlHelpers.getMapping = function(key) {
+        var fileType = key && key.toLowerCase();
+        return map[fileType];
+    };
     Handlebars.registerHelper('workspacePath', chorus.urlHelpers.workspacePath);
 })();

@@ -4,7 +4,7 @@ chorus.views.NotificationList = chorus.views.Base.extend({
     useLoadingSection: true,
 
     events: {
-        "click .more_notifications a":"fetchMoreNotifications"
+        "click .more_items a":"fetchMoreNotifications"
     },
 
     setup: function() {
@@ -13,8 +13,8 @@ chorus.views.NotificationList = chorus.views.Base.extend({
 
     fetchMoreNotifications: function (ev) {
         ev.preventDefault();
-        var pageToFetch = parseInt(this.collection.pagination.page) + 1;
-        this.collection.fetchPage(pageToFetch, { add: true, success: _.bind(this.render, this) });
+        var pageToFetch = parseInt(this.collection.pagination.page, 10) + 1;
+        this.collection.fetchPage(pageToFetch, { reset: false, remove: false, success: _.bind(this.render, this) });
         this.collection.bindOnce("loaded", function() {
             this.collection.markAllRead({});
         }, this);
@@ -23,8 +23,8 @@ chorus.views.NotificationList = chorus.views.Base.extend({
     additionalContext:function () {
         var ctx = {  };
         if (this.collection.loaded && this.collection.pagination) {
-            var page = parseInt(this.collection.pagination.page);
-            var total = parseInt(this.collection.pagination.total);
+            var page = parseInt(this.collection.pagination.page, 10);
+            var total = parseInt(this.collection.pagination.total, 10);
             ctx.showMoreLink = this.options.allowMoreLink && (total > page);
         } else {
             ctx.showMoreLink = false;
@@ -36,7 +36,7 @@ chorus.views.NotificationList = chorus.views.Base.extend({
         var $list = this.$("ul");
 
         _.each(this.activities, function(activityView) {
-           activityView.teardown();
+            activityView.teardown();
         });
         this.activities = [];
         this.collection.each(function(model) {
@@ -58,7 +58,7 @@ chorus.views.NotificationList = chorus.views.Base.extend({
             } catch (err) {
                 chorus.log("error", err, "processing notification", model);
                 if (chorus.isDevMode()) {
-                    chorus.toast("bad_notification", {type: model.get("action"), id: model.id, toastOpts: {theme: "bad_activity"}});
+                    chorus.toast("bad_notification", {type: model.get("action"), id: model.id, toastOpts: {type: "error"}});
                 }
             }
         }, this);
@@ -67,6 +67,6 @@ chorus.views.NotificationList = chorus.views.Base.extend({
     show: function() {
         _.each(this.activities, function(activity) {
             activity.show();
-        })
+        });
     }
 });

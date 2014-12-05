@@ -1,0 +1,51 @@
+@import "_common";
+
+$image-height : 35px;
+
+.upload_widget {
+  line-height: $image-height;
+  vertical-align: middle;
+
+  span, label, input[type=file] {
+    display: inline-block;
+  }
+
+  img {
+    float: left;
+    vertical-align: middle;
+  }
+
+  .file {
+    vertical-align: middle;
+
+    .empty_selection {
+      @include font-normal-alpha;
+      padding-left: 12px;
+    }
+
+    .file-wrapper {
+      padding-bottom: 1px;
+      vertical-align: top;
+      a {
+        font-size: 12px;
+        font-weight: $semibold;
+        margin-left: 10px;
+      }
+    }
+
+    .file_name {
+      @include ellipsis;
+      display: inline-block;
+      max-width: 315px;
+      color: $color-text3;
+      font-size: 14px;
+    }
+
+    input[type=file] {
+      color: $link-color;
+      &:hover {
+        cursor : pointer;
+      }
+    }
+  }
+}

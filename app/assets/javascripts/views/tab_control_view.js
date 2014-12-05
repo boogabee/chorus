@@ -2,7 +2,7 @@ chorus.views.TabControl = chorus.views.Base.extend({
     constructorName: "TabControlView",
     templateName:'tab_control',
 
-    events: { "click .tabs li": 'clickTab' },
+    events: { "click .tabs .tab": 'clickTab' },
 
     setup: function(tabNames) {
         this.tabNames = tabNames;
@@ -17,15 +17,14 @@ chorus.views.TabControl = chorus.views.Base.extend({
     },
 
     clickTab: function(evt) {
-        this.setSelectedTab($(evt.target));
-        if (chorus.page) {
-            chorus.page.trigger('resized');
-        }
+        this.setSelectedTab($(evt.target).closest('.tab'));
+
+        chorus.page && chorus.page.trigger('resized');
     },
 
     setSelectedTab: function(tab) {
-        this.$(".tabs li").removeClass("selected")
-        tab.addClass("selected")
+        this.$(".tabs li").removeClass("selected");
+        tab.addClass("selected");
 
         this.selectedTabName = tab.data('name');
         this.toggleTabbedArea();
@@ -37,6 +36,7 @@ chorus.views.TabControl = chorus.views.Base.extend({
         _.each(this.tabNames, function(tabName) {
             var view = this[tabName];
             if (view) {
+                this.registerSubView(view);
                 this.$(".tabbed_area").append(view.render().el);
                 view.delegateEvents();
             }

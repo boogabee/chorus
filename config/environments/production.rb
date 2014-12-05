@@ -1,3 +1,5 @@
+require_relative '../../app/models/chorus_config'
+
 Chorus::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb
 
@@ -25,17 +27,19 @@ Chorus::Application.configure do
   # Defaults to Rails.root.join("public/assets")
   # config.assets.manifest = YOUR_PATH
 
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
-
-  # See everything in the log (default is :info)
-  # config.log_level = :debug
-
   # Prepend all log lines with the following tags
   # config.log_tags = [ :subdomain, :uuid ]
 
   # Use a different logger for distributed setups
   # config.logger = ActiveSupport::TaggedLogging.new(SyslogLogger.new)
+  local_chorus_config = ChorusConfig.instance
+
+  # See everything in the log (default is :info)
+  config.log_level = local_chorus_config.log_level
+
+  if local_chorus_config.syslog_configured?
+    config.logger = ActiveSupport::TaggedLogging.new(Logger::Syslog.new('Chorus'))
+  end
 
   # Use a different cache store in production
   # config.cache_store = :mem_cache_store
@@ -45,9 +49,6 @@ Chorus::Application.configure do
 
   # Precompile additional assets (application.js, application.css, and all non-JS/CSS are already added)
   # config.assets.precompile += %w( search.js )
-
-  # Disable delivery errors, bad email addresses will be ignored
-  # config.action_mailer.raise_delivery_errors = false
 
   # Enable threaded mode
   if !(defined?($rails_rake_task) && $rails_rake_task)
@@ -61,6 +62,17 @@ Chorus::Application.configure do
 
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
+
+  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
+  config.force_ssl = ChorusConfig.instance["ssl.enabled"]
+
+  if ChorusConfig.instance["mail.enabled"]
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = ChorusConfig.instance.smtp_configuration
+    ActionMailer::Base.default ChorusConfig.instance.mail_configuration
+  else
+    config.action_mailer.perform_deliveries = false
+  end
 
   # Log the query plan for queries taking more than this (works
   # with SQLite, MySQL, and PostgreSQL)

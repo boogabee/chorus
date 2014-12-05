@@ -1,5 +1,6 @@
 chorus.views.DatasetEditChorusView = chorus.views.Base.extend({
     templateName: "dataset_edit_chorus_view",
+    constructorName: "DatasetEditChorusView",
 
     subviews: {
         ".editor": "editor"
@@ -10,15 +11,16 @@ chorus.views.DatasetEditChorusView = chorus.views.Base.extend({
         this.editor = new chorus.views.CodeEditorView({
             model: this.model,
             readOnly: false,
-            mode: "text/x-sql",
+            mode: "text/x-plsql",
             extraKeys: {},
-            onBlur: _.bind(this.updateQueryInModel, this)
+            theme: "default editable"
         });
 
-        chorus.PageEvents.subscribe("dataset:saveEdit", this.saveModel, this);
-        chorus.PageEvents.subscribe("dataset:cancelEdit", this.cancelEdit, this);
+        this.subscribePageEvent("dataset:saveEdit", this.saveModel);
+        this.subscribePageEvent("dataset:cancelEdit", this.cancelEdit);
         this.model.initialQuery = this.model.get("query");
-        this.bindings.add(this.model, "saved", this.navigateToChorusViewShowPage);
+        this.listenTo(this.model, "saved", this.navigateToChorusViewShowPage);
+        this.listenTo(this.editor, 'blur', this.updateQueryInModel);
     },
 
     updateQueryInModel: function() {
@@ -27,7 +29,7 @@ chorus.views.DatasetEditChorusView = chorus.views.Base.extend({
 
     saveModel: function() {
         // Don't want to navigate away on invalid model
-        chorus.page.bindings.remove(this.model, "unprocessableEntity");
+        chorus.page.stopListening(this.model, "unprocessableEntity");
 
         var query = this.editor.getValue();
 

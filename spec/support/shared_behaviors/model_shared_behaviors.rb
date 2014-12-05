@@ -12,5 +12,26 @@ shared_examples_for "recent" do
       described_class.recent.should_not include(not_recent)
     end
   end
+end
 
+shared_examples_for "a model with name validations" do
+  it "cannot exceed 64 characters" do
+    FactoryGirl.build(factory_name, :name => 'a'*64).should be_valid
+  end
+
+  it "cannot exceed 64 characters" do
+    FactoryGirl.build(factory_name, :name => 'a'*65).should_not be_valid
+  end
+
+  it "can include integers" do
+    FactoryGirl.build(factory_name, :name => "1aaa1").should be_valid
+  end
+
+  it "can include spaces" do
+    FactoryGirl.build(factory_name, :name => "with space").should be_valid
+  end
+
+  it "can include special characters" do
+    FactoryGirl.build(factory_name, :name => "-1test&").should be_valid
+  end
 end

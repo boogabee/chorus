@@ -1,0 +1,2 @@
+class RunWorkFlowTaskResult < JobTaskResult
+end

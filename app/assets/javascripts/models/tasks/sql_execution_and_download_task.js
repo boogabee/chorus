@@ -1,38 +1,35 @@
 chorus.models.SqlExecutionAndDownloadTask = chorus.models.WorkfileExecutionTask.extend({
     constructorName: "SqlExecutionAndDownloadTask",
+    nestParams: false,
+    paramsToSave: ['checkId', 'sql', 'schemaId', 'numOfRows', 'fileName'],
 
     save: function() {
-        $.fileDownload('/edc/task/sync/downloadResult', {
-            data: _.extend({}, this.attributes),
+        chorus.fileDownload(this.url(), {
+            data: _.extend({
+                download: true
+            }, this.toJSON()),
             httpMethod: "post",
             successCallback: _.bind(this.saved, this),
             failCallback: _.bind(this.saveFailed, this),
             cookieName: 'fileDownload_' + this.get('checkId')
         });
-
-        this.set({
-            executionInfo: {
-                instanceId: this.get("instanceId"),
-                databaseId: this.get("databaseId"),
-                schemaId: this.get("schemaId")
-            },
-            result: {
-                hasResult: "false"
-            }
-        }, { silent: true });
     },
 
     saved: function() {
         this.trigger("saved", this);
-        this.trigger("change");
     },
 
-    saveFailed: function() {
-        this.trigger("saveFailed");
+    saveFailed: function(responseHtml) {
+        var responseText = $(responseHtml).text();
+        this.handleRequestFailure("saveFailed", {responseText: responseText});
     },
 
     cancel: function() {
         this._super("cancel");
-        chorus.PageEvents.broadcast("file:executionCancelled");
+        chorus.PageEvents.trigger("file:executionCancelled");
+    },
+
+    fileName: function() {
+        return this.name();
     }
 });

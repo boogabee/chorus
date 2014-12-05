@@ -1,0 +1,82 @@
+data_sources:
+  gpdb:
+    - host: "chorus-gpdb42"
+      port: 5432
+      db_name: "postgres"
+      account:
+        db_username: "gpadmin"
+        db_password: "secret"
+
+    - host: "chorus-gpdb41"
+      port: 5432
+      db_name: "postgres"
+      account:
+        db_username: "gpadmin"
+        db_password: "secret"
+
+    - host: "chorus-gpdb40"
+      port: 5432
+      db_name: "postgres"
+      account:
+        db_username: "gpadmin"
+        db_password: "secret"
+
+    - host: "local-greenplum"
+      port: 5432
+      db_name: "postgres"
+      account:
+        db_username: "vagrant"
+        db_password: "secret"
+
+    - host: "chorus-gpdb-ci"
+      port: 5432
+      db_name: "postgres"
+      account:
+        db_username: "gpadmin"
+        db_password: "secret"
+
+    - host: "alpine-gpdb"
+      port: 5432
+      db_name: "postgres"
+      account:
+        db_username: "gpadmin"
+        db_password: "secret"
+
+  hadoop:
+    - host: "alpine-hadoop"
+      port: "9000"
+      username: "alpine"
+      group_list: "supergroup"
+      hdfs_version: "Apache Hadoop 1.2"
+      adapter_version: "1.0.0"
+
+  oracle:
+    - host: "chorus-oracle"
+      port: 1521
+      db_name: "orcl11g"
+      account:
+        db_username: "system"
+        db_password: "password"
+  jdbc:
+    - host: "jdbc:teradata://10.0.0.46/dbc"
+      account:
+        db_username: "dbc"
+        db_password: "dbc"
+    - host: "jdbc:mariadb://192.168.51.50/?sessionVariables=sql_mode=ANSI_QUOTES"
+      account:
+        db_username: "root"
+        db_password: "secret"
+  hawq:
+    - host: "phd20a.alpinenow.local"
+      port: 5432
+      db_name: "postgres"
+      account:
+        db_username: "miner_demo"
+        db_password: "miner_demo"
+  postgres:
+    - host: "chorus-postgres"
+      port: 5432
+      db_name: "postgres"
+      account:
+        db_username: "chorus_test"
+        db_password: "secret"

@@ -1,38 +1,25 @@
 .sub_nav {
-    margin-bottom: -1px;
-    overflow: hidden;
-    padding-top: 3px;
+    padding-top: $header-height + $subheader-height;
+    background: $list-striping-color;
+    height: $subnav-height;
+    line-height: $subnav-height;
+    border-bottom: $border-canon;
 
     li {
         display: inline;
-        float: right;
-        height: 16px;
-        border-left: 1px solid $guts-border-color;
-        border-top: 1px solid $guts-border-color;
-        border-bottom: none;
-        @include border-top-left-radius(3px);
-        @include border-top-right-radius(3px);
-        padding: 8px 30px;
+        float: left;
+        padding: 0 10px;
+        a { display: block; }
 
-        color: $link-color;
-        font-size: $medium-font;
-        font-weight: $semibold;
-
-        &:first-child {
-            border-right: 1px solid $guts-border-color;
+        .lozenge {
+            @include uppercase;
+            font-size: 12px;
+            color: $color-text2;
         }
 
-        &.selected {
-            background: white;
-            -moz-box-shadow    : 1px 2px 5px #999;
-            -webkit-box-shadow : 1px 2px 5px #999;
-            box-shadow         : 1px 2px 5px #999;
+        @include pill-tab(90px);
 
-            a {
-                color: $color-text1;
-            }
-        }
+
     }
-
     @include after-clearfix;
 }

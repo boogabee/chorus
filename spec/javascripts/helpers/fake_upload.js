@@ -1,18 +1,18 @@
 (function() {
-    window.stubFileUpload = function(el) {
-        return new FakeFileUpload(el);
-    };
-
     function FakeFileUpload() {
         var self = this;
         spyOn($.fn, 'fileupload').andCallFake(function(uploadOptions) {
             self.options = uploadOptions;
             _.defaults(self, uploadOptions);
-            if(uploadOptions.type == "PUT") {
+            if(uploadOptions.type === "PUT") {
                 throw("The HTTP PUT method will break in Internet Explorer 9!");
             }
         });
     }
+
+    window.stubFileUpload = function(el) {
+        return new FakeFileUpload(el);
+    };
 
     _.extend(FakeFileUpload.prototype, {
         add: function(files) {
@@ -43,7 +43,7 @@
         },
 
         done: function(e, data) {
-          this.options.done(e, data);
+            this.options.done(e, data);
         },
 
         always: function() {
@@ -91,6 +91,6 @@
 
                 result: options.noResult ? undefined : bodyText
             });
-        },
+        }
     });
 })();

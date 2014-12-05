@@ -1,47 +1,28 @@
 describe("chorus.views.ListContentDetails", function() {
     beforeEach(function() {
-        this.collection = rspecFixtures.userSet();
+        this.collection = backboneFixtures.userSet();
         this.collection.pagination = {
-            "total": "2",
-            "page": "1",
-            "records": "22"
-        }
+            "total": 2,
+            "page": 1,
+            "records": 22
+        };
         this.collection.loaded = true;
         this.view = new chorus.views.ListContentDetails({ collection: this.collection, modelClass: "User" });
-    })
+    });
 
     describe("#render", function() {
         describe("buttons", function() {
-            context("with a view", function() {
-                beforeEach(function() {
-                    this.view.options.buttons = [
-                        {
-                            view: "WorkspacesNew",
-                            text: "Create a Workspace",
-                            dataAttributes: [
-                                {
-                                    name: "foo",
-                                    value: "bar"
-                                }
-                            ]
-                        },
-                        {
-                            url: "#/foo",
-                            text: "Create a Foo"
-                        }
-                    ];
+            beforeEach(function() {
+                this.view.render();
+            });
 
-                    this.view.render();
-                });
+            it("creates a buttons subview", function(){
+                expect(this.view.buttonView).toBeA(chorus.views.ListContentDetailsButtonView);
+                expect(this.view.buttonView.options).toBe(this.view.options);
+            });
 
-                it("shows the buttons", function() {
-                    expect(this.view.$('button[data-dialog="WorkspacesNew"]')).toExist();
-                    expect(this.view.$('button[data-dialog="WorkspacesNew"]').text()).toBe("Create a Workspace");
-                    expect(this.view.$('button[data-dialog="WorkspacesNew"]')).toHaveData("foo", "bar");
-
-                    expect(this.view.$("a.button[href=#/foo]")).toExist();
-                    expect(this.view.$("a.button[href=#/foo]")).toContainText("Create a Foo");
-                });
+            it("contains a div to hold the buttons", function(){
+                expect(this.view.$("div.button_holder")).toExist();
             });
         });
 
@@ -61,31 +42,33 @@ describe("chorus.views.ListContentDetails", function() {
                 this.view.options.search = true;
                 this.view.options.multiSelect = true;
                 this.view.render();
-                spyOn(chorus.PageEvents, "broadcast");
+                spyOn(chorus.PageEvents, "trigger");
             });
 
             it("does not show the 'explore' text", function() {
                 expect(this.view.$("span.explore")).not.toExist();
             });
 
-            it("should have a 'select all' and 'deselect all'", function() {
-                expect(this.view.$(".multiselect span")).toContainTranslation("actions.select");
-                expect(this.view.$(".multiselect a.select_all")).toContainTranslation("actions.select_all");
-                expect(this.view.$(".multiselect a.select_none")).toContainTranslation("actions.select_none");
-            });
-
-            describe("when the 'select all' link is clicked", function() {
-                it("broadcasts the 'selectAll' page event", function() {
-                    this.view.$(".multiselect a.select_all").click();
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("selectAll");
+            describe("when the 'select all' checkbox is checked", function() {
+                it("triggers the 'selectAll' page event", function() {
+                    this.view.$(".multiselect .select_all").prop("checked", true);
+                    this.view.$(".multiselect .select_all").change();
+                    expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("selectAll");
                 });
             });
 
-            describe("when the 'select none' link is clicked", function() {
-                it("broadcasts the 'selectNone' page event", function() {
-                    this.view.$(".multiselect a.select_none").click();
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("selectNone");
+            describe("when the 'select all' checkbox is unchecked", function() {
+                it("triggers the 'selectNone' page event", function() {
+                    this.view.$(".multiselect .select_all").prop("checked", false);
+                    this.view.$(".multiselect .select_all").change();
+                    expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("selectNone");
                 });
+            });
+
+            it("renders the checked state", function () {
+                this.view.$(".select_all").prop("checked", true).change();
+                this.view.render();
+                expect(this.view.$(".select_all").prop("checked")).toBeTruthy();
             });
         });
 
@@ -94,26 +77,26 @@ describe("chorus.views.ListContentDetails", function() {
                 beforeEach(function() {
                     this.view.options.hideCounts = false;
                     this.view.render();
-                })
+                });
 
                 it("renders the total number of items in the collection", function() {
                     expect(this.view.$(".count")).toContainText("22");
-                })
-            })
+                });
+            });
 
             context("and the hideCounts option is truthy", function() {
                 beforeEach(function() {
                     this.view.options.hideCounts = true;
                     this.view.render();
-                })
+                });
 
                 it("does not render the total number of items in the collection", function() {
                     expect(this.view.$(".count")).not.toExist();
-                })
+                });
 
                 it("does not render the current page or total page count", function() {
                     expect(this.view.$(".pagination .page")).not.toExist();
-                })
+                });
             });
 
             context("and there is only one page of items", function() {
@@ -121,45 +104,45 @@ describe("chorus.views.ListContentDetails", function() {
                     this.collection.pagination.page = "1";
                     this.collection.pagination.total = "1";
                     this.view.render();
-                })
+                });
 
                 it("does not display the pagination controls", function() {
                     expect(this.view.$(".pagination")).toHaveClass("hidden");
-                })
+                });
 
                 context("and the hideIfNoPagination option is falsy", function() {
                     beforeEach(function() {
                         this.view.options.hideIfNoPagination = false;
                         this.view.render();
-                    })
+                    });
 
                     it("does not add the hidden class to the container", function() {
-                        expect($(this.view.el)).not.toHaveClass("hidden")
-                    })
-                })
+                        expect($(this.view.el)).not.toHaveClass("hidden");
+                    });
+                });
 
                 context("and the hideIfNoPagination option is truthy", function() {
                     beforeEach(function() {
                         this.view.options.hideIfNoPagination = true;
                         this.view.render();
-                    })
+                    });
 
                     it("adds the hidden class to the container", function() {
-                        expect($(this.view.el)).toHaveClass("hidden")
-                    })
-                })
-            })
+                        expect($(this.view.el)).toHaveClass("hidden");
+                    });
+                });
+            });
 
             context("and there is more than one page of items", function() {
                 beforeEach(function() {
                     this.collection.pagination.page = "1";
                     this.collection.pagination.total = "2";
                     this.view.render();
-                })
+                });
 
                 it("displays the pagination controls", function() {
                     expect(this.view.$(".pagination")).not.toHaveClass("hidden");
-                })
+                });
 
                 it("displays the page number of the collection", function() {
                     expect(this.view.$(".pagination .page .current").text().trim()).toBe(this.collection.pagination.page);
@@ -170,20 +153,20 @@ describe("chorus.views.ListContentDetails", function() {
                 });
 
                 it("does not add the hidden class to the container", function() {
-                    expect($(this.view.el)).not.toHaveClass("hidden")
-                })
+                    expect($(this.view.el)).not.toHaveClass("hidden");
+                });
 
                 context("when there is a next page", function() {
                     beforeEach(function() {
                         this.collection.pagination.page = "1";
                         this.collection.pagination.total = "2";
                         this.view.render();
-                    })
+                    });
 
                     it("renders the next page link", function() {
                         expect(this.view.$(".pagination .links a.next")).not.toHaveClass("hidden");
                         expect(this.view.$(".pagination .links span.next")).toHaveClass("hidden");
-                    })
+                    });
                 });
 
                 context("when there is NO next page", function() {
@@ -191,7 +174,7 @@ describe("chorus.views.ListContentDetails", function() {
                         this.collection.pagination.page = "2";
                         this.collection.pagination.total = "2";
                         this.view.render();
-                    })
+                    });
 
                     it("renders the next page link, but not as a link", function() {
                         expect(this.view.$(".pagination .links a.next")).toHaveClass("hidden");
@@ -204,26 +187,26 @@ describe("chorus.views.ListContentDetails", function() {
                         this.collection.pagination.page = "2";
                         this.collection.pagination.total = "2";
                         this.view.render();
-                    })
+                    });
 
                     it("renders the previous page link", function() {
                         expect(this.view.$(".pagination .links a.previous")).not.toHaveClass("hidden");
                         expect(this.view.$(".pagination .links span.previous")).toHaveClass("hidden");
-                    })
-                })
+                    });
+                });
 
                 context("when there is NO previous page", function() {
                     beforeEach(function() {
                         this.collection.pagination.page = "1";
                         this.collection.pagination.total = "2";
                         this.view.render();
-                    })
+                    });
 
                     it("renders the previous page link, but not as a link", function() {
                         expect(this.view.$(".pagination .links a.previous")).toHaveClass("hidden");
                         expect(this.view.$(".pagination .links span.previous")).not.toHaveClass("hidden");
                     });
-                })
+                });
             });
 
             context("and the collection is empty", function() {
@@ -231,46 +214,113 @@ describe("chorus.views.ListContentDetails", function() {
                     this.view.collection = new chorus.collections.UserSet();
                     this.view.collection.loaded = true;
                     this.view.render();
-                })
+                });
 
                 it("does not display the pagination controls", function() {
                     expect(this.view.$(".pagination")).toHaveClass("hidden");
-                })
+                });
 
                 context("and the hideIfNoPagination option is falsy", function() {
                     beforeEach(function() {
                         this.view.options.hideIfNoPagination = false;
                         this.view.render();
-                    })
+                    });
 
                     it("does not add the hidden class to the container", function() {
-                        expect($(this.view.el)).not.toHaveClass("hidden")
-                    })
-                })
+                        expect($(this.view.el)).not.toHaveClass("hidden");
+                    });
+                });
 
                 context("and the hideIfNoPagination option is truthy", function() {
                     beforeEach(function() {
                         this.view.options.hideIfNoPagination = true;
                         this.view.render();
-                    })
+                    });
 
                     it("adds the hidden class to the container", function() {
-                        expect($(this.view.el)).toHaveClass("hidden")
-                    })
-                })
-            })
-        })
+                        expect($(this.view.el)).toHaveClass("hidden");
+                    });
+                });
+            });
+        });
 
         context("when the collection is not loaded", function() {
             beforeEach(function() {
                 this.collection.loaded = undefined;
                 this.view.render();
-            })
+            });
 
             it("displays 'loading'", function() {
-                expect(this.view.$(".loading")).toExist();
-            })
-        })
+                expect(this.view.$(".loading_section")).toExist();
+            });
+        });
+    });
+
+    describe("multiSelect", function() {
+        beforeEach(function() {
+            spyOnEvent(chorus.PageEvents, "selectNone");
+        });
+
+        context("when the multiSelect option is true", function() {
+            beforeEach(function() {
+                this.view.options.multiSelect = true;
+                this.view.setup();
+            });
+
+            it("deselects all after a search", function() {
+                this.collection.trigger('searched');
+                expect("selectNone").toHaveBeenTriggeredOn(chorus.PageEvents);
+            });
+
+            it("deselects all after paginating", function() {
+                this.collection.trigger('paginate');
+                expect("selectNone").toHaveBeenTriggeredOn(chorus.PageEvents);
+            });
+
+            it("deselects all after filtering", function() {
+                chorus.PageEvents.trigger('choice:filter');
+                expect("selectNone").toHaveBeenTriggeredOn(chorus.PageEvents);
+            });
+
+            it("deselects all after sorting", function() {
+                chorus.PageEvents.trigger('choice:sort');
+                expect("selectNone").toHaveBeenTriggeredOn(chorus.PageEvents);
+            });
+        });
+
+        context("when multiSelect is false", function() {
+            beforeEach(function() {
+                this.view.options.multiSelect = false;
+                this.view.setup();
+            });
+
+            it("does not deselect all after a search", function() {
+                this.collection.trigger('searched');
+                expect("selectNone").not.toHaveBeenTriggeredOn(chorus.PageEvents);
+            });
+
+            it("does not deselect all after paginating", function() {
+                this.collection.trigger('paginate');
+                expect("selectNone").not.toHaveBeenTriggeredOn(chorus.PageEvents);
+            });
+
+            it("does not deselect all after filtering", function() {
+                chorus.PageEvents.trigger('choice:filter');
+                expect("selectNone").not.toHaveBeenTriggeredOn(chorus.PageEvents);
+            });
+
+            it("does not deselect all after sorting", function() {
+                chorus.PageEvents.trigger('choice:sort');
+                expect("selectNone").not.toHaveBeenTriggeredOn(chorus.PageEvents);
+            });
+        });
+    });
+
+    describe("changing the collection", function() {
+        it("renders the view", function() {
+            this.collection.remove(this.collection.first());
+            expect(this.view.$(".count")).toContainText(this.collection.totalRecordCount());
+        });
     });
 
     describe("clicking the pagination links", function() {
@@ -279,7 +329,7 @@ describe("chorus.views.ListContentDetails", function() {
             this.collection.pagination.total = "3";
             spyOn(window, 'scroll');
             this.view.render();
-        })
+        });
 
         describe("when the 'next' link is clicked", function() {
             beforeEach(function() {
@@ -289,12 +339,12 @@ describe("chorus.views.ListContentDetails", function() {
 
             it("fetches the next page of the collection", function() {
                 expect(this.collection.fetchPage).toHaveBeenCalledWith(3);
-            })
+            });
 
             it("scrolls the viewport to the top of the page", function() {
-                expect(window.scroll).toHaveBeenCalledWith(0, 0)
-            })
-        })
+                expect(window.scroll).toHaveBeenCalledWith(0, 0);
+            });
+        });
 
         describe("when the 'previous' link is clicked", function() {
             beforeEach(function() {
@@ -304,13 +354,13 @@ describe("chorus.views.ListContentDetails", function() {
 
             it("fetches the previous page of the collection", function() {
                 expect(this.collection.fetchPage).toHaveBeenCalledWith(1);
-            })
+            });
 
             it("scrolls the viewport to the top of the page", function() {
                 expect(window.scroll).toHaveBeenCalledWith(0, 0);
-            })
-        })
-    })
+            });
+        });
+    });
 
     describe("search", function() {
         beforeEach(function() {
@@ -341,6 +391,18 @@ describe("chorus.views.ListContentDetails", function() {
 
             expect(this.view.$("input.search:text")).not.toExist();
         });
+
+        context("when the collection already has a value for its searchAttr", function() {
+            beforeEach(function() {
+                this.collection.searchAttr = "namePattern";
+                this.collection.attributes.namePattern = "foo";
+                this.view.render();
+            });
+
+            it("sets the value in the search input", function() {
+                expect(this.view.$("input.search:text").val()).toEqual('foo');
+            });
+        });
     });
 
     describe("#startLoading", function() {
@@ -363,60 +425,19 @@ describe("chorus.views.ListContentDetails", function() {
             this.view = new chorus.views.ListContentDetails({ collection: this.collection, modelClass: "WorkspaceDataset" });
             $("#jasmine_content").append(this.view.el);
         });
+    });
 
-        describe("when the instance is provisioning", function() {
-            beforeEach(function() {
-                this.view.provisioningState = "provisioning";
-                this.view.render();
-            });
-
-            it("shows a grey bar below the title", function() {
-                expect(this.view.$(".provisioning_bar")).not.toHaveClass("hidden");
-                expect(this.view.$(".provisioning_fault_bar")).toHaveClass("hidden");
-                expect(this.view.$(".provisioning_bar")).toContainTranslation("dataset.content_details.provisioning");
-                expect(this.view.$(".provisioning_bar .actions a.close_provisioning")).toContainTranslation("actions.close");
-            });
-
-            describe("user clicks 'close'", function() {
-                beforeEach(function() {
-                    this.view.$(".provisioning_bar .actions a.close_provisioning").click();
-                });
-
-                it("removes the bar", function() {
-                    expect(this.view.$(".provisioning_bar")).toHaveClass("hidden");
-                });
+    context("when initialized with a buttons subview", function(){
+        beforeEach(function() {
+            this.buttonView = new chorus.views.Base();
+            this.view = new chorus.views.ListContentDetails({
+                collection: this.collection,
+                modelClass: "User",
+                buttonView: this.buttonView
             });
         });
-
-        describe("when the instance provisioning failed", function() {
-            beforeEach(function() {
-                this.view.provisioningState = "fault";
-                this.view.render();
-            });
-
-            it("shows a red bar below the title", function() {
-                expect(this.view.$(".provisioning_fault_bar")).not.toHaveClass("hidden");
-                expect(this.view.$(".provisioning_bar")).toHaveClass("hidden");
-                expect(this.view.$(".provisioning_fault_bar")).toContainTranslation("dataset.content_details.provisioning_fault");
-                expect(this.view.$(".provisioning_fault_bar .actions a.close_provisioning")).toContainTranslation("actions.close");
-            });
-
-            it("shows the retry link", function() {
-                expect(this.view.$(".provisioning_fault_bar .actions a.retry_provisioning")).toContainTranslation("actions.retry");
-                expect(this.view.$(".provisioning_fault_bar .actions a.retry_provisioning")).toHaveClass("dialog");
-                expect(this.view.$(".provisioning_fault_bar .actions a.retry_provisioning").data("dialog")).toBe("SandboxNew");
-                expect(this.view.$(".provisioning_fault_bar .actions a.retry_provisioning").data("workspace-id")).toBe(44);
-            });
-
-            describe("user clicks 'close'", function() {
-                beforeEach(function() {
-                    this.view.$(".provisioning_fault_bar .actions a.close_provisioning").click();
-                });
-
-                it("removes the bar", function() {
-                    expect(this.view.$(".provisioning_fault_bar")).toHaveClass("hidden");
-                });
-            });
+        it("has a buttons subview", function(){
+            expect(this.view.buttonView).toBe(this.buttonView);
         });
-    })
+    });
 });

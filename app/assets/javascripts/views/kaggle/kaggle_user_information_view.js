@@ -7,6 +7,6 @@ chorus.views.KaggleUserInformation = chorus.views.Base.extend({
             pastCompetitions: this.model.get('pastCompetitionTypes'),
             favoriteTechnique: this.model.get('favoriteTechnique'),
             favoriteSoftware: this.model.get('favoriteSoftware')
-        }
+        };
     }
 });

@@ -3,6 +3,7 @@ chorus.dialogs.SqlPreview = chorus.dialogs.Base.extend({
 
     templateName: "sql_preview",
     title: t("sql_preview.dialog.title"),
+    additionalClass: "dialog_wide",
 
     events: {
         "click .preview" : "previewData",
@@ -21,18 +22,19 @@ chorus.dialogs.SqlPreview = chorus.dialogs.Base.extend({
             enableResize: false
         });
 
-        chorus.PageEvents.subscribe("action:closePreview", this.hidePreviewData, this);
-        this.modalClosedHandle = chorus.PageEvents.subscribe("modal:closed", this.cancelTask, this);
+        this.subscribePageEvent("action:closePreview", this.hidePreviewData);
+        this.subscribePageEvent("modal:closed", this.cancelTask);
     },
 
     makeCodeMirrorOptions: function() {
-        return opts = {
-            readOnly: "nocursor",
+        return {
             lineNumbers: true,
-            mode: "text/x-sql",
             fixedGutter: true,
             theme: "default",
-            lineWrapping: true
+            lineWrapping: true,
+            readOnly: "nocursor",
+            mode: "text/x-plsql",
+            viewportMargin: Infinity
         };
     },
 
@@ -42,20 +44,19 @@ chorus.dialogs.SqlPreview = chorus.dialogs.Base.extend({
         _.defer(_.bind(function() {
             this.editor = CodeMirror.fromTextArea(textArea[0], this.makeCodeMirrorOptions());
             this.editor.refresh();
-            this.setupScrolling(this.$(".container"));
         }, this));
         this.hidePreviewData();
     },
 
     hidePreviewData: function() {
         this.$(".results_console").addClass("hidden");
-        this.$("button.preview").removeClass("hidden")
+        this.$("button.preview").removeClass("invisible");
     },
 
     previewData: function(e) {
         e && e.preventDefault();
         this.$(".results_console").removeClass("hidden");
-        this.$("button.preview").addClass("hidden");
+        this.$("button.preview").addClass("invisible");
         var preview = this.model.preview().set({ query: this.sql() }, {silent: true});
         this.resultsConsole.execute(preview);
     },
@@ -66,6 +67,5 @@ chorus.dialogs.SqlPreview = chorus.dialogs.Base.extend({
 
     cancelTask: function() {
         this.resultsConsole.cancelExecution();
-        chorus.PageEvents.unsubscribe(this.modalClosedHandle);
     }
 });

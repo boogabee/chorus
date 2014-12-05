@@ -8,29 +8,34 @@ pushd build
 mkdir -p dependencies
 pushd dependencies
 
-wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.31.tar.gz
-wget http://zlib.net/zlib-1.2.7.tar.gz
-wget http://www.openssl.org/source/openssl-0.9.8r.tar.gz
+NGINX_VER=1.4.4
+PCRE_VER=8.32
+ZLIB_VER=1.2.8
+OPENSSL_VER=0.9.8r
 
-tar xzf pcre-8.31.tar.gz
-tar xzf zlib-1.2.7.tar.gz
-tar xzf openssl-0.9.8r.tar.gz
+wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-$PCRE_VER.tar.gz
+wget http://zlib.net/zlib-$ZLIB_VER.tar.gz
+wget http://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz
+
+tar xzf pcre-$PCRE_VER.tar.gz
+tar xzf zlib-$ZLIB_VER.tar.gz
+tar xzf openssl-$OPENSSL_VER.tar.gz
 
 popd
 
-wget http://nginx.org/download/nginx-1.2.2.tar.gz
-tar xzf nginx-1.2.2.tar.gz
+wget http://nginx.org/download/nginx-$NGINX_VER.tar.gz
+tar xzf nginx-$NGINX_VER.tar.gz
 
-pushd nginx-1.2.2
+pushd nginx-$NGINX_VER
 
 #os_friendly_name=""
 unamestr=`uname`
 if [[ "$unamestr" == 'Darwin' ]]; then
     os_friendly_name='OSX'
-    ./configure --with-pcre="../dependencies/pcre-8.31" --with-pcre-opt="-arch i386" --with-zlib="../dependencies/zlib-1.2.7" --with-zlib-opt="-arch i386" --with-openssl="../dependencies/openssl-0.9.8r" --prefix="./nginx_data" --with-cc-opt="-DNGX_HAVE_ACCEPT4=0 -arch i386" --with-ld-opt="-static-libgcc -lc -lcrypto -arch i386" --with-http_gzip_static_module --with-http_ssl_module
+    ./configure --with-pcre="../dependencies/pcre-$PCRE_VER" --with-pcre-opt="-arch i386" --with-zlib="../dependencies/zlib-$ZLIB_VER" --with-zlib-opt="-arch i386" --with-openssl="../dependencies/openssl-$OPENSSL_VER" --prefix="./nginx_data" --with-cc-opt="-DNGX_HAVE_ACCEPT4=0 -arch i386" --with-ld-opt="-static-libgcc -lc -lcrypto -arch i386" --with-http_gzip_static_module --with-http_ssl_module --with-ipv6
 else
     os_friendly_name='Linux'
-   ./configure --with-pcre="../dependencies/pcre-8.31" --with-zlib="../dependencies/zlib-1.2.7" --with-openssl="../dependencies/openssl-0.9.8r" --prefix="./nginx_data" --with-cc-opt="-DNGX_HAVE_ACCEPT4=0" --with-ld-opt="-static-libgcc -Wl,-Bstatic -lc" --with-http_gzip_static_module --with-http_ssl_module
+   ./configure --with-pcre="../dependencies/pcre-$PCRE_VER" --with-zlib="../dependencies/zlib-$ZLIB_VER" --with-openssl="../dependencies/openssl-$OPENSSL_VER" --prefix="./nginx_data" --with-cc-opt="-DNGX_HAVE_ACCEPT4=0" --with-ld-opt="-static-libgcc -Wl,-Bstatic -lc" --with-http_gzip_static_module --with-http_ssl_module --with-ipv6
 fi
 
 make

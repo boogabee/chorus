@@ -1,7 +1,7 @@
 chorus.dialogs.DatasetDownload = chorus.dialogs.Base.extend({
     constructorName: "DatasetDownload",
     templateName: "dataset_download",
-    submitText: t("actions.download"),
+    submitKey: "actions.download",
 
     events: {
         "click button.submit": "submitDownload"
@@ -20,8 +20,8 @@ chorus.dialogs.DatasetDownload = chorus.dialogs.Base.extend({
 
     additionalContext: function() {
         return {
-            submitText: this.submitText
-        }
+            submitKey: this.submitKey
+        };
     },
 
     submitDownload: function(e) {
@@ -39,7 +39,7 @@ chorus.dialogs.DatasetDownload = chorus.dialogs.Base.extend({
     validateInput: function() {
         this.model.set({ rowLimit: this.rowLimit() }, { silent: true });
         if (this.model.performValidation()) {
-            return true
+            return true;
         }
         this.showErrors();
     },

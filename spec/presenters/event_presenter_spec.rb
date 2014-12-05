@@ -1,22 +1,22 @@
 require "spec_helper"
 
 describe EventPresenter, :type => :view do
-  let(:gpdb_instance) { FactoryGirl.create(:gpdb_instance) }
+  let(:gpdb_data_source) { FactoryGirl.create(:gpdb_data_source) }
   let(:current_user) { users(:owner) }
+  let(:sub_presenter_options) { {:succinct => true, :activity_stream => true} }
 
   before do
-    stub(ActiveRecord::Base).current_user { current_user }
+    set_current_user(current_user)
   end
 
   describe "#simple_hash" do
-    subject { EventPresenter.new(event, view, options) }
+    subject { EventPresenter.new(event, view, options).simple_hash }
     let(:options) { {} }
     let(:event) { events(:note_on_greenplum) }
 
     it "has targets and additional_data values in it" do
-      hash = subject.simple_hash
-      hash[:gpdb_instance].should be
-      hash["body"].should == 'i am a comment with greenplumsearch in me'
+      subject[:data_source].should be
+      subject["body"].should == 'i am a comment with greenplumsearch in me'
     end
   end
 
@@ -25,14 +25,15 @@ describe EventPresenter, :type => :view do
     let(:options) { {} }
 
     context "when rendering the activity stream" do
-      let(:options) { {:activity_stream => true} }
+      let(:options) { {:activity_stream => true, :succinct => true } }
 
       context "SourceTableCreated" do
-        let(:event) { FactoryGirl.create(:source_table_created_event, :dataset => datasets(:table)) }
+        let(:dataset) { datasets(:table) }
+        let(:event) { FactoryGirl.create(:source_table_created_event, :dataset => dataset) }
+
         it "does not render datasets with their schemas or associated workspaces" do
           hash = subject.to_hash
-          hash[:dataset][:schema][:id].should == datasets(:table).schema_id
-          hash[:dataset][:schema].keys.size.should == 1
+          hash[:dataset].should == DatasetPresenter.present(dataset, view, sub_presenter_options)
           hash[:dataset][:associated_workspaces].should be_empty
         end
       end
@@ -41,11 +42,9 @@ describe EventPresenter, :type => :view do
         let(:workspace_with_sandbox) { workspaces(:public) }
         let(:event) { FactoryGirl.create(:note_on_workspace_event, :workspace => workspace_with_sandbox) }
 
-        it "only renders the sandbox id of a workspace" do
+        it "presents the succinct hash of the workspace" do
           hash = subject.to_hash
-          hash[:workspace].should have_key(:id)
-          hash[:workspace].should have_key(:name)
-          hash[:workspace].keys.size.should == 2
+          hash[:workspace].should == WorkspacePresenter.new(workspace_with_sandbox, view, sub_presenter_options).to_hash
         end
       end
     end
@@ -65,30 +64,30 @@ describe EventPresenter, :type => :view do
     end
 
     context "Non-note event" do
-      let(:event) { FactoryGirl.create(:greenplum_instance_created_event, :gpdb_instance => gpdb_instance) }
+      let(:event) { FactoryGirl.create(:data_source_created_event, :data_source => gpdb_data_source) }
 
       it "includes the 'id', 'timestamp', 'actor', 'action'" do
         hash = subject.to_hash
         hash[:id].should == event.id
         hash[:timestamp].should == event.created_at
-        hash[:action].should == "GreenplumInstanceCreated"
-        hash[:actor].should == Presenter.present(event.actor, view)
+        hash[:action].should == "DataSourceCreated"
+        hash[:actor].should == Presenter.present(event.actor, view, sub_presenter_options)
       end
 
       it "presents all of the event's 'targets', using the same names" do
-        special_instance = FactoryGirl.build(:gpdb_instance)
+        special_data_source = FactoryGirl.build(:gpdb_data_source)
         special_user = FactoryGirl.build(:user)
 
         stub(event).targets do
           {
-              :special_instance => special_instance,
+              :special_data_source => special_data_source,
               :special_user => special_user
           }
         end
 
         hash = subject.to_hash
-        hash[:special_instance].should == Presenter.present(special_instance, view)
-        hash[:special_user].should == Presenter.present(special_user, view)
+        hash[:special_data_source].should == Presenter.present(special_data_source, view, sub_presenter_options)
+        hash[:special_user].should == Presenter.present(special_user, view, sub_presenter_options)
       end
 
       it "includes all of the event's 'additional data'" do
@@ -106,12 +105,12 @@ describe EventPresenter, :type => :view do
     end
 
     context "Note event" do
-      let(:event) { FactoryGirl.create(:note_on_greenplum_instance_event) }
+      let(:event) { FactoryGirl.create(:note_on_data_source_event) }
 
       it "returns the correct hash for a note" do
         hash = subject.to_hash
         hash[:action].should == "NOTE"
-        hash[:action_type].should == "NoteOnGreenplumInstance"
+        hash[:action_type].should == "NoteOnDataSource"
       end
 
       it "sanitizes notes' body" do
@@ -139,10 +138,11 @@ describe EventPresenter, :type => :view do
       end
 
       context "with an attachment" do
-        let(:event) { FactoryGirl.create(:note_on_workspace_event) }
+        let(:event) { FactoryGirl.create(:note_on_workfile) }
         let(:attachment) { Attachment.first }
         let(:dataset) { datasets(:table) }
         let(:workfile) { workfiles(:public) }
+        let(:note_work_flow_result) { NotesWorkFlowResult.new({:result_id => "0.1234321"}) }
 
         it "contains the attachment" do
           event.workspace.sandbox = dataset.schema
@@ -150,13 +150,17 @@ describe EventPresenter, :type => :view do
           stub(event).attachments { [attachment] }
           stub(event).datasets { [dataset] }
           stub(event).workfiles { [workfile] }
+          stub(event).notes_work_flow_results { [note_work_flow_result] }
           hash = subject.to_hash
           hash[:attachments].should be_present
-          hash[:attachments][0][:entity_type].should == 'file'
+          hash[:attachments][0][:entity_type].should == 'attachment'
           hash[:attachments][1][:entity_type].should == 'dataset'
           hash[:attachments][2][:entity_type].should == 'workfile'
           hash[:attachments][1][:workspace].should == event.workspace
-          hash[:attachments][1][:type].should == "SANDBOX_TABLE"
+          hash[:attachments][1][:entity_subtype].should == "SANDBOX_TABLE"
+          hash[:attachments][3][:entity_type].should == "work_flow_result"
+          hash[:attachments][3][:id].should == note_work_flow_result.result_id
+          hash[:attachments][3][:workfile_id].should == event.workfile.id
         end
       end
 
@@ -175,6 +179,19 @@ describe EventPresenter, :type => :view do
       end
     end
 
+    context "Workfile Result event" do
+      let(:event) { FactoryGirl.create(:workfile_result) }
+      let(:note_work_flow_result) { NotesWorkFlowResult.new({:result_id => "0.1234321"}) }
+
+      it "contains the attachment" do
+        stub(event).notes_work_flow_results { [note_work_flow_result] }
+
+        hash = subject.to_hash
+        hash[:attachments][0][:entity_type].should == "work_flow_result"
+        hash[:attachments][0][:id].should == note_work_flow_result.result_id
+      end
+    end
+
     context "Event with comments" do
       let(:event) { events(:note_on_greenplum) }
 
@@ -187,7 +204,7 @@ describe EventPresenter, :type => :view do
         hash = subject.to_hash
         hash[:comments].count.should > 1
         hash[:comments].each do | comment |
-          comment[:text].should_not be_nil
+          comment[:body].should_not be_nil
           comment[:author].should_not be_nil
         end
       end
@@ -200,13 +217,13 @@ describe EventPresenter, :type => :view do
       before do
         event.insight = true
         event.promoted_by = user
-        event.promotion_time = Time.now()
+        event.promotion_time = Time.current()
       end
 
       it "has hash for insights" do
         hash = subject.to_hash
         hash[:is_insight].should be_true
-        hash[:promoted_by].should == Presenter.present(user, view)
+        hash[:promoted_by].should == Presenter.present(user, view, sub_presenter_options)
         hash[:promotion_time].should == event.promotion_time
         hash[:is_published].should == false
       end
@@ -219,6 +236,43 @@ describe EventPresenter, :type => :view do
         it "should be published" do
           hash = subject.to_hash
           hash[:is_published].should == true
+        end
+      end
+    end
+
+    context "events with errors" do
+      let(:event) { events(:import_failed_with_model_errors) }
+      let(:user) { users(:owner) }
+
+      it "presents the errors" do
+        hash = subject.to_hash
+        hash[:error_objects].should == ErrorPresenter.new(event.error_objects).as_json
+      end
+    end
+
+    context "presenting as a comment" do
+      let(:options) { {:as_comment => true} }
+      let(:hash) { subject.to_hash }
+
+      context "for a note" do
+        let(:event) { events(:note_on_greenplum) }
+
+        it "should present a restricted set" do
+          hash[:body].should == event.body
+          hash[:author].should == UserPresenter.new(event.actor, view, sub_presenter_options).presentation_hash
+          hash[:timestamp].should == event.created_at
+          hash.keys.size.should == 3
+        end
+      end
+
+      context "for a workfile version" do
+        let(:event) { Events::WorkfileUpgradedVersion.first }
+
+        it "should present a restricted set" do
+          hash[:body].should == event.commit_message
+          hash[:author].should == UserPresenter.new(event.actor, view, sub_presenter_options).presentation_hash
+          hash[:timestamp].should == event.created_at
+          hash.keys.size.should == 3
         end
       end
     end

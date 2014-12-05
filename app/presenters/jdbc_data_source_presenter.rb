@@ -1,0 +1,1 @@
+class JdbcDataSourcePresenter < DataSourcePresenter; end

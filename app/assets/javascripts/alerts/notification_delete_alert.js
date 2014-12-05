@@ -13,6 +13,6 @@ chorus.alerts.NotificationDeleteAlert = chorus.alerts.ModelDelete.extend({
 
     modelDeleted: function() {
         this._super("modelDeleted");
-        chorus.PageEvents.broadcast("notification:deleted");
+        chorus.PageEvents.trigger("notification:deleted");
     }
 });

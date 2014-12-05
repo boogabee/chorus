@@ -1,18 +1,17 @@
 describe("chorus.collections.HdfsEntrySet", function() {
-    context("when the collection has path and instance set", function() {
+    context('when the collection has path and data source set', function() {
         beforeEach(function() {
-            this.hdfsEntrySet = fixtures.hdfsEntrySet(null, {
+            this.hdfsEntrySet = new chorus.collections.HdfsEntrySet([backboneFixtures.hdfsFile()], {
                 path: '/data/somewhere',
-                hadoopInstance: {id: 222},
+                hdfsDataSource: {id: 222},
                 id: 11
             });
         });
 
-
         describe("add", function() {
-            it("sets the path and instance on the added entries", function() {
-                expect(this.hdfsEntrySet.at(0).get('hadoopInstance')).toBe(this.hdfsEntrySet.attributes.hadoopInstance);
-            })
+            it("sets the path and data source on the added entries", function() {
+                expect(this.hdfsEntrySet.at(0).get('hdfsDataSource')).toBe(this.hdfsEntrySet.attributes.hdfsDataSource);
+            });
         });
 
         describe("hdfsEntry", function() {
@@ -20,27 +19,27 @@ describe("chorus.collections.HdfsEntrySet", function() {
                 var model = this.hdfsEntrySet.hdfsEntry();
                 expect(model).toBeA(chorus.models.HdfsEntry);
                 expect(model.id).toBe(11);
-                expect(model.get('hadoopInstance')).toEqual({id: 222});
+                expect(model.get('hdfsDataSource')).toEqual({id: 222});
                 expect(model.get('isDir')).toBeTruthy();
             });
         });
     });
 
-    context("when the collection does not have path and instanceId set", function() {
+    context("when the collection does not have path and dataSourceId set", function() {
         beforeEach(function() {
-            this.hdfsEntrySet = fixtures.hdfsEntrySet([], {
+            this.hdfsEntrySet = new chorus.collections.HdfsEntrySet([], {
                 path: null,
-                hadoopInstance: null
+                hdfsDataSource: null
             });
         });
 
         describe("add", function() {
-            it("keeps the path and instance already set on the entry", function() {
-                var entry = rspecFixtures.hdfsFile({path: '/data/foo', hadoopInstance: {id: '10000'}});
+            it("keeps the path and data source already set on the entry", function() {
+                var entry = backboneFixtures.hdfsFile({path: '/data/foo', hdfsDataSource: {id: '10000'}});
                 this.hdfsEntrySet.add(entry);
                 expect(this.hdfsEntrySet.at(0).get('path')).toBe('/data/foo');
-                expect(this.hdfsEntrySet.at(0).get('hadoopInstance').id).toBe('10000');
-            })
+                expect(this.hdfsEntrySet.at(0).get('hdfsDataSource').id).toBe('10000');
+            });
         });
     });
 });

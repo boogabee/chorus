@@ -1,0 +1,83 @@
+<form action="#">
+    <div class="girdle">
+        <legend class="subtitle">
+            <div class="text">{{t "job_task.action.import_source_data"}}</div>
+            <hr/>
+            <label>{{t "create_job_task_dialog.import_source_data.description"}}</label>
+        </legend>
+
+        <div class="source">
+            <legend class="subtitle">
+                <div class="text">{{t "create_job_task_dialog.source_table"}}</div>
+                <hr/>
+            </legend>
+
+            <fieldset class="choose_table source row">
+                <a href="#" class="dataset_picked" name="existingTableName">
+                    {{#if sourceName}}
+                        {{sourceName}}
+                    {{else}}
+                        {{t "dataset.import.select_source"}}
+                    {{/if}}
+                </a>
+            </fieldset>
+        </div>
+
+        <div class="destination">
+            <legend class="subtitle">
+                <div class="text">{{t "create_job_task_dialog.destination_table"}}</div>
+                <hr/>
+            </legend>
+
+            <fieldset class="choose_table destination row">
+                <input type="radio" name="imports" id="create_job_task_existing_table"
+                       {{#if useExistingTable}}checked="checked"{{/if}}/>
+                <label class="main" for="create_job_task_existing_table">{{t "import.existing_table"}}</label>
+            <span class="dataset_picked" name="existingName">
+                {{#if destinationId}}
+                    {{destinationName}}
+                {{else}}
+                    {{t "dataset.import.select_destination"}}
+                {{/if}}
+            </span>
+                <a href="#" class="dataset_picked hidden" name="existingName">
+                    {{#if destinationId}}
+                        {{destinationName}}
+                    {{else}}
+                        {{t "dataset.import.select_destination"}}
+                    {{/if}}
+                </a>
+            </fieldset>
+
+            <fieldset class="new_table row">
+                <input type="radio" name="imports" id="create_job_task_new_table"
+                       {{#unless useExistingTable}}checked="checked"{{/unless}}/>
+                <label class="main" for="create_job_task_new_table">{{t "import.new_table"}}</label>
+                <input type="text" class="new_table_name" name="destinationName"
+                       {{#unless destinationId}}value="{{destinationName}}"{{/unless}} maxlength="64"/>
+            </fieldset>
+
+        </div>
+
+        <div class="options">
+            <legend class="subtitle">
+                <div class="text">{{t "create_job_task_dialog.options"}}</div>
+                <hr/>
+            </legend>
+
+            <div class="row">
+                <input type="checkbox" class="truncate" name="truncate" id="create_job_task_truncate"
+                       {{#if truncate}}checked="checked"{{/if}}/>
+                <label for="create_job_task_truncate">{{t "import.truncate"}}</label>
+            </div>
+
+            <div class="row limit">
+                <input type="checkbox" name="limit_num_rows" id="create_job_task_limit_rows_existing"/>
+                <label for="create_job_task_limit_rows_existing">{{t "import.limit_rows"}}</label>
+                <input class="row_limit" type="text" name="rowLimit" maxlength="10" disabled="disabled"
+                       value="{{rowLimit}}"/>
+            </div>
+        </div>
+    </div>
+    {{formControlsWithDisabledSubmit submitButtonTranslationKey}}
+</form>

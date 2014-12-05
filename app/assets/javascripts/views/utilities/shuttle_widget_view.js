@@ -10,21 +10,21 @@ chorus.views.ShuttleWidget = chorus.views.Base.extend({
 
     setup:function () {
         this.selectionSource = this.options.selectionSource;
-        this.bindings.add(this.selectionSource, "reset", this.render);
+        this.listenTo(this.selectionSource, "reset", this.render);
         this.nonRemovableModels = this.options.nonRemovable;
     },
 
     collectionModelContext:function (model) {
         var ctx = {};
         var selections = this.selectionSource.map(function (item) {
-            return item.get("id")
+            return item.get("id");
         });
         ctx.isAdded = _.include(selections, model.get("id"));
         ctx.displayName = model.displayName();
-        ctx.imageUrl = model.fetchImageUrl();
+        ctx.imageUrl = model.fetchImageUrl({size: "icon"});
 
         var nonRemovableModelIds = _.map(this.nonRemovableModels, function (model) {
-            return model.get("id")
+            return model.get("id");
         });
         ctx.isNonRemovable = _.include(nonRemovableModelIds, model.get("id"));
         ctx.nonRemovableText = this.options.nonRemovableText;
@@ -81,5 +81,5 @@ chorus.views.ShuttleWidget = chorus.views.Base.extend({
     _updateLabels:function () {
         this.$(".selected_count").text(this.$("ul.selected li.added").length);
     }
-})
+});
 

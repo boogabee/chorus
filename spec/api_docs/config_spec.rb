@@ -2,6 +2,10 @@ require 'spec_helper'
 
 resource "Config" do
   let(:user) { users(:admin) }
+  before do
+    stub.proxy(License.instance).[](anything)
+  end
+
 
   get "/config" do
     before do

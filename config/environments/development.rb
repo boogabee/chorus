@@ -13,9 +13,6 @@ Chorus::Application.configure do
   config.consider_all_requests_local = false
   config.action_controller.perform_caching = false
 
-  # Don't care if the mailer can't send
-  config.action_mailer.raise_delivery_errors = false
-
   # Print deprecation notices to the Rails logger
   config.active_support.deprecation = :log
 
@@ -30,8 +27,20 @@ Chorus::Application.configure do
   config.assets.compress = false
 
   # Expands the lines which load the assets
-  config.assets.debug = true
+  config.assets.debug = false
 
   # Give paperclip path to ImageMagick tools
   Paperclip.options[:command_path] = "/usr/local/bin/"
+
+  # Only turn it on if you really need concurrent requests
+  #config.allow_concurrency = true
+  #config.threadsafe!
+
+  if ChorusConfig.instance['mail.enabled']
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = { :address => 'localhost', :port => 1025 }
+    ActionMailer::Base.default ChorusConfig.instance.mail_configuration
+  else
+    config.action_mailer.perform_deliveries = false
+  end
 end

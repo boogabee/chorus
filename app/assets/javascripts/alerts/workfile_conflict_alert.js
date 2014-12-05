@@ -1,4 +1,4 @@
-chorus.alerts.WorkfileConflict = chorus.alerts.Base.extend({
+chorus.alerts.WorkfileConflict = chorus.alerts.Confirm.extend({
     constructorName: "WorkfileConflict",
 
     text:t("workfile.conflict.alert.text"),
@@ -12,13 +12,10 @@ chorus.alerts.WorkfileConflict = chorus.alerts.Base.extend({
     },
 
     postRender:function () {
+        this._super('postRender');
         this.$("button.cancel").click(_.bind(function () {
             this.discardChanges();
-        }, this))
-
-        _.delay(_.bind(function () {
-            this.$("button.submit").focus()
-        }, this), 250);
+        }, this));
     },
 
     confirmAlert:function () {
@@ -29,7 +26,7 @@ chorus.alerts.WorkfileConflict = chorus.alerts.Base.extend({
 
     discardChanges:function () {
         var draft = new chorus.models.Draft({workspaceId:this.model.workspace().id, workfileId:this.model.get("id")});
-        this.bindings.add(draft, "change", function (draft) {
+        this.listenTo(draft, "change", function (draft) {
             draft.destroy();
         });
 

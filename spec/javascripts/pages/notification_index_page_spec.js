@@ -1,6 +1,6 @@
 describe("chorus.pages.NotificationIndexPage", function() {
     beforeEach(function() {
-        spyOn(chorus.PageEvents, "subscribe");
+        spyOn(chorus.pages.NotificationIndexPage.prototype, "refreshNotifications");
         this.page = new chorus.pages.NotificationIndexPage();
     });
 
@@ -15,18 +15,13 @@ describe("chorus.pages.NotificationIndexPage", function() {
         beforeEach(function() {
             spyOn(chorus.collections.NotificationSet.prototype, "markAllRead").andCallThrough();
 
-            this.collection = fixtures.notificationSet([
-                fixtures.notification(),
-                fixtures.notification({unread: true}),
-                fixtures.notification()
-            ]);
+            this.collection = backboneFixtures.notificationSet();
             this.server.completeFetchFor(this.collection);
         });
 
-        it("subscribes to the notification:deleted event", function() {
-            expect(chorus.PageEvents.subscribe).toHaveBeenCalled();
-            expect(chorus.PageEvents.subscribe.callCount).toBe(2);
-            expect(chorus.PageEvents.subscribe.argsForCall[1][0]).toBe("notification:deleted");
+        it("refreshes notifications on the notification:deleted event", function() {
+            chorus.PageEvents.trigger("notification:deleted");
+            expect(this.page.refreshNotifications).toHaveBeenCalled();
         });
 
         it("should have the right breadcrumbs", function() {
@@ -44,7 +39,7 @@ describe("chorus.pages.NotificationIndexPage", function() {
 
         it("has NotificationList as the main content view", function() {
             expect(this.page.mainContent.content).toBeA(chorus.views.NotificationList);
-        })
+        });
 
         it("should mark all notifications read", function() {
             expect(chorus.collections.NotificationSet.prototype.markAllRead).toHaveBeenCalled();

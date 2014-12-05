@@ -1,13 +1,11 @@
 class MyWorkspacesSearch < Search
-  def initialize(current_user, params = {})
-    @models_to_search = [Workspace, Workfile, Dataset]
-    super
+  def models_to_search
+    super & [Workspace, Workfile, Dataset]
   end
 
   def build_search
-    super
-    @search.build do
-      with :workspace_id, current_user.memberships.map(&:workspace_id)
+    super.build do
+      with :workspace_id, current_user.memberships.map(&:workspace_id).sort
     end
   end
 end

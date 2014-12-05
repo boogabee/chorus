@@ -1,0 +1,71 @@
+.configure_import_source_data_task_dialog {
+    hr {
+        margin-top: 1em;
+        height: 1px;
+        background-color: $border-color;
+        border: none;
+    }
+
+    fieldset {
+        border: none;
+        padding: 0 15px 0px;
+    }
+
+    input[type=checkbox] { margin-left: 20px; }
+
+    .row {
+        line-height: 34px;
+        vertical-align: middle;
+    }
+
+    label {
+        display: inline-block;
+        min-width: 200px;
+        line-height: 20px;
+    }
+
+    label.main { @include font-menu; }
+
+    .new_table {
+        .name { width: 206px; }
+    }
+
+    .choose_table {
+        .names {
+            width: 200px;
+            display: inline-block;
+        }
+
+        label.main {
+            vertical-align: top;
+            margin-top: 10px;
+        }
+
+        .dataset_picked {
+            font-size: 13px;
+            font-weight: $semibold;
+            margin-right: 5px;
+            display: inline-block;
+            line-height: 14px;
+        }
+
+        a.dataset_picked {
+            display: inline-block;
+            line-height: 14px;
+        }
+    }
+
+    .limit {
+        .row_limit {
+            float: right;
+            width: 120px;
+            @include after-clearfix;
+        }
+    }
+
+    select, .ui-selectmenu-button .ui-button {
+        vertical-align: middle;
+        width: 200px;
+        margin-bottom: 5px;
+    }
+}

@@ -15,12 +15,12 @@ chorus.dialogs.ComposeKaggleMessage = chorus.dialogs.Base.extend({
 
     postRender: function() {
         this.$(".more-info").qtip({
-            content: "<h1>" + t('kaggle.compose.tooltip.title') + "</h1>\
-                <dl>\
-                    <dt>" + t('kaggle.compose.tooltip.section_1.title') + "</dt><dd>" + t('kaggle.compose.tooltip.section_1.description') + "</dd> \
-                    <dt>" + t('kaggle.compose.tooltip.section_2.title') + "</dt><dd>" + t('kaggle.compose.tooltip.section_2.description') + "</dd>\
-                    <dt>" + t('kaggle.compose.tooltip.section_3.title') + "</dt><dd>" + t('kaggle.compose.tooltip.section_3.description') + "</dd>\
-                 </dl>",
+            content: ["<h1>", t('kaggle.compose.tooltip.title'), "</h1>",
+                "<dl>",
+                    "<dt>", t('kaggle.compose.tooltip.section_1.title'), "</dt><dd>", t('kaggle.compose.tooltip.section_1.description'), "</dd>",
+                    "<dt>", t('kaggle.compose.tooltip.section_2.title'), "</dt><dd>", t('kaggle.compose.tooltip.section_2.description'), "</dd>",
+                    "<dt>", t('kaggle.compose.tooltip.section_3.title'), "</dt><dd>", t('kaggle.compose.tooltip.section_3.description'), "</dd>",
+                 "</dl>"].join(''),
             style: {
                 classes: "tooltip-tips tooltip-modal",
                 tip: {
@@ -33,12 +33,12 @@ chorus.dialogs.ComposeKaggleMessage = chorus.dialogs.Base.extend({
     },
 
     setup: function(options) {
-        this.recipients = options.recipients;
-        this.workspace = options.workspace;
+        this.recipients = options.collection;
+        this.workspace = options.pageModel;
         this.maxRecipientCharacters = options.maxRecipientCharacters || 70;
         this.requiredDatasets = new chorus.RequiredResources();
-        this.bindings.add(this.model, "saveFailed", this.saveFailed);
-        this.bindings.add(this.model, "validationFailed", this.saveFailed);
+        this.listenTo(this.model, "saveFailed", this.saveFailed);
+        this.listenTo(this.model, "validationFailed", this.saveFailed);
         this._super('setup', arguments);
     },
 
@@ -52,10 +52,6 @@ chorus.dialogs.ComposeKaggleMessage = chorus.dialogs.Base.extend({
         });
     },
 
-    saveFailed:function () {
-        this.$("button.submit").stopLoading();
-    },
-
     clearServerErrors : function() {
         this.model.serverErrors = {};
     },
@@ -65,33 +61,32 @@ chorus.dialogs.ComposeKaggleMessage = chorus.dialogs.Base.extend({
         return {
             replyTo: chorus.session.user().get('email'),
             recipientNames: combinedNames,
-            hasMoreRecipients: (combinedNames.full.length != combinedNames.short.length)
+            hasMoreRecipients: (combinedNames.full.length !== combinedNames.short.length)
         };
     },
 
     makeModel: function (options) {
         this.model = new chorus.models.KaggleMessage({
-            recipients: options.recipients,
-            workspace: options.workspace
+            recipients: options.collection
         });
-        this.bindings.add(this.model, "saved", this.saved);
+        this.listenTo(this.model, "saved", this.saved);
     },
 
     combineNames: function(recipients){
-       var maxChars = this.maxRecipientCharacters;
-       var short = "";
-       var moreCount = 0;
-       var recipientNames = _.reduce(recipients, function(result, recipient) {
-           var fullNamesList = result + recipient.get("fullName") + ", ";
-           if(fullNamesList.length <= maxChars + 2) {
-               short = fullNamesList
-           }
+        var maxChars = this.maxRecipientCharacters;
+        var short = "";
+        var moreCount = 0;
+        var recipientNames = _.reduce(recipients, function(result, recipient) {
+            var fullNamesList = result + recipient.get("fullName") + ", ";
+            if(fullNamesList.length <= maxChars + 2) {
+                short = fullNamesList;
+            }
            else {
-               moreCount += 1;
-           }
-           return fullNamesList;
-       }, "");
-       return ( { short: short.substring(0, short.length - 2),
+                moreCount += 1;
+            }
+            return fullNamesList;
+        }, "");
+        return ( { short: short.substring(0, short.length - 2),
            full: recipientNames.substring(0, recipientNames.length - 2),
            moreCount: moreCount } );
     },
@@ -119,7 +114,7 @@ chorus.dialogs.ComposeKaggleMessage = chorus.dialogs.Base.extend({
             var datasetDialog = new chorus.dialogs.KaggleInsertDatasetSchema({
                 workspaceId: this.workspace.get('id')
             });
-            this.bindings.add(datasetDialog, "datasets:selected", this.datasetsChosen, this);
+            this.listenTo(datasetDialog, "datasets:selected", this.datasetsChosen);
             this.launchSubModal(datasetDialog);
         }
     },
@@ -132,8 +127,8 @@ chorus.dialogs.ComposeKaggleMessage = chorus.dialogs.Base.extend({
             var collection = dataset.columns();
             var statistic = dataset.statistics();
 
-            this.bindings.add(collection, 'loaded', this.columnsLoaded);
-            this.bindings.add(statistic, 'loaded', this.columnsLoaded);
+            this.listenTo(collection, 'loaded', this.columnsLoaded);
+            this.listenTo(statistic, 'loaded', this.columnsLoaded);
 
             this.requiredDatasets.push(statistic);
             this.requiredDatasets.push(collection);
@@ -146,7 +141,7 @@ chorus.dialogs.ComposeKaggleMessage = chorus.dialogs.Base.extend({
     },
 
     columnsLoaded: function() {
-        if (!this.requiredDatasets.allLoaded()) {
+        if (!this.requiredDatasets.allResponded()) {
             return;
         }
 

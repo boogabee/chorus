@@ -14,7 +14,6 @@ describe("chorus.views.KaggleFilter", function () {
 
     describe("#render", function() {
         beforeEach(function () {
-            stubDefer();
             this.selectMenuStub = stubSelectMenu();
             spyOn(chorus, "styleSelect").andCallThrough();
             this.model.set({'input': { value: "QSAR"}});
@@ -93,7 +92,7 @@ describe("chorus.views.KaggleFilter", function () {
                     this.view.validateInput();
 
                     expect(this.view.markInputAsInvalid).toHaveBeenCalled();
-                    var args = this.view.markInputAsInvalid.mostRecentCall.args;
+                    var args = this.view.markInputAsInvalid.lastCall().args;
 
                     expect(args[0]).toBe(this.view.$(".filter.default input"));
                     expect(args[1]).toMatchTranslation("kaggle.filter.rank_required");

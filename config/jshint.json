@@ -1,0 +1,103 @@
+{
+    "bitwise":  true,      // true if bitwise operators should not be allowed
+    "newcap":   false,     // true if Initial Caps must be used with constructor functions
+    "eqeqeq":   true,      // true if === should be required (for ALL equality comparisons)
+    "immed":    false,     // true if immediate function invocations must be wrapped in parens
+    "nomen":    false,     // true if initial or trailing underscore in identifiers should be forbidden
+    "onevar":   false,     // true if only one var statement per function should be allowed
+    "plusplus": false,     // true if ++ and -- should not be allowed
+    "strict":   false,     // true if the ES5 "use strict"; pragma is required
+    "undef":    true,      // true if variables must be declared before used
+    "unused":   "vars",    // true if variables must be used if they are declared
+    "white":    false,     // true if strict whitespace rules apply (see also 'indent' option)
+    "indent":   4,     // Number of spaces that should be used for indentation
+    "trailing": true,      // true if a trailing whitespace at the end of the line is an error
+    "latedef":  true,      // true if variable must be defined before it was used
+    "debug":    false,     // true if debugger statements should be allowed (set to false, before going into production)
+    "evil":     false,     // true if eval should be allowed
+    "forin":    false,     // true if unfiltered 'for in' statements should be allowed
+    "laxbreak": false,     // true if statement breaks should not be checked
+    "sub":      true,      // true if subscript notation may be used for expressions better expressed in dot notation
+    "expr":     true,      // true if expressions are allowed in statements such as e && e.preventDefault()
+    "loopfunc": true,      // true if functions should be allowed to be defined within loops
+    "asi":      false,     // true if automatic semicolon insertion should be tolerated
+    "boss":     false,     // true if advanced usage of assignments and == should be allowed
+    "curly":    false,     // true if curly braces around blocks should be required (even in if/for/while)
+    "noarg":    true,      // true if arguments.caller and arguments.callee should be disallowed
+    "noempty":  true,      // true if empty blocks should be disallowed
+    "nonew":    false,     // true if using `new` for side-effects should be disallowed
+    "maxlen":   1000,      // basically no line limit
+    "passfail": false,     // true if the scan should stop on first error (per file)
+    "browser":  true,      // true if the standard browser globals should be predefined
+    "rhino":    false,     // true if the Rhino environment globals should be predefined
+    "devel":    false,     // true if functions like alert, confirm, console, prompt etc. are predefined
+    "couch":    false,     // true if CouchDB globals should be predefined
+    "node":     false,     // true if the Node.js environment globals should be predefined
+    "globals": {
+        "jQuery": false,
+        "$": false,
+        "Backbone": false,
+        "_": false,
+        "I18n": false,
+        "t": false,
+        "Messenger": false,
+        "BrowserDetect": false,
+        "CFInstall": false,
+        "Handlebars": false,
+        "URI": false,
+        "d3": false,
+        "CodeMirror": false,
+        "datePickerController": false,
+        "FMCOpenHelp": false,
+        "chorus": false,
+        "naturalSort": false,
+        "Spinner": false,
+        "XMLSerializer": false,
+        "CSV": false,
+        "Slick": false,
+        "moment": false,
+        "jstz": false,
+        "RailsTimeZone": false,
+
+        // spec specific globals to follow
+
+        "jasmine": false,
+        "describe": false,
+        "xdescribe": false,
+        "context": false,
+        "xcontext": false,
+        "spyOn": false,
+        "it": false,
+        "xit": false,
+        "specify": false,
+        "xspecify": false,
+        "itBehavesLike": false,
+        "xitBehavesLike": false,
+        "expect": false,
+        "beforeEach": false,
+        "afterEach": false,
+        "mostRecentAjaxRequest": false,
+        "clearAjaxRequests": false,
+        "sinon": false,
+        "backboneFixtures": false,
+        "BackboneFixtures": false,
+        "stubModals": false,
+        "spyOnEvent": false,
+        "setLoggedInUser": false,
+        "unsetLoggedInUser": false,
+        "resetBackboneEventSpies": false,
+        "stubView": false,
+        "stubDelay": false,
+        "unstubDelay": false,
+        "qtipElements": false,
+        "stubQtip": false,
+        "stubSelectMenu": false,
+        "stubClEditor": false,
+        "unstubClEditor": false,
+        "stubFileUpload": false,
+        "stubKeyboardMetaKey": false,
+        "cleditor": false,
+        "enterTag": false,
+        "loadConfig": false
+    }
+}

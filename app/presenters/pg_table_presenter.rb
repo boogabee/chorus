@@ -1,0 +1,3 @@
+class PgTablePresenter < TablePresenter
+
+end

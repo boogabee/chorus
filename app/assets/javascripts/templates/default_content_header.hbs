@@ -1,0 +1,14 @@
+<div class="item_metadata">
+  {{#if sandbox}}
+    <div class="found_in">{{datasetLocation sandbox "workspace.sandbox_schema"}}</div>
+  {{/if}}
+</div>
+<div class="menus">
+</div>
+{{#if imageUrl}}
+    <img class="icon" {{#if imageTitle}}title="{{imageTitle}}"{{/if}} src="{{imageUrl}}"/>
+{{/if}}
+<h1 title="{{title}}">{{title}}</h1>
+{{#if showTagBox}}
+  <div class="tag_box"></div>
+{{/if}}

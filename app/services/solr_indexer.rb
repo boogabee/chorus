@@ -5,27 +5,49 @@ module SolrIndexer
   end
 
   def self.reindex(types)
-    Rails.logger.info("Starting Solr Re-Index")
+    self.log("Starting Solr Full Re-Index")
     types_to_index(types).each(&:solr_reindex)
     Sunspot.commit
-    Rails.logger.info("Solr Re-Index Completed")
+    self.log("Solr Full Re-Index Completed")
   end
 
   def self.refresh_external_data
-    Rails.logger.info("Starting Solr Refresh")
-    GpdbInstance.find_each do |gpdb_instance|
-      gpdb_instance.refresh_all(:mark_stale => true)
+    self.log("Starting Solr Refresh")
+    DataSource.find_each do |ds|
+      QC.enqueue_if_not_queued("DataSource.refresh", ds.id, 'mark_stale' => true, 'force_index' => false)
     end
-    HadoopInstance.find_each do |hadoop_instance|
-      hadoop_instance.refresh
+    HdfsDataSource.find_each do |ds|
+      QC.enqueue_if_not_queued("HdfsDataSource.refresh", ds.id)
     end
-    Rails.logger.info("Solr Refresh Completed")
+    self.log("Solr Refreshes Queued")
+  end
+
+  def self.reindex_objects(object_identifiers)
+    self.log("Starting Solr Partial Reindex")
+    objects = object_identifiers.map do |ary|
+      begin
+        klass = ary[0].constantize
+        id = ary[1]
+        klass.find(id)
+      rescue ActiveRecord::RecordNotFound
+        nil
+      end
+    end
+    objects.compact!
+    Sunspot.index objects
+    Sunspot.commit
+    self.log("Solr Partial Reindex Completed")
   end
 
   private
 
+  def self.log(message)
+    Rails.logger.debug(message)
+  end
+
   def self.types_to_index(types)
     types = Array(types)
+    types = types.reject { |t| t.blank? }
 
     if types.include? "all"
       Sunspot.searchable

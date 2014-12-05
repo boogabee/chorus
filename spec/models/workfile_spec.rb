@@ -1,49 +1,60 @@
 require 'spec_helper'
 
 describe Workfile do
+  it_behaves_like "a notable model" do
+    let!(:note) do
+      Events::NoteOnWorkfile.create!({
+          :actor => users(:owner),
+          :workfile => model,
+          :body => "This is the body"
+      }, :as => :create)
+    end
+
+    let!(:model) { FactoryGirl.create(:workfile) }
+  end
+
+  it { should respond_to(:create_new_version) }
+  it { should respond_to(:attempt_data_source_connection) }
+  it { should respond_to(:remove_draft) }
+
   describe "validations" do
-    context "file name with valid characters" do
-      it "is valid" do
-        workfile = Workfile.new :file_name => 'work_(-file).sql'
-
-        workfile.should be_valid
-      end
-    end
-
-    context "file name with question mark" do
-      it "is not valid" do
-        workfile = Workfile.new :file_name => 'workfile?.sql'
-
-        workfile.should_not be_valid
-        workfile.errors[:file_name].should_not be_empty
-      end
-    end
+    it { should validate_presence_of :file_name }
+    it { should validate_presence_of :workspace }
+    it { should validate_presence_of :owner }
 
     context "normalize the file name" do
       let!(:another_workfile) { FactoryGirl.create(:workfile, :file_name => 'workfile.sql') }
+      let(:workfile) { Workfile.new(:file_name => "workfile.sql") }
+      let(:workspace) { another_workfile.workspace }
+      let(:resolve_name_conflicts) { false }
+
+      before do
+        workfile.resolve_name_conflicts = resolve_name_conflicts
+        workfile.workspace = another_workfile.workspace
+        workfile.owner = another_workfile.owner
+      end
+
+      context "when not resolving name conflicts" do
+        it "is not valid" do
+          workfile.should_not be_valid
+          workfile.file_name.should == "workfile.sql"
+        end
+      end
 
       context "first conflict" do
+        let(:resolve_name_conflicts) { true }
         it "renames and turns the workfile valid" do
-          workfile = Workfile.new(:versions_attributes => [{:contents => test_file("workfile.sql", "text/sql")}])
-          workfile.workspace = another_workfile.workspace
-          workfile.owner = another_workfile.owner
-
           workfile.should be_valid
           workfile.file_name.should == 'workfile_1.sql'
         end
       end
 
       context "multiple conflicts" do
-        let(:workspace) { FactoryGirl.create(:workspace) }
-        let!(:another_workfile_1) { FactoryGirl.create(:workfile, :workspace => workspace, :file_name => 'workfile.sql') }
-        let!(:another_workfile_2) { FactoryGirl.create(:workfile, :workspace => workspace, :file_name => 'workfile.sql') }
+        let(:resolve_name_conflicts) { true }
+        let!(:another_workfile_2) { FactoryGirl.create(:workfile, :workspace => workspace, :file_name => 'workfile.sql', :resolve_name_conflicts => true) }
 
-        it "increases the version number" do
-          workfile = Workfile.new :file_name => 'workfile.sql'
-          workfile.workspace = workspace
-          workfile.owner = another_workfile_1.owner
-
-          workfile.save
+        it "increases the name suffix number" do
+          workfile.resolve_name_conflicts = true
           workfile.should be_valid
           workfile.file_name.should == 'workfile_2.sql'
         end
@@ -51,224 +62,34 @@ describe Workfile do
     end
   end
 
-  describe ".validate_name_uniqueness" do
-    let!(:workspace) { FactoryGirl.create(:workspace) }
-    let!(:other_workspace) { FactoryGirl.create(:workspace) }
-    let!(:existing_workfile) { FactoryGirl.create(:workfile, :workspace => workspace, :file_name => 'workfile.sql') }
-
-    it "returns false and adds an error to the error list if name in workspace is taken" do
-      new_workfile = Workfile.new :file_name => 'workfile.sql'
-      new_workfile.workspace = workspace
-      new_workfile.validate_name_uniqueness.should be_false
-      new_workfile.errors[:file_name].should_not be_empty
-    end
-
-    it "returns true if there are no conflicts in its own workspace" do
-      new_workfile = Workfile.new :file_name => 'workfile.sql'
-      new_workfile.workspace = other_workspace
-      new_workfile.validate_name_uniqueness.should be_true
-      new_workfile.errors[:file_name].should be_empty
-    end
-  end
-
-  describe ".create_from_file_upload" do
-    let(:user) { users(:admin) }
-    let(:workspace) { workspaces(:public_with_no_collaborators) }
-
-
-    shared_examples "file upload" do
-      it "creates a workfile in the database" do
-        subject.should be_valid
-        subject.should be_persisted
-      end
-
-      it "creates a workfile version in the database" do
-        subject.versions.should have(1).version
-
-        version = subject.versions.first
-        version.should be_valid
-        version.should be_persisted
-      end
-
-      it "sets the attributes of the workfile" do
-        subject.owner.should == user
-        subject.file_name.should == 'workfile.sql'
-        subject.workspace.should == workspace
-      end
-
-      it "has a valid latest version" do
-        subject.latest_workfile_version.should_not be_nil
-      end
-
-      it "sets the modifier of the first, recently created version" do
-        subject.versions.first.modifier.should == user
-      end
-
-      it "sets the attributes of the workfile version" do
-        version = subject.versions.first
-
-        version.contents.should be_present
-        version.version_num.should == 1
-      end
-
-      it "does not set a commit message" do
-        subject.versions.first.commit_message.should be_nil
-      end
-    end
-
-    context "with versions" do
-      let(:attributes) do
-        {
-          :description => "Nice workfile, good workfile, I've always wanted a workfile like you",
-          :versions_attributes => [{
-                                     :contents => test_file('workfile.sql')
-                                   }]
-        }
-      end
-
-      subject { described_class.create_from_file_upload(attributes, workspace, user) }
-
-      it_behaves_like "file upload"
-
-      it "sets the content of the workfile" do
-        subject.versions.first.contents.size.should > 0
-      end
-
-      it "sets the right description on the workfile" do
-        subject.description.should == "Nice workfile, good workfile, I've always wanted a workfile like you"
-      end
-    end
-
-    context "without a version" do
-      subject { described_class.create_from_file_upload({:file_name => 'workfile.sql'}, workspace, user) }
-
-      it_behaves_like "file upload"
-
-      it "sets the file as blank" do
-        subject.versions.first.contents.size.should == 0
-        subject.versions.first.file_name.should == 'workfile.sql'
-      end
-    end
-
-    context "with an image extension on a non-image file" do
-      let(:attributes) do
-        {
-          :versions_attributes => [{
-                                     :contents => test_file('not_an_image.jpg')
-                                   }]
-        }
-      end
-
-      it "throws an exception" do
-        expect { described_class.create_from_file_upload(attributes, workspace, user) }.to raise_error(ActiveRecord::RecordInvalid)
-      end
-
-      it "does not create a orphan workfile" do
-        expect do
-          begin
-            described_class.create_from_file_upload(attributes, workspace, user)
-          rescue Exception => e
-          end
-        end.to_not change(Workfile, :count)
-      end
-    end
-  end
-
-  describe ".create_from_svg" do
-    let(:user) { users(:admin) }
-    let(:workspace) { workspaces(:public_with_no_collaborators) }
-    let(:filename) { 'svg_img.png' }
-    subject { described_class.create_from_svg({:svg_data => '<svg xmlns="http://www.w3.org/2000/svg"></svg>', :file_name => filename}, workspace, user) }
-
-    it "should make a new workfile with the initial version set to the image generated by the SVG data" do
-      subject.versions.first.contents.size.should_not == 0
-      subject.versions.first.file_name.should == filename
-    end
-
-    it "creates a workfile in the database" do
-      subject.should be_valid
-      subject.should be_persisted
-    end
-
-    it "creates a workfile version in the database" do
-      subject.versions.should have(1).version
-
-      version = subject.versions.first
-      version.should be_valid
-      version.should be_persisted
-    end
-
-    it "sets the attributes of the workfile" do
-      subject.owner.should == user
-      subject.file_name.should == filename
-      subject.workspace.should == workspace
-    end
-
-    it "has a valid latest version" do
-      subject.latest_workfile_version.should_not be_nil
-    end
-
-    it "sets the modifier of the first, recently created version" do
-      subject.versions.first.modifier.should == user
-    end
-
-    it "sets the attributes of the workfile version" do
-      version = subject.versions.first
-
-      version.contents.should be_present
-      version.version_num.should == 1
-    end
-
-    it "does not set a commit message" do
-      subject.versions.first.commit_message.should be_nil
-    end
-  end
-
-  describe "#build_new_version" do
-
-    let(:user) { users(:owner) }
-    let(:workspace) { FactoryGirl.build(:workspace, :owner => user) }
-    let(:workfile) { FactoryGirl.build(:workfile, :workspace => workspace, :file_name => 'workfile.sql') }
-
-    context "when there is a previous version" do
-      let(:workfile_version) { FactoryGirl.build(:workfile_version, :workfile => workfile) }
-
-      before do
-        workfile_version.contents = test_file('workfile.sql')
-        workfile_version.save
-      end
-
-      it "build a new version with version number increased by 1 " do
-        workfile_version = workfile.build_new_version(user, test_file('workfile.sql'), "commit Message")
-        workfile_version.version_num.should == 2
-        workfile_version.commit_message.should == "commit Message"
-        workfile_version.should_not be_persisted
-      end
-    end
-
-    context "creating the first version" do
-      it "build a version with version number as 1" do
-        workfile_version = workfile.build_new_version(user, test_file('workfile.sql'), "commit Message")
-        workfile_version.version_num.should == 1
-        workfile_version.commit_message.should == "commit Message"
-        workfile_version.should_not be_persisted
-      end
-    end
-  end
-
-  describe "#has_draft" do
+  describe "name uniqueness validation" do
     let(:workspace) { workspaces(:public) }
-    let(:user) { workspace.owner }
-    let!(:workfile1) { FactoryGirl.create(:workfile, :file_name => "some.txt", :workspace => workspace) }
-    let!(:workfile2) { FactoryGirl.create(:workfile, :file_name => "workfile.sql", :workspace => workspace) }
-    let!(:draft) { FactoryGirl.create(:workfile_draft, :workfile_id => workfile1.id, :owner_id => user.id) }
+    let(:other_workspace) { workspaces(:private) }
+    let(:existing_workfile) { workspace.workfiles.first! }
 
-    it "has_draft return true for workfile1" do
-      workfile1.has_draft(user).should == true
+    it "is invalid if a workfile in the workspace has the same name" do
+      new_workfile = FactoryGirl.build(:workfile, :file_name => existing_workfile.file_name, :workspace => workspace)
+      new_workfile.should_not be_valid
+      new_workfile.should have_error_on(:file_name)
     end
 
-    it "has_draft return false for workfile2" do
-      workfile2.has_draft(user).should == false
+    it "enforces uniqueness only among non-deleted workfiles" do
+      stub(Alpine::API).delete_work_flow
+      existing_workfile.destroy
+      new_workfile = FactoryGirl.build(:workfile, :file_name => existing_workfile.file_name, :workspace => workspace)
+      new_workfile.should be_valid
+    end
+
+    it "is valid if a workfile in another workspace has the same name" do
+      new_workfile = FactoryGirl.build(:workfile, :file_name => existing_workfile.file_name, :workspace => other_workspace)
+      new_workfile.should be_valid
+    end
+
+    it "is invalid if you change a name to an existing name" do
+      new_workfile = FactoryGirl.build(:workfile, :file_name => 'totally_unique', :workspace => workspace)
+      new_workfile.should be_valid
+      new_workfile.file_name = existing_workfile.file_name
+      new_workfile.should_not be_valid
     end
   end
 
@@ -276,10 +97,31 @@ describe Workfile do
     it { should belong_to :owner }
     it { should have_many :activities }
     it { should have_many :events }
+    it { should have_many :notes }
+    it { should have_many :comments }
 
-    it "belongs to an execution_schema" do
-      workfile = workfiles(:private)
-      workfile.execution_schema.should be_a GpdbSchema
+    describe "#notes" do
+      let(:workfile) { workfiles(:private) }
+      let(:author) { workfile.owner }
+
+      it 'returns notes' do
+        set_current_user(author)
+        note = Events::NoteOnWorkfile.create!({:note_target => workfile, :body => "note on a workfile"}, :as => :create)
+        workfile.reload
+        workfile.notes.first.should be_a(Events::NoteOnWorkfile)
+        workfile.notes.should == [note]
+      end
+    end
+
+    it "destroys dependent versions" do
+      workfile = workfiles(:public)
+      versions = workfile.versions
+      versions.length.should > 0
+
+      workfile.destroy
+      versions.each do |version|
+        WorkfileVersion.find_by_id(version.id).should be_nil
+      end
     end
   end
 
@@ -287,6 +129,164 @@ describe Workfile do
     it "indexes text fields" do
       Workfile.should have_searchable_field :file_name
       Workfile.should have_searchable_field :description
+      Workfile.should have_searchable_field :version_comments
+    end
+  end
+
+  describe "entity_type_name" do
+    it "should return 'workfile'" do
+      Workfile.new.entity_type_name.should == 'workfile'
+    end
+  end
+
+  describe "copy" do
+    let(:workfile) { workfiles(:public) }
+    let(:workspace) { workspaces(:private) }
+    let(:user) { users(:admin) }
+
+    it "copies the associated data" do
+      new_workfile = workfile.copy(user, workspace)
+      new_workfile.file_name.should == workfile.file_name
+      new_workfile.description.should == workfile.description
+      new_workfile.workspace.should == workspace
+      new_workfile.owner.should == user
+    end
+
+    it "copies any additional_data" do
+      workfile.additional_data["something"] = "here"
+      new_workfile = workfile.copy(user, workspace)
+      new_workfile.additional_data["something"].should == "here"
+    end
+
+    it "should copy file to new name if new name is provided" do
+      test_name = "whatever.txt"
+      file = workfile.copy(user,workspace,test_name)
+      file.file_name.should == test_name
+    end
+  end
+
+  describe "copy!" do
+    let(:workfile) { workfiles(:public) }
+    let(:workspace) { workspaces(:private) }
+    let(:user) { users(:admin) }
+
+    it "copies stuff & saves the new workfile" do
+      mock.proxy(workfile).copy(user, workspace, 'fooo')
+      new_workfile = workfile.copy!(user, workspace, 'fooo')
+      new_workfile.should be_persisted
+    end
+
+    it "can throw errors" do
+      expect {
+        workfile.copy!(user, workspace, "////")
+      }.to raise_error(ActiveRecord::RecordInvalid)
+    end
+  end
+
+  describe "create" do
+    let(:workspace) { workspaces(:empty_workspace) }
+    let(:user) { users(:owner) }
+
+    it 'updates has_added_workfile on the workspace to true' do
+      workspace.has_added_workfile.should be_false
+      Workfile.build_for(:workspace => workspace, :owner => user, :file_name => 'test.sql').save!
+      workspace.reload.has_added_workfile.should be_true
+    end
+
+    it 'makes a WorkfileCreated event' do
+      set_current_user(user)
+      description = 'i am a description'
+      expect {
+        Workfile.build_for(:workspace => workspace, :owner => user, :file_name => 'test.sql', :description => description).save!
+      }.to change(Events::WorkfileCreated, :count).by(1)
+      event = Events::WorkfileCreated.by(user).last
+      event.workfile.description.should == description
+      event.additional_data['commit_message'].should == description
+      event.workspace.should == workspace
+    end
+
+    context 'when file_name is invalid' do
+      it 'has a validation error rather than exploding' do
+        workfile = Workfile.build_for(:workspace => workspace, :owner => user, :file_name => 'a/test.sql')
+        workfile.save
+        workfile.should have_error_on(:file_name)
+      end
+    end
+
+  end
+
+  describe 'user_modified_at' do
+    let(:workfile) { workfiles(:public) }
+
+    it 'does not update when adding tags' do
+      expect do
+        workfile.tag_list=(['garden', 'gnomes'])
+      end.not_to change { workfile.user_modified_at }
+    end
+
+    it 'does not update when changing execution schema' do
+      schema = schemas(:default)
+      expect do
+        workfile.execution_schema = schema
+        workfile.save
+      end.not_to change { workfile.user_modified_at }
+    end
+
+    it "updates on create" do
+      workfile = FactoryGirl.create(:workfile)
+      workfile.user_modified_at.should_not be_nil
+    end
+  end
+
+  it_should_behave_like "taggable models", [:workfiles, :public]
+
+  it_behaves_like 'a soft deletable model' do
+    let(:model) { workfiles(:public) }
+  end
+
+  describe "changing the extension" do
+    subject { workfile.update_attributes(:file_name => new_file_name) }
+
+    context "renaming a text file to .sql" do
+      let(:workfile) { workfiles("text.txt") }
+      let(:new_file_name) { 'ham.sQl' }
+
+      it "changes the content_type to 'sql'" do
+        subject
+        workfile.reload.content_type.should == 'sql'
+      end
+    end
+
+    context "renaming a .png file to .sql" do
+      let(:workfile) { workfiles("image.png") }
+      let(:new_file_name) { 'ham.sql' }
+
+      it "does not change the content_type" do
+        expect do
+          subject
+        end.not_to change(workfile, :content_type)
+        workfile.reload.content_type.should == 'image'
+      end
+    end
+
+    context "renaming a sql file to .txt" do
+      let(:workfile) { workfiles("sql.sql") }
+      let(:new_file_name) { 'ham.tXt' }
+
+      it "changes the content_type to 'txt'" do
+        subject
+        workfile.reload.content_type.should == 'text'
+      end
+    end
+
+    context "renaming a sql file to .png" do
+      let(:workfile) { workfiles("sql.sql") }
+      let(:new_file_name) { 'ham.png' }
+
+      it "leaves the content_type alone" do
+        subject
+        workfile.reload.content_type.should == 'sql'
+      end
     end
   end
 end

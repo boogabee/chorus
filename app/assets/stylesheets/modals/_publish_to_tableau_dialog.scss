@@ -1,10 +1,21 @@
 .publish_to_tableau_dialog {
-  width: 450px;
-
   .target_location {
-    width: 450px;
-    @include results-console-message;
     @include ellipsis;
-    padding-bottom: 10px;
+    padding-bottom: 8px;
+  }
+
+  label {
+    margin-top: 10px;
+    display: inline-block;
+  }
+
+  .username, .password {
+    margin-left: 0px;
+    width: $default-dialog-width/2 - 30px;
+    display: inline-block;
+  }
+
+  .password {
+    margin-left: 25px;
   }
 }

@@ -1,86 +1,67 @@
 chorus.views.ActivityListHeader = chorus.views.Base.extend({
     constructorName: "ActivityListHeaderView",
     templateName : "activity_list_header",
+    additionalClass: 'list_header',
     persistent: true,
 
     events: {
-        "click .all":     "onAllClicked",
-        "click .insights": "onInsightsClicked"
+        "change .activities_filter": "onFilterChange"
+    },
+
+    subviews: {
+        '.tag_box': 'tagBox'
     },
 
     setup: function() {
-        var options = {}
-        if (this.modelIsWorkspace()) {
-            options.urlParams = {
-                workspaceId: this.model.get("id"),
-                entityType: "workspace"
-            };
+        if(!this.collection) {
+            this.collection = this.model.activities();
         }
-        this.insightCount = chorus.models.InsightCount.count(options);
-        this.requiredResources.add(this.insightCount);
-        this.insightCount.fetch();
-        this.collection = this.options.collection || (this.model && this.model.activities());
 
         this.allTitle = this.options.allTitle;
         this.insightsTitle = this.options.insightsTitle;
+        this.tagBox = this.options.tagBox;
+    },
+
+    postRender: function() {
+
+        _.defer(_.bind(function () {
+            chorus.styleSelect(this.selectElement());
+        }, this));
+        var value = this.collection.attributes.insights ? "only_insights" : "all_activity";
+        this.selectElement().val(value);
     },
 
     additionalContext: function() {
         return {
             title: this.pickTitle(),
-            count: this.insightCount.get("numberOfInsight"),
-            iconUrl: this.model && this.model.defaultIconUrl()
+            iconUrl: this.model && this.model.defaultIconUrl(),
+            tagBox: this.tagBox
         };
     },
 
-    modelIsWorkspace: function() {
-        return this.model && this.model instanceof chorus.models.Workspace;
-    },
-
     pickTitle: function() {
-        if (this.modelIsWorkspace()) {
-            return this.model.get("name");
-        } else {
-            return this.collection.attributes.insights ? this.insightsTitle : this.allTitle;
-        }
+        return this.collection.attributes.insights ? this.insightsTitle : this.allTitle;
     },
 
-    postRender: function() {
-        if (this.collection.attributes.insights) {
-            this.$("a.insights").addClass("active")
-        } else {
-            this.$("a.all").addClass("active")
-        }
-    },
-
-    resourcesLoaded: function() {
-        this.bindings.add(this.collection, "reset", this.updateInsightCount);
-    },
-
-    updateInsightCount: function() {
-        this.insightCount.bindOnce("loaded", this.render, this);
-        this.insightCount.fetch();
-    },
-
-    onAllClicked: function(e) {
-        e.preventDefault();
-
-        this.$(".insights").removeClass("active");
-        this.$(".all").addClass("active");
-
-        this.collection.attributes.insights = false;
-        delete this.collection.attributes.workspace;
+    reloadCollection: function() {
+        this.collection.loaded = false;
+        this.collection.reset();
         this.collection.fetch();
+        this.render();
     },
 
-    onInsightsClicked: function(e) {
-        e.preventDefault();
+    onFilterChange: function(e) {
+        e && e.preventDefault();
 
-        this.$(".all").removeClass("active");
-        this.$(".insights").addClass("active");
+        this.collection.attributes.insights = this.isInsightsOnly();
+        this.reloadCollection();
+    },
 
-        this.collection.attributes.insights = true;
-        this.collection.attributes.workspace = this.model;
-        this.collection.fetch();
+    isInsightsOnly: function() {
+        return this.selectElement().val() === "only_insights";
+    },
+
+    selectElement: function() {
+        return this.$("select.activities_filter");
     }
 });

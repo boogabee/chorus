@@ -1,6 +1,7 @@
 chorus.Mixins.ServerErrors = {
-   serverErrorMessages: function() {
+    serverErrorMessages: function() {
         var output = [];
+        var fullKey;
         if (!this.serverErrors) { return output; }
 
         if (this.serverErrors.fields) {
@@ -11,16 +12,32 @@ chorus.Mixins.ServerErrors = {
                         message;
 
                     if (I18n.lookup(fullKey)) {
-                        message = t(fullKey, context)
+                        message = t(fullKey, context);
                     } else {
                         context.field = _.humanize(field);
-                        message = t(genericKey, context)
+                        message = t(genericKey, context);
                     }
 
-                    output.push(message)
-                })
-            })
+                    output.push(message);
+                });
+            });
+        } else if (this.serverErrors.record) {
+            fullKey = "record_error." + this.serverErrors.record;
+
+            if (I18n.lookup(fullKey)) {
+                output = [t(fullKey, this.serverErrors)];
+            }
+        } else if (this.serverErrors.service) {
+            fullKey = "service_error." + this.serverErrors.service;
+
+            if (I18n.lookup(fullKey)) {
+                output = [t(fullKey)];
+            }
         }
+        if (this.serverErrors.message) {
+            output.push(this.serverErrors.message);
+        }
+
         return output;
     },
 

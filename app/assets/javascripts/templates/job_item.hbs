@@ -1,0 +1,53 @@
+<span class="image">
+    <img src="{{iconUrl}}"/>
+</span>
+
+<div class="item_information">
+
+    <div class="item_name">
+        {{#if url}}
+            <a title="{{name}}" class="name" href="{{url}}">{{name}}</a>
+        {{else}}
+            <span class="name">{{name}}</span>
+        {{/if}}
+    </div>
+
+    <div class="item_metadata">
+        {{#if frequency}}
+            <span class="frequency"><strong>{{frequency}}</strong></span>
+        {{/if}}
+
+        {{#if nextRun}}
+            <span class="next_run">
+                <strong>{{t "job.next_run"}}</strong>
+                {{displayTimestamp nextRun}}
+            </span>
+        {{/if}}
+
+        <span class="last_run">
+            <strong>{{t "job.last_run"}}:</strong>
+            {{#if lastRun}}
+                <a class='last_run_date' href='#'>{{displayTimestamp lastRun}} {{t lastRunLinkKey}}</a>
+            {{else}}
+                -
+            {{/if}}
+        </span>
+
+        <span class="state">
+            {{#if running}}
+                <span class='loading_spinner'></span>
+            {{/if}}
+
+            {{t stateKey}}
+        </span>
+
+        {{#if title}}
+            <div class="title" title="{{title}}">{{title}}</div>
+        {{/if}}
+        {{#if lastComment}}
+            {{> itemLastComment}}
+        {{/if}}
+
+        {{> itemTags}}
+    </div>
+</div>

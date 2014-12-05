@@ -40,16 +40,17 @@ class InstallerIO
   end
 
   MESSAGES = {
-      destination_path: "Please enter Chorus destination path",
-      data_path: "Please enter the data storage directory",
-      confirm_upgrade: "Existing version of Chorus detected. Upgrading will restart services.  Continue now?",
+      destination_path: "Please enter the full path to the Chorus installation directory",
+      data_path: "Please enter the full path to the Chorus data directory (recommended 500GB)",
+      confirm_upgrade: 'Existing version of Chorus detected. Upgrading will stop services. Continue now?',
       passphrase: "Enter optional passphrase to generate a recoverable secret key for encrypting passwords.  By default, a random key will be generated.",
       confirm_legacy_upgrade: "Chorus 2.1 installation detected, do you want to upgrade to 2.2?",
       legacy_destination_path: "Chorus 2.2 cannot be installed in the same directory as 2.1, please provide an empty directory",
+      accept_terms: "Do you accept the terms above?",
       select_os: <<-TEXT
 Could not detect your Linux version. Please select one of the following:
-  [1] - RedHat (CentOS/RHEL) 5.5 or compatible
-  [2] - RedHat (CentOS/RHEL) 6.2 or compatible
+  [1] - RedHat (CentOS/RHEL) 5.5+ or compatible
+  [2] - RedHat (CentOS/RHEL) 6.2+ or compatible
   [3] - SuSE Enterprise Linux Server 11 or compatible
   [4] - Abort install
       TEXT

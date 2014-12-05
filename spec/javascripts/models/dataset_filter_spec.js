@@ -1,8 +1,8 @@
 describe("chorus.models.DatasetFilter", function() {
     beforeEach(function() {
         this.model = new chorus.models.DatasetFilter();
-        this.column = fixtures.databaseColumn({parentName: "Mom"});
-        this.column.dataset = fixtures.dataset({ objectName: "Mom"});
+        this.column = backboneFixtures.databaseColumnSet().at(0);
+        this.column.dataset = backboneFixtures.dataset({ objectName: "Mom"});
         this.model.set({column: this.column, comparator: "someComparator", input: {value: "one"}});
     });
 
@@ -81,13 +81,14 @@ describe("chorus.models.DatasetFilter", function() {
     describe("#sqlString", function() {
         beforeEach(function() {
             this.column.set({typeCategory: "STRING"});
-            this.model.set({comparator: "not_equal", input: {value: "test"}})
+            this.model.set({comparator: "not_equal", input: {value: "test"}});
             spyOn(this.model.getFilterMap().comparators.not_equal, "generate");
             this.model.sqlString();
         });
 
         it("calls the generate function of the correct filter type", function() {
-            var qualifiedName = chorus.Mixins.dbHelpers.safePGName(this.column.get("parentName"), this.column.get("name"));
+            expect(this.column.dataset).not.toBeNull();
+            var qualifiedName = chorus.Mixins.dbHelpers.ensureDoubleQuoted(this.column.dataset.selectName(), this.column.get("name"));
             expect(this.model.getFilterMap().comparators.not_equal.generate).toHaveBeenCalledWith(qualifiedName, "test");
         });
 

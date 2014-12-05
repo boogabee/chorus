@@ -4,14 +4,20 @@ chorus.models = {
         chorus.Mixins.Events,
         chorus.Mixins.dbHelpers,
         chorus.Mixins.Fetching,
-        chorus.Mixins.ServerErrors
+        chorus.Mixins.ServerErrors,
+        chorus.Mixins.Taggable
     ).extend({
         constructorName: "Model",
 
-        isDeleted: function() {
-            return this.get("isDeleted") && (this.get("isDeleted") == true || this.get("isDeleted") == "true");
+        eventType: function() {
+            return this.get('entityType');
         },
 
+        isDeleted: function() {
+            return this.get("isDeleted") && (this.get("isDeleted") === true || this.get("isDeleted") === "true");
+        },
+
+        //Build the url for a model based on the urlTemplate in the model's context.
         url: function(options) {
             var template = _.isFunction(this.urlTemplate) ? this.urlTemplate(options) : this.urlTemplate;
             var context = _.extend({}, this.attributes, { entityId: this.entityId, entityType: this.entityType });
@@ -24,9 +30,9 @@ chorus.models = {
             return uri.toString();
         },
 
-        activities: function() {
+        activities: function(opts) {
             if (!this._activities) {
-                this._activities = chorus.collections.ActivitySet.forModel(this);
+                this._activities = new chorus.collections.ActivitySet([], _.extend({entity: this}, opts));
                 this.bind("invalidated", this._activities.fetch, this._activities);
             }
             return this._activities;
@@ -43,7 +49,7 @@ chorus.models = {
             };
 
             options.error = function(model, xhr) {
-                model.handleRequestFailure("saveFailed", xhr)
+                model.handleRequestFailure("saveFailed", xhr, options);
                 if (error) error(model, xhr);
             };
 
@@ -65,19 +71,13 @@ chorus.models = {
 
         destroy: function(options) {
             options || (options = {});
-            if (this.isNew()) return this.trigger('destroy', this, this.collection, options);
-            var model = this;
-            var success = options.success, error = options.error;
-            options.success = function(data, status, xhr) {
-                if (!model.set(model.parse(data, xhr), options)) return false;
-                model.trigger("destroy", model, model.collection, options);
-                if (success) success(model, data);
-            };
-            options.error = function(xhr) {
-                model.handleRequestFailure("destroyFailed", xhr)
+            options.wait = true;
+            var error = options.error;
+            options.error = function(model, xhr) {
+                model.handleRequestFailure("destroyFailed", xhr);
                 if (error) error(model);
             };
-            return (this.sync || Backbone.sync).call(this, 'delete', this, options);
+            return Backbone.Model.prototype.destroy.call(this, options);
         },
 
         declareValidations: $.noop,
@@ -111,12 +111,13 @@ chorus.models = {
             this.errors[attr] = this.errors[attr] || t((custom_key || message_key), vars);
         },
 
+        //Client-side model validation used to verify that `attr` is present in `newAttrs` and is not blank/whitespace.
         require: function(attr, newAttrs, messageKey) {
             var value = newAttrs && newAttrs.hasOwnProperty(attr) ? newAttrs[attr] : this.get(attr);
 
             var present = value;
 
-            if (value && _.isString(value) && value.match(chorus.ValidationRegexes.AllWhitespace())) {
+            if (value && _.isString(value) && _.stripTags(value).match(chorus.ValidationRegexes.AllWhitespace())) {
                 present = false;
             }
 
@@ -138,7 +139,7 @@ chorus.models = {
             value = value && value.toString();
 
             if (allowBlank && !value) {
-                return
+                return;
             }
 
             if (!value || !value.match(regex)) {
@@ -147,7 +148,7 @@ chorus.models = {
         },
 
         requireValidEmailAddress:function (name, newAttrs, messageKey) {
-            this.requirePattern(name, /[\w\.-]+(\+[\w-]*)?@([\w-]+\.)+[\w-]+/, newAttrs, messageKey);
+            this.requirePattern(name, /[\w\.\-]+(\+[\w\-]*)?@([\w\-]+\.)+[\w\-]+/, newAttrs, messageKey);
         },
 
         requireConfirmation: function(attr, newAttrs, messageKey) {
@@ -166,7 +167,7 @@ chorus.models = {
                 conf = this.get(confAttrName);
             }
 
-            if (!value || !conf || value != conf) {
+            if (!value || !conf || value !== conf) {
                 this.setValidationError(attr, "validation.confirmation", messageKey);
             }
         },
@@ -195,7 +196,7 @@ chorus.models = {
             if (this.nameFunction) {
                 return this[this.nameFunction]();
             }
-            return this.get(this.nameAttribute || "name");
+            return this.get(this.nameAttribute || "name") || "";
         },
 
         displayName: function() {
@@ -209,13 +210,17 @@ chorus.models = {
             return (name.length < length) ? name : name.slice(0, length) + "...";
         },
 
+        // TODO: use the helper in the template, not in the model
         highlightedName: function() {
-            var highlightedModel = chorus.helpers.withSearchResults(this);
+            var highlightedModel = Handlebars.helpers.withSearchResults(this);
             return new Handlebars.SafeString(highlightedModel.name());
         },
 
+        //When the `paramsToSave` attribute is set on a model, the JSON version of the model only includes the white-listed attributes.
+        //When the `paramsToIgnore` attribute is set and `paramsToSave` is not, the JSON version of the model explicitly excludes the rejected attributes.
         toJSON: function() {
-            var paramsToSave = this.paramsToSave
+            var paramsToSave = this.paramsToSave;
+            var paramsToIgnore = this.paramsToIgnore;
             var result = {};
             var attributes = this._super("toJSON", arguments);
             if(paramsToSave) {
@@ -234,10 +239,23 @@ chorus.models = {
                 }, this);
                 attributes = newAttributes;
             }
+            else if(paramsToIgnore) {
+                _.each(paramsToIgnore, function(rm_me) {
+                    delete attributes[rm_me];
+                });
+            }
+            attributes = _.inject(attributes, function(attrs, value, key) {
+                if(value !== undefined && value !== null) {
+                    attrs[key] = value;
+                }
+                return attrs;
+            }, {});
             attributes = this.underscoreKeys(attributes);
-            if (this.parameterWrapper) {
+            if (this.nestParams === false) {
+                result = attributes;
+            } else if (this.parameterWrapper) {
                 result[this.parameterWrapper] = attributes;
-            } else if (this.constructorName && this.constructorName != "Model") {
+            } else if (this.constructorName && this.constructorName !== "Model") {
                 result[_.underscored(this.constructorName)] = attributes;
             } else {
                 result = attributes;
@@ -249,6 +267,7 @@ chorus.models = {
             return (this.attrToLabel && this.attrToLabel[attr]) ? t(this.attrToLabel[attr]) : attr;
         },
 
+        //return changes on this model since the last save.
         unsavedChanges: function() {
             this._savedAttributes = this._savedAttributes || {};
             var changes = {};
@@ -256,179 +275,35 @@ chorus.models = {
             _.each(allKeys, function(key) {
                 var oldValue = this._savedAttributes[key];
                 var newValue = this.attributes[key];
-                if(oldValue != newValue) {
-                    changes[key] = {old: oldValue, new: newValue}
+                if(oldValue !== newValue) {
+                    changes[key] = {oldValue: oldValue, newValue: newValue};
                 }
             }, this);
             return changes;
         },
 
-        set: function(attrs) {
+        set: function(key, val, options) {
+            var attrs;
+            if (key === null) return this;
+
+            // Handle both `"key", value` and `{key: value}` -style arguments.
+            if (_.isObject(key)) {
+                attrs = key;
+                options = val;
+            } else {
+                (attrs = {})[key] = val;
+            }
+
+            if (attrs instanceof Backbone.Model) attrs = attrs.attributes;
+
             //Can't use _super because we end up nesting set calls which _super doesn't handle
-            var result = Backbone.Model.prototype.set.apply(this, arguments);
+            var result = Backbone.Model.prototype.set.apply(this, [attrs, options]);
             if(attrs && attrs.completeJson) {
                 this.loaded = true;
+                this.statusCode = this.statusCode || 204;
             }
-            return result
+            return result;
         }
     })
 };
 chorus.models.Base.extend = chorus.classExtend;
-
-chorus.collections = {
-    Base: Backbone.Collection.include(
-        chorus.Mixins.Urls,
-        chorus.Mixins.Events,
-        chorus.Mixins.Fetching,
-        chorus.Mixins.ServerErrors
-    ).extend({
-        constructorName: "Collection",
-
-        initialize: function(models, options) {
-            this.attributes = options || {};
-            this.setup(arguments);
-        },
-
-        findWhere: function(attrs) {
-            return this.find(function(model) {
-                return _.all(attrs, function(value, key) {
-                    return model.get(key) === value;
-                });
-            });
-        },
-
-        setup: $.noop,
-
-        url: function(options) {
-            options = _.extend({
-                per_page: this.per_page || 50,
-                page: 1
-            }, options);
-
-            var template = _.isFunction(this.urlTemplate) ? this.urlTemplate(options) : this.urlTemplate;
-            var uri = new URI("/" + Handlebars.compile(template, {noEscape: true})(this.attributes));
-
-            if (this.urlParams) {
-                var params = _.isFunction(this.urlParams) ? this.urlParams(options) : this.urlParams;
-                uri.addSearch(this.underscoreKeys(params));
-            }
-
-            uri.addSearch({
-                page: options.page,
-                per_page: options.per_page
-            });
-
-            if (options.order) {
-                uri.addSearch({
-                    order: _.underscored(options.order)
-                });
-            }
-
-            if (this.order) {
-                uri.addSearch({
-                    order: _.underscored(this.order)
-                });
-            }
-
-            // this ensures that IE doesn't cache 'needs_login' responses
-            if (!window.jasmine) {
-                uri.addSearch({iebuster: chorus.cachebuster()});
-            }
-
-            return uri.toString();
-        },
-
-        isDeleted: function() {
-            return false;
-        },
-
-        shouldTriggerImmediately: function(eventName) {
-            if (eventName === "loaded") {
-                return this.loaded;
-            }
-
-            return false;
-        },
-
-        fetchPage: function(page, options) {
-            if (options && options.per_page) {
-                this.per_page = options.per_page;
-                delete options.per_page;
-            }
-            var url = this.url({ page: page });
-            options = _.extend({}, options, { url: url });
-            this.fetch(options);
-            this.trigger("paginate");
-        },
-
-        fetchAll: (function() {
-            var fetchPage = function(page) {
-                var self = this;
-                this.fetch({
-                    url: this.url({ page: page, per_page: 1000 }),
-                    silent: true,
-                    add: page != 1,
-                    success: function(collection, data, xhr) {
-                        var total = data.pagination ? parseInt(data.pagination.total) : 1;
-                        var page = data.pagination ? parseInt(data.pagination.page) : 1;
-                        if (page >= total) {
-                            collection.trigger("reset", collection);
-                            collection.trigger("loaded");
-                        } else {
-                            collection.loaded = false;
-                            fetchPage.call(collection, page + 1);
-                        }
-                    },
-                    error: function(collection) {
-                        collection.trigger("reset", collection);
-                        collection.trigger("loaded");
-                    }
-                });
-            };
-
-            return function() {
-                fetchPage.call(this, 1);
-            }
-        })(),
-
-        totalRecordCount: function() {
-            return (this.pagination && this.pagination.records) || this.models.length;
-        },
-
-        sortDesc: function(idx) {
-            // Not used. We only do ascending sort for now.
-            this._sort(idx, "desc")
-        },
-
-        sortAsc: function(idx) {
-            // We only support ascending sort at the moment.
-            this._sort(idx, "asc")
-        },
-
-        _prepareModel: function(model, options) {
-            var model = this._super("_prepareModel", arguments);
-            this.attributes || (this.attributes = {});
-            if (_.isFunction(this.modelAdded)) this.modelAdded(model);
-            return model;
-        },
-
-        _sort: function(idx, order) {
-            // order argument not used at this time. We only support ascending sort for now.
-            this.order = idx
-        }
-    })
-};
-chorus.collections.Base.extend = chorus.classExtend;
-
-chorus.collections.LastFetchWins = chorus.collections.Base.extend({
-    lastFetchId: 0,
-
-    makeSuccessFunction: function(options, success) {
-        var fetchId = ++this.lastFetchId;
-        return _.bind(function(collection, data) {
-            if (fetchId != this.lastFetchId) return;
-            var parentFunction = this._super("makeSuccessFunction", [options || {}, success]);
-            return parentFunction(collection, data);
-        }, this);
-    }
-});

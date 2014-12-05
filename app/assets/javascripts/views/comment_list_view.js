@@ -12,17 +12,17 @@ chorus.views.CommentList = chorus.views.Base.extend({
 
     collectionModelContext:function (comment) {
         if (comment.note()) {
-            return new chorus.presenters.Activity(comment, {displayStyle:this.options.displayStyle})
+            return new chorus.presenters.Activity(comment, {displayStyle:this.options.displayStyle});
         } else {
             var author = comment.author();
             return  {
-                isOwner: (author.id == chorus.session.user().id) || this.options.currentUserOwnsWorkspace,
+                isOwner: (author.id === chorus.session.user().id) || this.options.currentUserOwnsWorkspace,
                 iconSrc: author.fetchImageUrl({ size:"icon" }),
                 iconHref: author.showUrl(),
                 displayName: author.displayName(),
                 timestamp: comment.get("timestamp"),
                 id: comment.get("id"),
-                headerHtml: new Handlebars.SafeString(t('activity.comments.commented_on_note', {authorLink:chorus.helpers.linkTo(author.showUrl(), author.displayName(), {'class':'author'}).toString()}))
+                headerHtml: new Handlebars.SafeString(t('activity.comments.commented_on_note', {authorLink:Handlebars.helpers.linkTo(author.showUrl(), author.displayName(), {'class':'author'}).toString()}))
             };
         }
     },
@@ -30,12 +30,12 @@ chorus.views.CommentList = chorus.views.Base.extend({
     postRender: function() {
         var $lis = this.$("li .comment_content .body");
         _.each(this.commentViews, function(commentView) {
-           commentView.teardown();
+            commentView.teardown();
         });
         this.commentViews = [];
         this.collection.each(function(comment, index) {
             comment.loaded = true;
-            var view = new chorus.views.TruncatedText({model: comment, attribute: "text", attributeIsHtmlSafe: true});
+            var view = new chorus.views.TruncatedText({model: comment, attribute: "body", attributeIsHtmlSafe: true});
             $lis.eq(index).append(view.render().el);
             this.registerSubView(view);
             this.commentViews.push(view);

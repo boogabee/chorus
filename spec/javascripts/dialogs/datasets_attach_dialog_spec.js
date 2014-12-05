@@ -2,7 +2,7 @@ describe("chorus.dialogs.DatasetsAttach", function() {
     var datasetModels;
 
     beforeEach(function() {
-        datasetModels = [rspecFixtures.workspaceDataset.datasetTable(), rspecFixtures.workspaceDataset.datasetTable()];
+        datasetModels = [backboneFixtures.workspaceDataset.datasetTable(), backboneFixtures.workspaceDataset.datasetTable()];
 
         this.datasets = new chorus.collections.WorkspaceDatasetSet([], {workspaceId: "33"});
 
@@ -14,13 +14,8 @@ describe("chorus.dialogs.DatasetsAttach", function() {
         expect(this.dialog.multiSelection).toBeTruthy();
     });
 
-    it("enables server-side search", function() {
-        expect(this.dialog.serverSideSearch).toBeTruthy();
-    });
-
-
     it("fetches the results sorted by objectName ascending", function() {
-        var url = this.server.lastFetch().url
+        var url = this.server.lastFetch().url;
         expect(url).toHaveUrlPath("/workspaces/33/datasets");
         expect(url).toContainQueryParams({ order: "object_name"});
     });
@@ -39,11 +34,11 @@ describe("chorus.dialogs.DatasetsAttach", function() {
         });
 
         it("has the correct submit button text", function() {
-            expect(this.dialog.$('button.submit')).toContainTranslation("actions.dataset_attach")
+            expect(this.dialog.$('button.submit')).toContainTranslation("actions.dataset_attach");
         });
 
         it("has the correct iconUrl", function() {
-            expect(this.dialog.$('li:eq(0) img')).toHaveAttr('src', datasetModels[0].iconUrl({size: 'medium'}));
+            expect(this.dialog.$('li:eq(0) img')).toHaveAttr('src', datasetModels[0].iconUrl({size: 'icon'}));
         });
 
         it("has the correct name", function() {

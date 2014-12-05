@@ -26,6 +26,6 @@ chorus.views.BoxplotChartConfiguration = chorus.views.ChartConfiguration.extend(
             xAxis: this.$(".category select option:selected").text(),
             yAxis: this.$(".value select option:selected").text(),
             bins: this.$(".limiter .selected_value").text()
-        }
+        };
     }
 });

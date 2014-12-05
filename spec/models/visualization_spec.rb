@@ -3,46 +3,28 @@ require 'spec_helper'
 describe Visualization do
   let(:table) { FactoryGirl.build_stubbed(:gpdb_table) }
 
-  describe ".build" do
-    context "frequency visualization" do
-      let(:params) { {:type => 'frequency'} }
+  describe '.build' do
+    shared_examples 'a visualization factory' do |type, klass|
+      context "#{type} visualization" do
+        let(:params) { {:type => type} }
 
-      it "builds a frequency visualization" do
-        visualization = described_class.build(table, params)
-
-        visualization.should be_a_kind_of(Visualization::Frequency)
+        it "builds a #{type} visualization" do
+          visualization = described_class.build(table, params)
+          visualization.should be_a_kind_of(klass)
+        end
       end
     end
 
-    context "histogram visualization" do
-      let(:params) { {:type => 'histogram'} }
+    it_behaves_like 'a visualization factory', 'frequency', Visualization::Frequency
+    it_behaves_like 'a visualization factory', 'histogram', Visualization::Histogram
+    it_behaves_like 'a visualization factory', 'timeseries', Visualization::Timeseries
+    it_behaves_like 'a visualization factory', 'boxplot', Visualization::Boxplot
+    it_behaves_like 'a visualization factory', 'heatmap', Visualization::Heatmap
 
-      it "builds a histogram visualization" do
-        visualization = described_class.build(table, params)
-
-        visualization.should be_a_kind_of(Visualization::Histogram)
-      end
-
-    end
-
-    context "timeseries visualization" do
-      let(:params) { {:type => 'timeseries'} }
-
-      it "builds a timeseries visualization" do
-        visualization = described_class.build(table, params)
-
-        visualization.should be_a_kind_of(Visualization::Timeseries)
-      end
-    end
-
-    context "boxplot visualization" do
-      let(:params) { {:type => 'boxplot'} }
-
-      it "builds a boxplot visualization" do
-        visualization = described_class.build(table, params)
-        visualization.should be_a_kind_of(Visualization::Boxplot)
-      end
-
+    it 'raises if an unknown type is passed' do
+      expect {
+        described_class.build(table, {:type => 'missing'})
+      }.to raise_error(Visualization::UnknownType)
     end
   end
 end

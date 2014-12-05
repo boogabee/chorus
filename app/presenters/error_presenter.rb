@@ -6,7 +6,8 @@ class ErrorPresenter
 
   def as_json(options = {})
     hsh = {}
-    @errors.messages.each do |field, errors|
+    errors_hash = @errors.is_a?(Hash) ? @errors : @errors.messages
+    errors_hash.each do |field, errors|
       errors_as_hash = {}
 
       errors.each do |failure, context|

@@ -44,8 +44,8 @@ describe WorkspaceCsvController do
       post :create, csv_file_params
 
       decoded_response['contents'].should have(100).lines
-      decoded_response['contents'].should include('99,99,99')
-      decoded_response['contents'].should_not include('100,100,100')
+      decoded_response['contents'].should include("99,99,99\n")
+      decoded_response['contents'].should_not include("100,100,100\n")
 
     end
 

@@ -1,176 +1,199 @@
 describe("chorus.pages.DashboardPage", function() {
-    beforeEach(function() {
-        chorus.session = new chorus.models.Session({ id: "foo" });
-        this.page = new chorus.pages.DashboardPage();
-    });
 
-    it("has a helpId", function() {
-        expect(this.page.helpId).toBe("dashboard")
-    });
-
-    it("uses fetch all for the collections", function() {
-        spyOn(chorus.collections.UserSet.prototype, "fetchAll").andCallThrough();
-        spyOn(chorus.collections.GpdbInstanceSet.prototype, "fetchAll").andCallThrough();
-        spyOn(chorus.collections.HadoopInstanceSet.prototype, "fetchAll").andCallThrough();
-        spyOn(chorus.collections.GnipInstanceSet.prototype, "fetchAll").andCallThrough();
-        spyOn(chorus.collections.WorkspaceSet.prototype, "fetchAll").andCallThrough();
-        var page = new chorus.pages.DashboardPage();
-        expect(page.userSet.fetchAll).toHaveBeenCalled();
-        expect(page.gpdbInstanceSet.fetchAll).toHaveBeenCalled();
-        expect(page.hadoopInstanceSet.fetchAll).toHaveBeenCalled();
-        expect(page.gnipInstanceSet.fetchAll).toHaveBeenCalled();
-        expect(page.workspaceSet.fetchAll).toHaveBeenCalled();
-    });
-
-
-    describe("#render", function() {
+    describe("#setup", function() {
         beforeEach(function() {
-            this.server.completeFetchAllFor(this.page.gpdbInstanceSet, [
-                                         rspecFixtures.gpdbInstance(),
-                                         rspecFixtures.gpdbInstance()
-            ]);
-            this.server.completeFetchAllFor(this.page.hadoopInstanceSet, [
-                                         rspecFixtures.hadoopInstance(),
-                                         rspecFixtures.hadoopInstance()
-            ]);
-            this.server.completeFetchAllFor(this.page.gnipInstanceSet, [
-                                         rspecFixtures.gnipInstance(),
-                                         rspecFixtures.gnipInstance()
-            ]);
+            this.page = new chorus.pages.DashboardPage();
+        });
 
+        it("has a 'Home' sub header", function() {
             this.page.render();
+            expect(this.page.$(".page_sub_header")).toContainTranslation("header.home");
         });
 
-        it("creates a Header view", function() {
-            expect(this.page.$("#header.header")).toExist();
+        it("links to the dashboard edit page", function() {
+            this.page.render();
+            expect(this.page.$("a.container").attr("href")).toBe("#/users/" + chorus.session.user().id + "/dashboard_edit");
         });
 
-        context("the workspace list", function() {
-            beforeEach(function() {
-                this.workspaceList = this.page.mainContent.workspaceList;
-            });
-
-            it("has a title", function() {
-                expect(this.workspaceList.$("h1").text()).toBe("My Workspaces");
-            });
-
-            it("creates a WorkspaceList view", function() {
-                expect(this.page.$(".dashboard_workspace_list")).toExist();
-            });
-        });
-
-        it("does not have a sidebar", function() {
-            expect(this.page.$("#sidebar_wrapper")).not.toExist();
-        });
-
-        context("when the users fetch completes", function() {
-            beforeEach(function() {
-                this.server.completeFetchAllFor(
-                    this.page.userSet,
-                    rspecFixtures.userSet()
-                );
-            });
-
-            it("shows the number of users", function() {
-                expect(this.page.$("#user_count a")).toContainTranslation("dashboard.user_count", {count: rspecFixtures.userSet().length});
-                expect(this.page.$("#user_count")).not.toHaveClass("hidden");
-            });
+        it("creates a module dashboard view", function() {
+            expect(this.page.mainContent).toBeA(chorus.views.ModularDashboard);
         });
     });
 
-    context("#setup", function() {
+    xcontext("old dashboard page...", function() {
         beforeEach(function() {
-            this.server.completeFetchAllFor(this.page.gpdbInstanceSet, [
-                rspecFixtures.gpdbInstance(),
-                rspecFixtures.gpdbInstance()
-            ]);
-
-            this.server.completeFetchAllFor(this.page.hadoopInstanceSet, [
-                rspecFixtures.hadoopInstance(),
-                rspecFixtures.hadoopInstance()
-            ]);
-
-            this.server.completeFetchAllFor(this.page.gnipInstanceSet, [
-                rspecFixtures.gnipInstance(),
-                rspecFixtures.gnipInstance()
-            ]);
+            chorus.session = backboneFixtures.session();
+            this.page = new chorus.pages.DashboardPage();
         });
 
-        it("sets chorus.session.user as the model", function() {
-            expect(this.page.model).toBe(chorus.session.user())
+        it("has a helpId", function() {
+            expect(this.page.helpId).toBe("dashboard");
         });
 
-        it("gets the number of users", function() {
-            expect(this.server.lastFetchFor(new chorus.collections.UserSet([], {page:1, per_page:1}))).toBeTruthy();
+        it("fetches all the collections", function() {
+            expect(this.page.userSet).toHaveBeenFetched();
+            expect(this.page.dataSourceSet).toHaveBeenFetched();
+            expect(this.page.hdfsDataSourceSet).toHaveBeenFetched();
+            expect(this.page.gnipDataSourceSet).toHaveBeenFetched();
+            expect(this.page.workspaceSet).toHaveBeenFetched();
         });
 
-        it("passes the collection through to the workspaceSet view", function() {
-            expect(this.page.mainContent.workspaceList.collection).toBe(this.page.workspaceSet);
-        });
-
-        it("fetches active workspaces for the current user, including recent comments", function() {
-            expect(this.page.workspaceSet.attributes.showLatestComments).toBeTruthy();
-        });
-
-        it("should sort the workspaceSet by name ascending", function() {
-            expect(this.page.workspaceSet.order).toBe("name");
-        });
-
-        it("passes the active to workspaceSet", function() {
-            expect(this.page.workspaceSet.attributes.active).toBe(true);
-        });
-
-        it("passes the userId to workspaceSet", function() {
-            expect(this.page.workspaceSet.attributes.userId).toBe("foo");
-        });
-
-        it("fetches only the chorus instances where the user has permissions", function() {
-            expect(this.page.gpdbInstanceSet).toBeA(chorus.collections.GpdbInstanceSet);
-            expect(this.page.gpdbInstanceSet.attributes.hasCredentials).toBe(true);
-            expect(this.page.gpdbInstanceSet).toHaveBeenFetched();
-        });
-
-        it("fetches the hadoop instances", function() {
-            expect(this.page.hadoopInstanceSet).toBeA(chorus.collections.HadoopInstanceSet);
-            expect(this.page.hadoopInstanceSet).toHaveBeenFetched();
-        });
-
-        it("fetches the gnip instances", function() {
-            expect(this.page.gnipInstanceSet).toBeA(chorus.collections.GnipInstanceSet);
-            expect(this.page.gnipInstanceSet).toHaveBeenFetched();
-        });
-
-        it("passes the instance set through to the instance list view", function() {
-            var packedUpGreenplumSet = _.map(this.page.gpdbInstanceSet.models, function(instance) {
-                return new chorus.models.Base({ theInstance: instance });
-            });
-            var packedUpHadoopSet = _.map(this.page.hadoopInstanceSet.models, function(instance) {
-                return new chorus.models.Base({ theInstance: instance });
-            });
-            var packedUpGnipSet = _.map(this.page.gnipInstanceSet.models, function(instance) {
-                return new chorus.models.Base({ theInstance: instance });
-            });
-            var packedUpInstanceSet = new chorus.collections.Base();
-            packedUpInstanceSet.add(packedUpGreenplumSet);
-            packedUpInstanceSet.add(packedUpHadoopSet);
-            packedUpInstanceSet.add(packedUpGnipSet);
-
-            expect(packedUpInstanceSet.length).toBe(this.page.mainContent.instanceList.collection.length);
-
-            _.each(this.page.mainContent.instanceList.collection, function(instance, i) {
-                expect(instance.get("theInstance").get("name")).toBe(packedUpInstanceSet.models[i].get("name"));
-            });
-        });
-
-        describe("when an instance is added", function() {
+        describe("#render", function() {
             beforeEach(function() {
-                spyOn(this.page, "fetchInstances");
-                chorus.PageEvents.broadcast("instance:added");
+                this.server.completeFetchAllFor(this.page.dataSourceSet, [
+                    backboneFixtures.gpdbDataSource(),
+                    backboneFixtures.oracleDataSource()
+                ]);
+                this.server.completeFetchAllFor(this.page.hdfsDataSourceSet, [
+                    backboneFixtures.hdfsDataSource(),
+                    backboneFixtures.hdfsDataSource()
+                ]);
+                this.server.completeFetchAllFor(this.page.gnipDataSourceSet, [
+                    backboneFixtures.gnipDataSource(),
+                    backboneFixtures.gnipDataSource()
+                ]);
+
+                this.page.render();
             });
 
-            it("re-fetches all instances", function() {
-                expect(this.page.fetchInstances).toHaveBeenCalled();
+            it("creates a Header view", function() {
+                expect(this.page.$("#header.header")).toExist();
+            });
+
+            context("the workspace list", function() {
+                beforeEach(function() {
+                    this.workspaceList = this.page.mainContent.workspaceList;
+                });
+
+                it("has a title", function() {
+                    expect(this.workspaceList.$("h1").text()).toBe("Workspaces");
+                });
+
+                it("creates a WorkspaceList view", function() {
+                    expect(this.page.$(".dashboard_workspace_list")).toExist();
+                });
+            });
+
+            it("does not have a sidebar", function() {
+                expect(this.page.$("#sidebar_wrapper")).not.toExist();
+            });
+
+            context("when the users fetch completes", function() {
+                beforeEach(function() {
+                    this.server.completeFetchAllFor(
+                        this.page.userSet,
+                        backboneFixtures.userSet()
+                    );
+                });
+
+                it("shows the number of users", function() {
+                    expect(this.page.$("#user_count a")).toContainTranslation("dashboard.user_count", {count: backboneFixtures.userSet().length});
+                    expect(this.page.$("#user_count")).not.toHaveClass("hidden");
+                });
             });
         });
-    })
+
+        context("#setup", function() {
+            beforeEach(function() {
+                this.server.completeFetchAllFor(this.page.dataSourceSet, [
+                    backboneFixtures.gpdbDataSource(),
+                    backboneFixtures.oracleDataSource()
+                ]);
+
+                this.server.completeFetchAllFor(this.page.hdfsDataSourceSet, [
+                    backboneFixtures.hdfsDataSource(),
+                    backboneFixtures.hdfsDataSource()
+                ]);
+
+                this.server.completeFetchAllFor(this.page.gnipDataSourceSet, [
+                    backboneFixtures.gnipDataSource(),
+                    backboneFixtures.gnipDataSource()
+                ]);
+            });
+
+            it("sets chorus.session.user as the model", function() {
+                expect(this.page.model).toBe(chorus.session.user());
+            });
+
+            it("gets the number of users", function() {
+                expect(this.server.lastFetchFor(new chorus.collections.UserSet([], {page:1, per_page:1}))).toBeTruthy();
+            });
+
+            it("fetches active workspaces for the current user, including recent comments", function() {
+                expect(this.page.workspaceSet.attributes.showLatestComments).toBeTruthy();
+            });
+
+            it("should sort the workspaceSet by name ascending", function() {
+                expect(this.page.workspaceSet.order).toBe("name");
+            });
+
+            it("passes the active to workspaceSet", function() {
+                expect(this.page.workspaceSet.attributes.active).toBe(true);
+            });
+
+            it("passes succinct to workspaceSet", function() {
+                expect(this.page.workspaceSet.attributes.succinct).toBe(true);
+            });
+
+            it("fetches only the data sources where the user has permissions succinctly", function() {
+                expect(this.page.dataSourceSet.attributes.succinct).toBe(true);
+                expect(this.page.dataSourceSet).toBeA(chorus.collections.DataSourceSet);
+                expect(this.page.dataSourceSet).toHaveBeenFetched();
+            });
+
+            it('fetches the hadoop data sources', function() {
+                expect(this.page.hdfsDataSourceSet.attributes.succinct).toBe(true);
+                expect(this.page.hdfsDataSourceSet).toBeA(chorus.collections.HdfsDataSourceSet);
+                expect(this.page.hdfsDataSourceSet).toHaveBeenFetched();
+            });
+
+            it('fetches the gnip data sources', function() {
+                expect(this.page.gnipDataSourceSet.attributes.succinct).toBe(true);
+                expect(this.page.gnipDataSourceSet).toBeA(chorus.collections.GnipDataSourceSet);
+                expect(this.page.gnipDataSourceSet).toHaveBeenFetched();
+            });
+
+            it('passes the data source set through to the data source list view', function() {
+                var packedUpDataSourceSet = this.page.dataSourceSet.map(function(dataSource) {
+                    return new chorus.models.Base(dataSource);
+                });
+                var packedUpHadoopSet = this.page.hdfsDataSourceSet.map(function(dataSource) {
+                    return new chorus.models.Base(dataSource);
+                });
+                var packedUpGnipSet = this.page.gnipDataSourceSet.map(function(dataSource) {
+                    return new chorus.models.Base(dataSource);
+                });
+                var entireDataSourceSet = new chorus.collections.Base();
+                entireDataSourceSet.add(packedUpDataSourceSet);
+                entireDataSourceSet.add(packedUpGnipSet);
+                entireDataSourceSet.add(packedUpHadoopSet);
+
+                expect(entireDataSourceSet.length).toBe(this.page.mainContent.dataSourceList.collection.length);
+            });
+
+            describe('when a data source is added', function() {
+                beforeEach(function() {
+                    spyOn(this.page, "fetchDataSources");
+                    chorus.PageEvents.trigger("data_source:added");
+                });
+
+                it('re-fetches all data sources', function() {
+                    expect(this.page.fetchDataSources).toHaveBeenCalled();
+                });
+            });
+        });
+
+        describe('#fetchDataSources', function(){
+            beforeEach(function() {
+                spyOn(this.page.gnipDataSourceSet, "fetchAll");
+                spyOn(this.page.hdfsDataSourceSet, "fetchAll");
+                this.page.fetchDataSources();
+            });
+
+            it("fetches all gnip and hadoop data sources", function() {
+                expect(this.page.gnipDataSourceSet.fetchAll).toHaveBeenCalled();
+                expect(this.page.hdfsDataSourceSet.fetchAll).toHaveBeenCalled();
+            });
+        });
+    });
 });

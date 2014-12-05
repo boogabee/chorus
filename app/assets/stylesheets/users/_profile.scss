@@ -1,9 +1,16 @@
 @mixin profile_image {
     background: white;
     padding: 2px;
-    border: 1px solid $guts-border-color;
+    border: $border-canon;
 }
 
 img.profile {
     @include profile_image;
+    border-radius: 5px;
+}
+
+.icon img.profile,
+img.profile.icon {
+    max-width: $icon-image-width - 3;
+    max-height: $icon-image-height - 3;
 }

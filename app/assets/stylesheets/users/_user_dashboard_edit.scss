@@ -1,0 +1,103 @@
+@import "_common";
+@import "compass/css3/border-radius";
+@import "compass/css3/box-shadow";
+
+.user_dashboard_edit {
+
+    .sub_title {
+        padding-top: 20px;
+        @include section-heading;
+    }
+
+    .sub_description {
+        padding-bottom: 20px;
+    }
+
+    .sortable_container {
+        margin-bottom: 50px;
+    }
+
+    .form_controls {}
+
+    .sortable {
+        min-height: 300px;
+        padding: 20px;
+
+        li {
+            min-height: 45px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: white;
+            border: $border-canon;
+
+            @include border-radius(2px);
+            @include grab_cursor;
+
+            .name {
+                @include secondary-text-semibold;
+            }
+
+            .module_description {
+                @include secondary-text-normal;
+            }
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+
+            &.ui-sortable-placeholder {
+                visibility: visible !important;
+                border: $default-border-width dashed $brand;
+                background: transparent;
+            }
+        }
+    }
+
+    .ui-sortable-helper {
+        @include single-box-shadow(rgba($bright-grey, 0.5), 3px, 3px, 3px, 0px);
+    }
+
+    .module_list {
+        ul, .header {
+            @include border-radius(3px);
+        }
+
+        .header {
+            height: 35px;
+            line-height: 35px;
+            padding-left: 20px;
+            padding-right: 20px;
+            @include dnd-list-header;
+            @include border-bottom-radius(0);
+        }
+
+        .note {
+            @include font-secondary-content;
+            color: $color-text4;
+            text-align: center;
+            padding: 20px;
+        }
+    }
+
+    .selected_modules {
+        ul {
+            background-color: $accent;
+        }
+        .header {
+            background-color: $brand;
+        }
+    }
+
+    .available_modules {
+        ul {
+            background-color: $light-grey-yellow;
+        }
+        .header {
+            background-color: $greyish-yellow;
+        }
+    }
+
+    .left {
+        float: left;
+    }
+}

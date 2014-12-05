@@ -12,17 +12,22 @@ describe Presenter, :type => :view do
     end
   end
 
-  describe '#current_user' do
-    it "returns the ActiveRecord's current user" do
-      viewer = User.new
-      mock(ActiveRecord::Base).current_user { viewer }
-      @presenter.current_user.should == viewer
-    end
-  end
-
   describe ".present_collection" do
     it "serializes an array" do
       Presenter.present_collection([@model], view, {}).should be_a(Array)
+    end
+
+    it "allows passing explicit presenter class for polymorphic collections" do
+      class SpecExplicitPolymorphicPresenter < Presenter
+        def to_hash
+          {
+            :name => model.name
+          }
+        end
+      end
+
+      hash = Presenter.present_collection([GpdbTable.new(:name => 'foo'), GpdbView.new(:name => 'bar')], view, {:presenter_class => 'SpecExplicitPolymorphicPresenter'})
+      hash.should == [{:name => 'foo'}, {:name => 'bar'}]
     end
   end
 
@@ -31,6 +36,14 @@ describe Presenter, :type => :view do
 
     context "with a single model" do
       let(:object_to_present) { FactoryGirl.build(:user) }
+
+      context "when forbidden is true" do
+        let(:json) { Presenter.present(object_to_present, view, {:forbidden => true}) }
+
+        it "presents an empty hash" do
+          json.should be_empty
+        end
+      end
 
       it "passes its options on" do
         mock(Presenter).present_model(object_to_present, { view: true }, { test: true })
@@ -71,8 +84,16 @@ describe Presenter, :type => :view do
 
     context "with a subclass of Events::Base" do
       it "creates an EventPresenter" do
-        event = FactoryGirl.build(:greenplum_instance_created_event)
+        event = FactoryGirl.build(:data_source_created_event)
         mock.proxy(EventPresenter).new(event, view, {})
+        Presenter.present(event, view)
+      end
+    end
+
+    context "with an acts as taggable on tag" do
+      it "should create a TagPresenter" do
+        event = Tag.new(:name => 'bar')
+        mock.proxy(TagPresenter).new(event, view, {})
         Presenter.present(event, view)
       end
     end
@@ -101,20 +122,29 @@ describe Presenter, :type => :view do
         json[0][:username].should == object_to_present[0].username
         json[1][:username].should == object_to_present[1].username
       end
+
+      context "when forbidden is true" do
+        let(:json) { Presenter.present(object_to_present, view, {:forbidden => true}) }
+
+        it "presents an array of empty hashes" do
+          json.length.should == 2
+          json.each { |j| j.should be_empty }
+        end
+      end
     end
 
     context "with a heterogeneous list of models" do
       let(:object_to_present) do
         [
             FactoryGirl.build(:user, :username => 'user'),
-            FactoryGirl.build(:gpdb_instance, :name => 'gpdb_instance')
+            FactoryGirl.build(:gpdb_data_source, :name => 'gpdb_data_source')
         ]
       end
 
       it "presents an array with a hash for each model" do
         json.length.should == 2
         json[0][:username].should == 'user'
-        json[1][:name].should == 'gpdb_instance'
+        json[1][:name].should == 'gpdb_data_source'
       end
     end
 

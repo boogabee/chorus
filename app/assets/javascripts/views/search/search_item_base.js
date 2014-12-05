@@ -1,11 +1,14 @@
-chorus.views.SearchItemBase = chorus.views.Base.extend({
-    tagName: "li",
+chorus.views.SearchItemBase = chorus.views.Base.extend(chorus.Mixins.TagsContext).extend({
+    tagName: "div",
     additionalClass: "result_item",
 
     events: {
         "click a.show_more_comments": "showMoreComments",
-        "click a.show_fewer_comments": "showFewerComments",
-        "click": "itemSelected"
+        "click a.show_fewer_comments": "showFewerComments"
+    },
+
+    additionalContext: function() {
+        return this.additionalContextForTags();
     },
 
     postRender: function() {
@@ -15,26 +18,26 @@ chorus.views.SearchItemBase = chorus.views.Base.extend({
 
     makeCommentList: function() {
         return new chorus.views.SearchResultCommentList({comments: this.getComments(), columns: this.getColumns(),
-            columnDescriptions: this.getColumnDescriptions(), tableDescriptions: this.getTableDescription()});
+            columnDescriptions: this.getColumnDescriptions(), tableDescription: this.getTableDescription()});
     },
 
     getTableDescription: function() {
-        var descriptions = this.model.get("tableDescriptions") || [];
-        _.each(descriptions, function(description) { description.isTableDescription = true; });
+        var descriptions = this.model.get("tableDescription") || [];
+        _.each(descriptions, function(description) { description.subType = 'table_description'; });
 
         return descriptions;
     },
 
     getColumns: function() {
         var columns = this.model.get("columns") || [];
-        _.each(columns, function(column) { column.isColumn = true; });
+        _.each(columns, function(column) { column.subType = 'column'; });
 
         return columns;
     },
 
     getColumnDescriptions: function() {
         var columnDescriptions = this.model.get("columnDescriptions") || [];
-        _.each(columnDescriptions, function(columnDescription) { columnDescription.isColumnDescription = true; });
+        _.each(columnDescriptions, function(columnDescription) { columnDescription.subType = 'column_description'; });
 
         return columnDescriptions;
     },
@@ -53,10 +56,5 @@ chorus.views.SearchItemBase = chorus.views.Base.extend({
         evt && evt.preventDefault();
         this.$(".has_more_comments").removeClass("hidden");
         this.$(".more_comments").addClass("hidden");
-    },
-
-    itemSelected: function(evt) {
-        this.options.search.selectedItem = this.model;
-        chorus.PageEvents.broadcast(this.eventType + ":selected", this.model);
     }
-})
+});

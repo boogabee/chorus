@@ -1,0 +1,30 @@
+<span class="index">{{index}}.</span>
+
+<span class="image">
+    <img src="{{iconUrl}}"/>
+</span>
+
+<div class="item_information">
+
+    <div class="item_name">
+        {{#if url}}
+            <span title="{{name}}" class="name">{{name}}</span>
+        {{else}}
+            <span class="name">{{name}}</span>
+        {{/if}}
+    </div>
+
+    <div class="item_metadata">
+        <span class="action">{{t actionKey}}</span>
+    </div>
+
+    <div class="arrows">
+        {{#unless firstItem}}
+            <img src="/images/jobs/arrow-up.png" class="up_arrow">
+        {{/unless}}
+
+        {{#unless lastItem}}
+            <img src="/images/jobs/arrow-down.png" class="down_arrow">
+        {{/unless}}
+    </div>
+</div>

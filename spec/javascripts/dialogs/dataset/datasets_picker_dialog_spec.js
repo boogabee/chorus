@@ -2,18 +2,18 @@ describe("chorus.dialogs.DatasetsPicker", function() {
     var dialog, datasets, datasetModels;
     beforeEach(function() {
         stubModals();
-        dialog = new chorus.dialogs.DatasetsPicker({ workspaceId : "33" });
         datasets = new chorus.collections.WorkspaceDatasetSet([], {workspaceId: "33", type: "SANDBOX_TABLE", objectType: "TABLE" });
+        dialog = new chorus.dialogs.DatasetsPicker({ collection: datasets });
         datasetModels = [
-                            newFixtures.workspaceDataset.sandboxTable({ objectName: "A", columns: 42, id: "REAL_ID" }),
-                            newFixtures.workspaceDataset.sandboxTable({ objectName: "B", columns: 666, id: "AGENT_SMITH" })
-                        ];
+            backboneFixtures.workspaceDataset.datasetTable({ objectName: "A", id: "REAL_ID" }),
+            backboneFixtures.workspaceDataset.datasetTable({ objectName: "B", id: "AGENT_SMITH" })
+        ];
     });
 
     describe("#render", function() {
         var options;
         beforeEach(function() {
-            options = { order: "objectName", type: "SANDBOX_TABLE", objectType: "TABLE" };
+            options = { order: "objectName", entitySubtype: "SANDBOX_TABLE" };
             dialog.launchModal();
         });
 
@@ -32,7 +32,7 @@ describe("chorus.dialogs.DatasetsPicker", function() {
             });
 
             it("shows the correct title", function() {
-                expect(dialog.$("h1")).toContainTranslation("dataset.pick");
+                expect(dialog.$("h1")).toContainTranslation("dataset.pick_destination");
             });
 
             it("shows the correct search help", function() {
@@ -51,13 +51,9 @@ describe("chorus.dialogs.DatasetsPicker", function() {
                 expect(dialog.multiSelection).toBeFalsy();
             });
 
-            it("has serverside search", function() {
-                expect(dialog.serverSideSearch).toBeTruthy();
-            });
-
             it("only shows real sandbox tables (no hdfs, source, externals, views)", function() {
                 _.each(dialog.collection.models, function(model) {
-                    expect(model.get("type")).toBe("SANDBOX_TABLE");
+                    expect(model.get("entitySubtype")).toBe("SANDBOX_TABLE");
                 });
             });
 
@@ -74,30 +70,29 @@ describe("chorus.dialogs.DatasetsPicker", function() {
             it("shows the preview columns submodal with the appropriate dataset when you click the link", function() {
                 dialog.$("ul li:eq(0) a.preview_columns").click();
                 expect(chorus.dialogs.PreviewColumns.prototype.render).toHaveBeenCalled();
-                var previewColumnsDialog = chorus.dialogs.PreviewColumns.prototype.render.mostRecentCall.object;
+                var previewColumnsDialog = chorus.dialogs.PreviewColumns.prototype.render.lastCall().object;
                 expect(previewColumnsDialog.title).toBe(dialog.title);
                 expect(previewColumnsDialog.model.get("id")).toEqual(datasetModels[0].get("id"));
             });
 
-            it("shows the number of columns in each dataset", function() {
-                expect(dialog.$("ul li:eq(0) .column_count")).toContainTranslation("dataset.column_count", {count: 42});
-                expect(dialog.$("ul li:eq(1) .column_count")).toContainTranslation("dataset.column_count", {count: 666});
-            });
-        });
-
-        context("when a dataset has no column count (or is undefined)", function() {
-            beforeEach(function() {
-                datasetModels = [
-                                    newFixtures.workspaceDataset.sandboxTable({ objectName: "A", columns: null, id: "NOBODY" }),
-                                    newFixtures.workspaceDataset.sandboxTable({ objectName: "B", columns: undefined, id: "NONE" })
-                                ];
-                datasets = new chorus.collections.WorkspaceDatasetSet([], { workspaceId: "33", type: "SANDBOX_TABLE", objectType: "TABLE" });
-                this.server.completeFetchFor(datasets, datasetModels, options);
+            describe("selecting an item", function() {
+                beforeEach(function() {
+                    dialog.$("ul li:eq(0)").click();
+                });
+                it("should mark the item selected", function() {
+                    expect(dialog.$("ul li:eq(0)")).toHaveClass("selected");
+                });
             });
 
-            it("doesn't show column count", function() {
-                expect(dialog.$("li:eq(0) span.column_count")).not.toExist();
-                expect(dialog.$("li:eq(1) span.column_count")).not.toExist();
+            describe("closing the dialog", function() {
+                beforeEach(function() {
+                    datasets.search("searching");
+                    dialog.$("button.cancel").click();
+                });
+
+                it("resets the namePattern on the collection", function() {
+                    expect(datasets.attributes.namePattern).toBe("");
+                });
             });
         });
     });

@@ -1,62 +1,59 @@
 require 'spec_helper'
 
 describe GpdbDatabase do
-  context "#refresh" do
-    let(:gpdb_instance) { FactoryGirl.build_stubbed(:gpdb_instance) }
-    let(:account) { FactoryGirl.build_stubbed(:instance_account, :gpdb_instance => gpdb_instance) }
-    let(:db_names) { ["db_a", "db_B", "db_C", "db_d"] }
+  it_should_behave_like 'something that can go stale' do
+    let(:model) { databases(:default) }
+  end
 
-    before(:each) do
-      stub_gpdb(account, GpdbDatabase::DATABASE_NAMES_SQL => [
-          {"datname" => "db_a"}, {"datname" => "db_B"}, {"datname" => "db_C"}, {"datname" => "db_d"}
-      ]
-      )
+  it_behaves_like 'a soft deletable model' do
+    let(:model) { databases(:default) }
+  end
+
+  it_behaves_like 'a well-behaved database' do
+    let(:database) { databases(:default) }
+  end
+
+  it_behaves_like 'an index-able database' do
+    let(:database) { databases(:default) }
+  end
+
+  describe "validations" do
+    it 'has a valid factory' do
+      FactoryGirl.build(:gpdb_database).should be_valid
     end
 
-    it "creates new copies of the databases in our db" do
-      GpdbDatabase.refresh(account)
+    it { should validate_presence_of(:name) }
 
-      databases = gpdb_instance.databases
-
-      databases.length.should == 4
-      databases.map { |db| db.name }.should =~ db_names
-      databases.map { |db| db.gpdb_instance_id }.uniq.should == [gpdb_instance.id]
+    it 'does not allow strange characters in the name' do
+      ['/', '&', '?'].each do |char|
+        new_database = FactoryGirl.build(:gpdb_database, :name =>"schema#{char}name")
+        new_database.should have_error_on(:name)
+      end
     end
 
-    it "returns a list of GpdbDatabase objects" do
-      results = GpdbDatabase.refresh(account)
+    describe 'name uniqueness' do
+      let(:existing) { databases(:default) }
 
-      db_objects = []
-      db_names.each do |name|
-        db_objects << gpdb_instance.databases.find_by_name(name)
+      context 'in the same data_source' do
+        it 'does not allow two databases with the same name' do
+          new_database = FactoryGirl.build(:gpdb_database,
+                                           :name => existing.name,
+                                           :data_source => existing.data_source)
+          new_database.should have_error_on(:name).with_message(:taken)
+        end
       end
 
-      results.should match_array(db_objects)
-    end
-
-    it "does not re-create databases that already exist in our database" do
-      GpdbDatabase.refresh(account)
-      expect { GpdbDatabase.refresh(account) }.not_to change(GpdbDatabase, :count)
-    end
-
-    context "when database objects are stale" do
-      before do
-        GpdbDatabase.all.each { |database|
-          database.mark_stale!
-        }
-      end
-
-      it "marks them as non-stale" do
-        GpdbDatabase.refresh(account)
-        account.gpdb_instance.databases.each { |database|
-          database.reload.should_not be_stale
-        }
+      context 'in a different data_source' do
+        it 'allows same names' do
+          new_database = FactoryGirl.build(:gpdb_database, :name => existing.name)
+          new_database.should be_valid
+        end
       end
     end
   end
 
-  context "refresh using a real greenplum instance", :database_integration => true do
-    let(:account) { GpdbIntegration.real_gpdb_account }
+  context "refresh using a real greenplum data_source", :greenplum_integration do
+    let(:account) { GreenplumIntegration.real_account }
 
     it "sorts the database by name in ASC order" do
       results = GpdbDatabase.refresh(account)
@@ -65,122 +62,46 @@ describe GpdbDatabase do
     end
   end
 
-  describe "reindexDatasetPermissions" do
-    let(:database) { gpdb_databases(:default) }
-
-    it "calls solr_index on all datasets" do
-      database.datasets.each do |dataset|
-        mock(Sunspot).index(dataset)
-      end
-      GpdbDatabase.reindexDatasetPermissions(database.id)
-    end
-
-    it "does not call solr_index on stale datasets" do
-      dataset = database.datasets.first
-      dataset.update_attributes!({:stale_at => Time.now}, :without_protection => true)
-      stub(Sunspot).index(anything)
-      dont_allow(Sunspot).index(dataset)
-      GpdbDatabase.reindexDatasetPermissions(database.id)
-    end
-
-    it "does a solr commit" do
-      mock(Sunspot).commit
-      GpdbDatabase.reindexDatasetPermissions(database.id)
-    end
-
-    it "continues if exceptions are raised" do
-      database.datasets.each do |dataset|
-        mock(Sunspot).index(dataset) { raise "error!" }
-      end
-      mock(Sunspot).commit
-      GpdbDatabase.reindexDatasetPermissions(database.id)
-    end
-  end
-
   context "association" do
-    it { should have_many :schemas }
+    it { should have_many(:schemas).class_name('GpdbSchema') }
 
     it "has many datasets" do
-      gpdb_databases(:default).datasets.should include(datasets(:table))
-    end
-  end
-
-  describe "callbacks" do
-    let(:database) { gpdb_databases(:default) }
-
-    describe "before_save" do
-      describe "#mark_schemas_as_stale" do
-        it "if the database has become stale, schemas will also be marked as stale" do
-          database.update_attributes!({:stale_at => Time.now}, :without_protection => true)
-          schema = database.schemas.first
-          schema.should be_stale
-          schema.stale_at.should be_within(5.seconds).of(Time.now)
-        end
-      end
+      databases(:default).datasets.should include(datasets(:table))
     end
   end
 
   describe ".create_schema" do
-    context "using a real greenplum instance", :database_integration => true do
-      let(:account) { GpdbIntegration.real_gpdb_account }
-      let(:database) { GpdbDatabase.find_by_name_and_gpdb_instance_id(GpdbIntegration.database_name, GpdbIntegration.real_gpdb_instance) }
-      let(:instance) { database.gpdb_instance }
+    let(:connection) { Object.new }
+    let(:database) { databases(:default) }
+    let(:user) { users(:owner) }
+    let(:schema_name) { "stuff" }
 
-      after do
-        exec_on_gpdb('DROP SCHEMA IF EXISTS "my_new_schema"')
-      end
-
-      it "creates the schema" do
-
-        database.create_schema("my_new_schema", account.owner).tap do |schema|
-          schema.name.should == "my_new_schema"
-          schema.database.should == database
-        end
-
-        database.schemas.find_by_name("my_new_schema").should_not be_nil
-
-        exec_on_gpdb("select * from pg_namespace where nspname = 'my_new_schema';") do |result|
-          result[0]["nspname"].should == "my_new_schema"
-        end
-      end
-
-      it "raises an error if a schema with the same name already exists" do
-        expect {
-          database.create_schema(database.schemas.last.name, account.owner)
-        }.to raise_error(ActiveRecord::StatementInvalid) { |exception|
-          exception.message.should match("already exists")
-        }
-      end
-
-      def exec_on_gpdb(sql)
-        Gpdb::ConnectionBuilder.connect!(instance, account, database.name) do |connection|
-          result = connection.exec_query(sql)
-          block_given? ? yield(result) : result
-        end
-      end
+    before do
+      stub(database).connect_as(user) { connection }
+      stub(Schema).refresh.with_any_args { database.schemas.create(:name => schema_name) }
     end
 
-    context "when gpdb connection is broken" do
-      let(:database) { gpdb_databases(:default) }
-      let(:user) { users(:owner) }
+    it "should create the schema" do
+      mock(connection).create_schema(schema_name)
+      expect {
+        database.create_schema(schema_name, user).name.should == schema_name
+      }.to change(GpdbSchema, :count).by(1)
+    end
 
+    context "when the schema is invalid" do
       before do
-        stub(Gpdb::ConnectionBuilder).connect!.with_any_args { raise ActiveRecord::JDBCError.new('quack') }
+        any_instance_of(GpdbSchema) do |schema|
+          stub(schema).valid? { false }
+        end
       end
 
-      it "raises an error" do
-        expect {
-          database.create_schema("test_schema", user)
-        }.to raise_error(ActiveRecord::JDBCError) { |exception|
-          exception.message.should match("quack")
-        }
-      end
-
-      it "does not create a local database" do
-        expect {
-          database.create_schema("my_new_schema", user)
-        }.to raise_error(ActiveRecord::JDBCError)
-        database.schemas.find_by_name("my_new_schema").should be_nil
+      it "should not create the database" do
+        dont_allow(connection).create_schema.with_any_args
+        expect do
+          expect do
+            database.create_schema(schema_name, user)
+          end.to raise_error(ActiveRecord::RecordInvalid)
+        end.not_to change(GpdbSchema, :count)
       end
     end
   end

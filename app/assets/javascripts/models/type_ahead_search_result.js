@@ -9,37 +9,36 @@ chorus.models.TypeAheadSearchResult = chorus.models.SearchResult.extend({
         if (!typeAhead) { return []; }
         return _.compact(_.map(typeAhead.results, function(result) {
             switch (result.entityType) {
-                case "user":
-                    return new chorus.models.User(result);
-                    break;
-                case "workspace":
-                    return new chorus.models.Workspace(result);
-                    break;
-                case "workfile":
-                    return new chorus.models.Workfile(result);
-                    break;
-                case "hdfs_file":
-                    return new chorus.models.HdfsEntry(result);
-                    break;
-                case "dataset":
-                    return new chorus.models.Dataset(result);
-                    break;
-                case "chorus_view":
-                    return new chorus.models.ChorusView(result);
-                    break;
-                case "gpdb_instance":
-                    return new chorus.models.GpdbInstance(result);
-                    break;
-                case "hadoop_instance":
-                    return new chorus.models.HadoopInstance(result);
-                    break;
-                case "gnip_instance":
-                    return new chorus.models.GnipInstance(result);
-                    break;
-                case "attachment":
-                    return new chorus.models.Attachment(result);
-                default:
-                    break;
+            case "user":
+                return new chorus.models.User(result);
+            case "workspace":
+                return new chorus.models.Workspace(result);
+            case "workfile":
+                return new chorus.models.Workfile(result);
+            case "hdfs_file":
+                return new chorus.models.HdfsEntry(result);
+            case "dataset":
+                return new chorus.models.DynamicDataset(result);
+            case "chorus_view":
+                return new chorus.models.ChorusView(result);
+            case "gpdb_data_source":
+                return new chorus.models.GpdbDataSource(result);
+            case "hdfs_data_source":
+                return new chorus.models.HdfsDataSource(result);
+            case "gnip_data_source":
+                return new chorus.models.GnipDataSource(result);
+            case "oracle_data_source":
+                return new chorus.models.OracleDataSource(result);
+            case "jdbc_data_source":
+                return new chorus.models.JdbcDataSource(result);
+            case "pg_data_source":
+                return new chorus.models.PgDataSource(result);
+            case "attachment":
+                return new chorus.models.Attachment(result);
+            case "tag":
+                return new chorus.models.Tag(result);
+            default:
+                break;
             }
         }));
     },

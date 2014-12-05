@@ -1,29 +1,55 @@
+.popup .girdle {
+    padding: $dialog-padding $dialog-padding 0;
+    border: none;
+}
+
 .dialog {
     .dialog_header {
-        height: 54px;
         border-bottom: 1px solid $border-color;
+        background-color: $dialog-header-background;
+        word-break: break-all;
+        height: 40px;
+        line-height: 40px;
 
         h1 {
-            @include heading-normal;
-            line-height: 54px;
+            font-size: 14px;
+            color: rgb(88, 89, 95);
+            @include uppercase;
             vertical-align: middle;
             margin: 0 $dialog-padding;
             padding-right: 25px;
         }
     }
 
+    h2 {
+        font-size: $medium-font;
+    }
+
     .dialog_content {
         background-color: $body-background-color;
-        padding: 10px $dialog-padding;
+
+        line-height: 16px;
 
         .menus {
             height: 30px;
         }
 
+        &.is_loading {
+            padding: 50px;
+            text-align: center;
+
+            & > div {
+                display: inline-block;
+            }
+        }
     }
 
-    fieldset {
-        border: 1px solid $border-color;
+    .errors {
+        word-break: break-word;
+    }
+
+    fieldset.in_a_box {
+        border: none;
         padding: 0 $dialog-padding $dialog-padding;
 
         legend label {
@@ -45,7 +71,6 @@
         padding : 0;
         line-height: 34px;
         vertical-align: middle;
-        @include font-content-details;
 
         .sort_menu {
             float: right;
@@ -57,13 +82,9 @@
     }
 
     &.with_sub_header {
-        .dialog_content {
-            padding: 0;
-        }
-
         .sub_header {
             padding: 0 15px;
-            border-bottom: 1px solid $menu-border-color;
+            border-bottom: $border-canon;
         }
 
         .sub_content {
@@ -74,16 +95,103 @@
             padding: 20px;
         }
 
-        .modal_controls {
-            padding: $dialog-padding;
-            border-top: 1px solid $menu-border-color;
-            margin: 0;
-        }
+        .form_controls { margin: 0; }
     }
 
   .additional_options {
     float: right;
     font-size: 13px;
   }
+
+  .display_box {
+     margin-top: 10px;
+     padding: 10px;
+     overflow-y: auto;
+     overflow-x: hidden;
+     max-height: 100px;
+     border: 1px solid $border-color;
+     @include font-normal-delta;
+     margin-left: 14px;
+     margin-right: 14px;
+  }
 }
 
+div.dialog {
+    width: $default-dialog-width;
+
+    &.dialog_wide {
+      width:940px;
+    }
+}
+
+/*Custom Dialogs*/
+
+.dialog.data_source_permissions {
+  width: 570px;
+}
+
+.dialog.edit_workspace_dialog {
+     width: 580px;
+ }
+
+.dialog.show_image {
+    width: 100%;
+    min-width: 600px;
+
+    .dialog_header {
+        height: 35px;
+        border: none;
+    }
+
+    .workspace_row {
+        background-color: $dialog-header-background;
+        height:25px;
+        border-bottom: 1px solid $border-color;
+
+        .workspace_image {
+            height: 18px;
+            padding-left: 20px;
+            padding-right: 5px;
+            float: left;
+        }
+    }
+
+    .content_space {
+        padding: 10px;
+
+        img {
+            max-width: 1200px;
+        }
+
+        .interactions_row {
+            padding-left: 10px;
+            a {
+                padding-right: 20px;
+            }
+        }
+
+        .image_space {
+            text-align: center;
+
+            .main_image {
+                padding:10px;
+            }
+        }
+    }
+}
+
+.dialog .full_dialog_horizontal {
+  display: block;
+  width: $default-dialog-width - 35px;
+}
+
+legend.subtitle {
+    padding: 10px 10px 10px 0px;
+    width: 100%;
+    @include font-normal-alpha;
+
+    .text {
+        float: left;
+        padding-right: 10px;
+    }
+}

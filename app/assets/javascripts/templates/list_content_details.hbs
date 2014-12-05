@@ -1,0 +1,41 @@
+{{#if multiSelect}}
+    {{> multipleSelectionHeader}}
+{{/if}}
+
+<div class="button_holder"></div>
+
+{{#if loaded}}
+    <div class="pagination">
+        {{#unless hideCounts}}
+            <div class="page">
+                {{t "pagination.page"}} <span class="current"></span> {{t "pagination.of"}} <span class="total"></span>
+            </div>
+        {{/unless}}
+
+        <div class="links">
+            <a class="previous"><span>{{t "pagination.previous"}}</span></a>
+            <span class="previous">{{t "pagination.previous"}}</span>
+
+            <a class="next"><span>{{t "pagination.next"}}</span></a>
+            <span class="next">{{t "pagination.next"}}</span>
+        </div>
+    </div>
+{{/if}}
+
+{{#if search}}
+    {{#unless multiSelect}}
+        <span class="explore">{{t "actions.explore" }}</span>
+    {{/unless}}
+
+    {{#if search.placeholder}}
+        <input type="text" class="search" placeholder="{{search.placeholder}}" value="{{searchTerm}}"/>
+    {{/if}}
+{{/if}}
+
+{{#if loaded}}
+    {{#unless hideCounts}}
+        <div class="count"></div>
+    {{/unless}}
+{{else}}
+    <div class="loading_section">{{t "loading"}}</div>
+{{/if}}

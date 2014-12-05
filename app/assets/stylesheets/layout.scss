@@ -1,25 +1,40 @@
-@import "_common.scss";
+@import "_common";
 @import "compass/css3/images";
 @import "compass/css3/border-radius";
 @import "compass/css3/opacity";
-
+@import "compass/css3/box-shadow";
 @import "layout/_breadcrumbs";
-@import "layout/_header.scss";
-@import "layout/_list.scss";
-@import "layout/_list_content_details.scss";
-@import "layout/_main_content.scss";
-@import "layout/_sidebar.scss";
-@import "layout/_sub_nav.scss";
-@import "layout/_pills.scss";
+@import "layout/_header";
+@import "layout/_page_sub_header";
+@import "layout/_list";
+@import "layout/_list_content_details";
+@import "layout/_main_content";
+@import "layout/_sidebar";
+@import "layout/_sub_nav";
+@import "layout/_pills";
+@import "layout/_full_height";
 
 #page {
     min-width: $page-min-width;
+    position: relative;
+    height: 100%;
+}
+
+/* comfortable spacing at bottom of page EXCEPT for iframe situation */
+#page > div:not(.header_iframe_layout) {
+    margin-bottom: $page-margin-bottom;
 }
 
 #guts {
-    padding: 0 0 0 $guts-padding;
     @include after-clearfix;
     z-index: $guts-z-index;
+}
+
+.workspace > #guts {
+    padding-top: $workspace-header-height;
+    & > #sidebar_wrapper {
+        top: $workspace-header-height;
+    }
 }
 
 #left {
@@ -28,17 +43,20 @@
 
 //hax for position fixed header and sidebar
 .logged_in_layout {
-    > .header {
+    > .header, .page_sub_header, .sub_nav {
         position: fixed;
         width: 100%;
         z-index: $header-z-index;
+        min-width: $page-min-width;
     }
 
-    > .breadcrumbs {
+    .breadcrumbs {
         padding-top: 50px;
+        margin-right: $sidebar-width + ($sidebar-padding-x);
     }
 
     #sidebar_wrapper {
+        z-index: 10;
         position: fixed;
         right: 0;
         top: $header-height;
@@ -69,4 +87,26 @@
             }
         }
     }
+}
+
+.header_iframe_layout {
+    height: 100%;
+
+    .iframe_wrapper {
+        position: absolute;
+        top: 50px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    iframe {
+        height: 99%;
+        width: 100%;
+        border: none;
+    }
+}
+
+.auto_scroll_horizontal {
+    overflow-x: auto;
 }

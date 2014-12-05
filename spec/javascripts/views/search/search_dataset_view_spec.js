@@ -1,6 +1,6 @@
 describe("chorus.views.SearchDataset", function() {
     beforeEach(function() {
-        this.result = fixtures.searchResult();
+        this.result = backboneFixtures.searchResult();
         this.result.set({query: "foo"});
         this.model = this.result.datasets().models[0];
         this.view = new chorus.views.SearchDataset({model: this.model});
@@ -23,7 +23,6 @@ describe("chorus.views.SearchDataset", function() {
                     name: "Baz"
                 }
             ]});
-            this.fakeQtip = stubQtip();
             this.view.render();
         });
 
@@ -34,14 +33,14 @@ describe("chorus.views.SearchDataset", function() {
             });
         });
 
-        it("should attach an instance to the database and instance links", function() {
-            expect(this.view.$("a.instance, a.database").data("instance")).toBe(this.model.get("instance"));
+        it('should attach a data source to the database and data source links', function() {
+            expect(this.view.$("a.data_source, a.database").data("data_source")).toBe(this.model.get("dataSource"));
         });
     });
 
     context("when the search results include a chorus view", function() {
         beforeEach(function() {
-            this.model = fixtures.searchResultChorusView({ workspace: { name: "Chorus View Thing" }, type: "CHORUS_VIEW" });
+            this.model = backboneFixtures.workspaceDataset.chorusView({ workspace: { name: "Chorus View Thing" }, entitySubtype: "CHORUS_VIEW" });
             this.view = new chorus.views.SearchDataset({model: this.model});
             this.view.render();
         });
@@ -54,26 +53,12 @@ describe("chorus.views.SearchDataset", function() {
 
         it("links to the correct dataset url", function() {
             expect(this.view.$('.name').attr('href')).toMatch(/workspace/);
-        })
-    });
-
-    context("when there are column comments", function() {
-        beforeEach(function() {
-            this.model.set({'columnDescriptions': [{highlightedAttributes: {body: ['comment 1']}}, {highlightedAttributes: {body: ['comment 2']}}]});
-            this.view.render();
-        });
-
-        it("displays the column comments", function() {
-            expect(this.view.$('.comment .comment_type').eq(0)).toContainText('Column Comment:');
-            expect(this.view.$('.comment .comment_content').eq(0)).toContainText('comment 1');
-            expect(this.view.$('.comment .comment_content').eq(1)).toContainText('comment 2');
         });
     });
 
-    // TODO: Fix these when we have the new structure for column and table comments on a dataset. [#37076621]
-    xcontext("when there is a table comment", function() {
+    context("when there is a table comment", function() {
         beforeEach(function() {
-            this.model.get('highlightedAttributes').description = ['comment 1'];
+            this.model.set({'tableDescription': [{highlightedAttributes: {body: ['comment 1']}}]});
             this.view.render();
         });
 
@@ -91,9 +76,11 @@ describe("chorus.views.SearchDataset", function() {
     });
 
     it("displays an icon for the item", function() {
-        var img = this.view.$(".icon");
+        var img = this.view.$("img");
         expect(img).toExist();
-        expect(img).toHaveAttr("src", this.model.iconUrl())
-        expect(img).toHaveAttr("title", Handlebars.helpers.humanizedDatasetType(this.model.attributes))
+        expect(img).toHaveAttr("src", this.model.iconUrl());
+        expect(img).toHaveAttr("title", Handlebars.helpers.humanizedDatasetType(this.model.attributes));
     });
+
+    itBehavesLike.ItPresentsModelWithTags();
 });

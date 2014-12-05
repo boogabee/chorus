@@ -1,14 +1,13 @@
 describe("chorus.views.TruncatedText", function() {
     beforeEach(function() {
-        stubDefer();
         this.text = '<span style="font-weight: normal; ">This is&nbsp;</span><div><span style="font-weight: normal;"><br></span>' +
             '</div><div><span style="font-weight: normal;"><br></span></div><div><span style="font-weight: normal; "><br></span>' +
             '</div><div><span style="font-weight: normal; ">some </span><b>great</b> stuff <div style="font-weight: normal; "><ul>' +
             '<li><span style="font-size: 10pt; ">one</span></li><li><span style="font-size: 10pt; ">two</span></li><li>' +
             '<span style="font-size: 10pt;">three</span> </li></ul><a href="http://example.com">hi</a></div></div>';
-        this.model = rspecFixtures.workspace({ summary: this.text });
+        this.model = backboneFixtures.workspace({ summary: this.text });
 
-        this.view = new chorus.views.TruncatedText({model: this.model, attribute: "summary", attributeIsHtmlSafe: true})
+        this.view = new chorus.views.TruncatedText({model: this.model, attribute: "summary", attributeIsHtmlSafe: true});
 
         this.parent = $("<div/>")
             .css("width", "200px")
@@ -68,7 +67,7 @@ describe("chorus.views.TruncatedText", function() {
 
         context("when the text height is less than or equal to two lines", function() {
             beforeEach(function() {
-                this.model.set({ summary: "This is <br/>a test"})
+                this.model.set({ summary: "This is <br/>a test"});
             });
 
             it("marks the view as not expandable", function() {
@@ -89,8 +88,8 @@ describe("chorus.views.TruncatedText", function() {
 
         context("when given an extraLine option", function() {
             beforeEach(function() {
-                this.text = "This is <br>a test <br> more"
-                this.model.set({ summary: this.text})
+                this.text = "This is <br>a test <br> more";
+                this.model.set({ summary: this.text});
                 this.view.options.extraLine = true;
                 this.view.render();
             });
@@ -105,13 +104,13 @@ describe("chorus.views.TruncatedText", function() {
 
             it("adds class extra_line to the .styled_text", function() {
                 expect(this.view.$(".styled_text")).toHaveClass("extra_line");
-            })
-        })
+            });
+        });
 
         it("renders 'read more' and 'read less' links", function() {
             expect(this.view.$(".links a.more").text().trim()).toMatchTranslation("truncated_text.more");
             expect(this.view.$(".links a.less").text().trim()).toMatchTranslation("truncated_text.less");
-        })
+        });
 
         it("is not expanded", function() {
             expect($(this.view.el)).not.toHaveClass('expanded');
@@ -119,12 +118,12 @@ describe("chorus.views.TruncatedText", function() {
 
         describe("clicking links in the text", function() {
             beforeEach(function() {
-                spyOn(window, "open")
+                spyOn(window, "open");
                 this.view.$(".original a").click();
             });
 
             it("opens the link in a new window", function() {
-                expect(window.open).toHaveBeenCalledWith("http://example.com")
+                expect(window.open).toHaveBeenCalledWith("http://example.com");
             });
         });
     });

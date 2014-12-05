@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe GpdbDatabasePresenter, :type => :view do
   before(:each) do
-    database = FactoryGirl.build(:gpdb_database, name: "abc", id: 456, gpdb_instance: FactoryGirl.build(:gpdb_instance, :id => 123))
+    database = FactoryGirl.build(:gpdb_database, name: "abc", id: 456, data_source: FactoryGirl.build(:gpdb_data_source, :id => 123))
     @presenter = GpdbDatabasePresenter.new(database, view)
   end
 
@@ -14,9 +14,7 @@ describe GpdbDatabasePresenter, :type => :view do
     it "includes the fields" do
       @hash[:name].should == "abc"
       @hash[:id].should == 456
-      @hash[:instance][:id].should == 123
+      @hash[:data_source][:id].should == 123
     end
-
-    it_behaves_like "sanitized presenter", :gpdb_database, :name
   end
 end

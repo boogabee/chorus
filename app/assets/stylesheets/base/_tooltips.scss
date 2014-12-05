@@ -24,21 +24,28 @@
     // qTip's author explicitly recommends !important for overriding z-index
     // https://github.com/Craga89/qTip2/issues/274
     /*z-index: $body-tooltip-z-index !important;*/
+    
+    box-shadow: $shadow-canon;
 }
 
-.tooltip-modal {
+.ui-tooltip {
     // qTip's author explicitly recommends !important for overriding z-index
     // https://github.com/Craga89/qTip2/issues/274
-    z-index: $modal-tooltip-z-index !important;
+    z-index: $tooltip-z-index !important;
+
 }
 
 .tooltip-white {
-    @include tooltip($color-text1, #FFFFFF, #CCC)
+    /* @include tooltip($color-text1, #FFFFFF, #CCCCCC); */
+    @include tooltip($color-text1, #FFFFFF, $border-color);
+    
+    box-shadow: $shadow-canon;
 }
 
 .tooltip-error {
     @include tooltip($error-text-color, #B61B1D, #B61B1D);
-
+    box-shadow: $shadow-canon;
+        
     .ui-tooltip-content {
         font-size: 16px;
         line-height: 16px;
@@ -64,6 +71,7 @@
         max-width: 350px;
         line-height: 1.2;
 
+
         .content-bold {
             font-size: 13px;
             font-weight: $semibold;
@@ -83,16 +91,12 @@
     .ui-tooltip-tip {
         visibility: hidden;
     }
-
-    a {
-        @include link-with-dotted-underline;
-    }
 }
 
 .tooltip-insert {
-    @include tooltip(red, $selected-row-hover-background-color, $list-border-color);
+    @include tooltip(red, $selected-row-hover-background-color, $border-color);
     .ui-tooltip-content {
-        $height: 19px;
+        $height: 15px;
         height: $height;
         line-height: $height;
         font-weight: $semibold;
@@ -111,7 +115,6 @@
   width: 12px;
 }
 
-
 .tooltip-tips {
   @include tooltip(white, #282828, #282828);
 
@@ -123,7 +126,7 @@
 
   dt {
     padding-top: 10px;
-    font-weight: bold;
+    font-weight: $semibold;
   }
 
   dd {

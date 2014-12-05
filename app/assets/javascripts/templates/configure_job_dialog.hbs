@@ -1,0 +1,101 @@
+<form action="#">
+    <div class="girdle">
+        <label class="required">{{t "job.dialog.name"}}</label>
+        <input class='name' type='text' value="{{name}}" />
+
+        <legend class="subtitle">
+            <div class="text">{{t "job.dialog.schedule"}}</div>
+            <hr/>
+        </legend>
+
+        <label>{{t "job.dialog.schedule_explanation"}}</label>
+
+        <div class="options">
+            <div class="on_demand row">
+                <input type="radio" id="onDemand" name="jobType" value="on_demand" {{#if runsOnDemand}}checked="checked"{{/if}}/>
+                <label for="onDemand">{{t "job.dialog.on_demand"}}</label>
+            </div>
+
+
+            <div class="on_schedule row">
+                <input type="radio" id="onSchedule" name="jobType" value="on_schedule" {{#unless runsOnDemand}}checked="checked"{{/unless}}/>
+                <label for="onSchedule">{{t "job.dialog.on_schedule"}}</label>
+            </div>
+
+            <fieldset class="interval_options {{#if runsOnDemand}}hidden{{/if}}">
+                <label>{{t "job.dialog.run_every"}}</label>
+                <input class='interval_value' type='text' maxlength="3" value="{{intervalValue}}"/>
+
+                <select class='interval_unit'>
+                    <option value="hours">{{t "job.interval_unit.hours"}}</option>
+                    <option value="days">{{t "job.interval_unit.days"}}</option>
+                    <option value="weeks">{{t "job.interval_unit.weeks"}}</option>
+                    <option value="months">{{t "job.interval_unit.months"}}</option>
+                </select>
+
+                <div class='next_run'>
+                    <label class="">{{t "job.dialog.next_run_date"}}</label>
+
+                    <div>
+                        <div class="start_date_widget">
+                            <div class='start_date'></div>
+                        </div>
+                        <div class="time">
+                            <select class="hour">
+                                {{#each hours}}
+                                    <option value="{{value}}">{{value}}</option>
+                                {{/each}}
+                            </select>
+                            <select class="minute">
+                                {{#each minutes}}
+                                    <option value="{{value}}">{{label}}</option>
+                                {{/each}}
+                            </select>
+                            <select class="meridiem">
+                                <option value="am">{{t "job.dialog.meridiem.am"}}</option>
+                                <option value="pm">{{t "job.dialog.meridiem.pm"}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="time_zone">
+                        {{timeZonesSelect}}
+                    </div>
+                    <div class="end_date_container">
+                        <input type="checkbox" id="end_date_enabled" class="end_date_enabled" {{#if endRun}}checked='checked'{{/if}}/>
+                        <label for="end_date_enabled">{{t "job.dialog.end_date_enabled"}}</label>
+                        <div class="end_date_widget" disabled="disabled">
+                            <div class='end_date'></div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <legend class="subtitle">
+            <div class="text">{{t 'job.dialog.edit.notify.subtitle'}}</div>
+            <hr/>
+        </legend>
+
+        {{#each notifyOptions}}
+            <div class='notify options'>
+                <div class='title'>{{t labelKey}}</div>
+                <label>
+                    <input type="radio" name="{{condition}}_notify" value="nobody" class="row"
+                           {{#if notifyNobody}}checked='checked'{{/if}}/> {{t 'job.dialog.edit.notify.nobody'}}
+                </label>
+                <label>
+                    <input type="radio" name="{{condition}}_notify" value="everybody" class="row"
+                           {{#if notifyEverybody}}checked='checked'{{/if}}/> {{t 'job.dialog.edit.notify.entire_workspace'}}
+                </label>
+                <label>
+                    <input type="radio" id="{{condition}}_notify_selected" name="{{condition}}_notify" value="selected" class="row"
+                           {{#if notifySelected}}checked='checked'{{/if}}/>
+
+                    <a class='select_{{condition}}_recipients {{#unless notifySelected}}hidden{{/unless}}' href='#'>{{t 'job.dialog.edit.notify.recipients_selected' count=recipientCount}}</a>
+                    <span class='select_{{condition}}_recipients {{#if notifySelected}}hidden{{/if}}'>{{t 'job.dialog.edit.notify.recipients_not_selected'}}</span>
+                </label>
+            </div>
+        {{/each}}
+    </div>
+    {{formControlsWithDisabledSubmit submitTranslation}}
+</form>

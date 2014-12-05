@@ -1,5 +1,7 @@
 chorus.views.Filter = chorus.views.Base.extend({
     templateName: "dataset_filter",
+    constructorName: "FilterView",
+
     tagName: "li",
     persistent: true,
 
@@ -23,8 +25,8 @@ chorus.views.Filter = chorus.views.Base.extend({
             disableOtherTypeCategory: false
         });
 
-        this.bindings.add(this.columnFilter, "columnSelected", this.columnSelected);
-        this.bindings.add(this.collection, "remove", this.render);
+        this.listenTo(this.columnFilter, "columnSelected", this.columnSelected);
+        this.listenTo(this.collection, "remove", this.render);
     },
 
     postRender: function() {
@@ -52,7 +54,7 @@ chorus.views.Filter = chorus.views.Base.extend({
 
 
         _.defer(function() {
-            chorus.styleSelect($comparator, { menuWidth: 240 })
+            chorus.styleSelect($comparator, { menuWidth: 240 });
         });
 
         this.selectComparator();
@@ -103,7 +105,7 @@ chorus.views.Filter = chorus.views.Base.extend({
             input = { value: '' };
         }
 
-        if (this.model.get("column") && (this.model.get("column").get("typeCategory") == "DATE")) {
+        if (this.model.get("column") && (this.model.get("column").get("typeCategory") === "DATE")) {
             $filters.find("input[name='day']").val(input.day);
             $filters.find("input[name='month']").val(input.month);
             $filters.find("input[name='year']").val(input.year);
@@ -132,11 +134,11 @@ chorus.views.Filter = chorus.views.Base.extend({
     },
 
     fieldValues: function() {
-       return { value: this.$(".filter.default input").val() };
+        return { value: this.$(".filter.default input").val() };
     },
 
     fieldSelectValues: function() {
-       return { value: this.$(".filter.select_type select").val() };
+        return { value: this.$(".filter.select_type select").val() };
     },
 
     filtersForComparator: function(comparator) {

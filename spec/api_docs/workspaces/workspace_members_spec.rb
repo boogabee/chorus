@@ -12,13 +12,13 @@ resource "Workspaces" do
 
   post "/workspaces/:workspace_id/members" do
     parameter :workspace_id, "Id of a workspace"
-    parameter :'member_ids[]', "Ids of Users to add as a member to the workspace"
+    parameter :'member_ids[]', "Ids of the users that will be members of the workspace"
 
     let(:'member_ids[]') { [user1.id, owner.id] }
 
     required_parameters :'member_ids[]', :workspace_id
 
-    example_request "Add a member to the workspace" do
+    example_request "Update membership of a workspace" do
       status.should == 200
     end
   end

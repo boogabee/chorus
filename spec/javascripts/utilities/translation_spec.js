@@ -11,7 +11,7 @@ describe("translation", function() {
                 "multiline=\\\n" +
                 "    line2\\ \n" +
                 "    line3\n" +
-                "value_with_equal_sign=1+1=2"
+                "value_with_equal_sign=1+1=2";
             this.topLevelKeys = ['quux', 'test', 'multiline', 'value_with_equal_sign'];
             this.result = chorus.translation.parseProperties(this.translationString);
         });

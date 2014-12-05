@@ -8,7 +8,7 @@ chorus.views.visualizations.Histogram = chorus.views.Base.extend({
 
         var bins = _.pluck(data, 'bin');
 
-        var frequencies = _.pluck(data, 'frequency')
+        var frequencies = _.pluck(data, 'frequency');
 
         var svg = d3.select(this.el).append("svg").
             attr("class", "chart histogram").
@@ -47,20 +47,20 @@ chorus.views.visualizations.Histogram = chorus.views.Base.extend({
             .enter().append("svg:rect")
             .attr("class", "bar")
             .attr("x", function(d) {
-                return (scales.x(d.bin[0]) + barOffset)
+                return (scales.x(d.bin[0]) + barOffset);
             })
             .attr("width", barWidth)
             .attr("y", function(d) {
-                return scales.y(d.frequency)
+                return scales.y(d.frequency);
             })
             .attr("height", function(d) {
-                return scales.y(0) - scales.y(d.frequency)
-            })
+                return scales.y(0) - scales.y(d.frequency);
+            });
 
-        svg.select(".xaxis").remove()
-        svg.select(".yaxis").remove()
+        svg.select(".xaxis").remove();
+        svg.select(".yaxis").remove();
         this.axes.render();
-   }
+    }
 
 });
 

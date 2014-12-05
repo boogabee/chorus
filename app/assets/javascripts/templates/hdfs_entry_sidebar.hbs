@@ -1,0 +1,19 @@
+{{#if name}}
+    <div class="actions">
+        <label>{{t "sidebar.selected.one"}}</label>
+        <ul>
+            <li><a class="associate_with_workspace">{{t "actions.associate"}}</a></li>
+            {{#if isDir}}
+                <li><a class="directory_external_table" href="#">{{t "hdfs_data_source.create_directory_external_table"}}</a></li>
+            {{else}}
+                {{#unless isBinary}}
+                    <li><a class="external_table" href="#">{{t "hdfs.create_external_table"}}</a></li>
+                {{/unless}}
+                <li><a class="dialog add_note" href="#">{{t "actions.add_note"}}</a></li>
+                <li><a class="edit_tags" href="#">{{t "sidebar.edit_tags"}}</a></li>
+            {{/if}}
+        </ul>
+    </div>
+
+    <div class="tab_control"></div>
+{{/if}}

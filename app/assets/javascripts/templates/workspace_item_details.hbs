@@ -1,0 +1,20 @@
+<div class="summary">
+</div>
+<div class="details">
+    <span class="owner">
+        {{#if active}}
+            {{t "workspaces.owned_by"}}
+            <a href="{{ownerUrl}}">{{ownerFullName}}</a>
+        {{else}}
+            {{t "workspaces.archived_by"}}
+            <a href="{{archiverUrl}}">{{archiverFullName}}</a>
+            <span class="timestamp">{{relativeTimestamp archivedAt}}</span>
+        {{/if}}
+    </span>
+    {{#unless public}}
+        <span class="private">
+                    <img src="/images/workspace-lock.png"/>
+            {{t "workspaces.private"}}
+                    </span>
+    {{/unless}}
+</div>

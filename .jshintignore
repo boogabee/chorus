@@ -1,0 +1,9 @@
+app/assets/javascripts/vendor/*
+spec/run-phantom-jasmine.js
+spec/javascripts/phantom
+spec/javascripts/support/jasmine-boot/boot.js
+spec/javascripts/helpers/sinon.js
+spec/javascripts/helpers/jasmine-jquery.js
+spec/javascripts/helpers/jquery.color.js
+spec/javascripts/helpers/fake_jasmine_builtins.js
+spec/javascripts/helpers/stub_keyboard_meta_key.js

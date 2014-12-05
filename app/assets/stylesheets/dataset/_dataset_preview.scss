@@ -1,26 +1,15 @@
 .dataset_preview.dialog {
-    width: 800px;
-
     &.dialog {
-        .dialog_content {
-            padding-left: 0;
-            padding-right: 0;
-            padding-top: 0;
-        }
-
         h1 {
             @include ellipsis;
-            max-width: 750px;
         }
     }
 
-    .modal_controls {
-        margin-right: $dialog-padding;
+    .form_controls {
+        margin-top: 0px;
     }
 
     .results_console {
-        border-bottom: 1px solid $list-border-color;
-
         .execution {
             h1.title {
                 display: none;

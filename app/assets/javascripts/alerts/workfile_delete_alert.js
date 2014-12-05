@@ -5,7 +5,6 @@ chorus.alerts.WorkfileDelete = chorus.alerts.ModelDelete.extend({
     ok:t("workfile.delete.button"),
     deleteMessage:"workfile.delete.toast",
 
-
     makeModel:function () {
         this.model = this.model || new chorus.models.Workfile({
             id:this.options.workfileId,

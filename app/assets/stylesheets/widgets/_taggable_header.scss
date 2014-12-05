@@ -1,0 +1,19 @@
+.taggable_header {
+    .icon {
+        max-height: 45px;
+        max-width: 45px;
+        float: left;
+    }
+
+    h1 {
+        padding: 6px 0 5px;
+    }
+
+    .item_information {
+        margin-left: 55px;
+        max-width:85%;
+    }
+}
+.item_information {
+    word-wrap:break-word;
+}

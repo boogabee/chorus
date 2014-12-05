@@ -1,15 +1,11 @@
-@import "_common.scss";
+@import "_common";
 @import "compass/css3/border-radius";
 @import "compass/css3/opacity";
 
-@import "workfiles/_pick_workspace_dialog.scss";
-@import "workfiles/_workfile_list.scss";
-@import "workfiles/_workfile_new.scss";
-@import "workfiles/_workfile_show.scss";
-@import "workfiles/_workfiles_import.scss";
-@import "workfiles/_workfile_sidebar.scss";
-@import "workfiles/_results_console.scss";
-@import "workfiles/_run_file_in_schema.scss";
+@import "workfiles/_workfile_new";
+@import "workfiles/_workfile_show";
+@import "workfiles/_workfile_sidebar";
+@import "workfiles/_results_console";
 
 .image_workfile_content {
     background: white;
@@ -17,4 +13,10 @@
     img {
         max-width: 100%;
     }
+}
+
+button .down_arrow {
+    @include triangle(down, #aaa, 8px, 4px);
+    margin: 0 0 2px 8px;
+    display: inline-block;
 }

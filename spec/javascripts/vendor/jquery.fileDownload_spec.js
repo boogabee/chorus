@@ -48,7 +48,7 @@ xdescribe("jQuery.fileDownload", function() {
         beforeEach(function() {
             $.fileDownload("foo/bar", {data: data, httpMethod: 'POST'});
             $iframe = $('iframe');
-            $form = $($iframe[0].contentDocument.body).find("form")
+            $form = $($iframe[0].contentDocument.body).find("form");
             uri = new URI($iframe.attr('src'));
         });
 

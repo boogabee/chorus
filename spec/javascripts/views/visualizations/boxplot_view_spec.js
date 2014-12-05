@@ -1,19 +1,17 @@
 describe("chorus.views.visualizations.BoxPlot", function() {
-    var leftX   = chorus.svgHelpers.leftX,
-        rightX  = chorus.svgHelpers.rightX,
-        width   = chorus.svgHelpers.width,
-        height  = chorus.svgHelpers.height,
+    var leftX = chorus.svgHelpers.leftX,
+        rightX = chorus.svgHelpers.rightX,
+        width = chorus.svgHelpers.width,
         centerX = chorus.svgHelpers.centerX,
-        topY    = chorus.svgHelpers.topY,
-        bottomY = chorus.svgHelpers.bottomY,
-        centerY = chorus.svgHelpers.centerY;
+        topY = chorus.svgHelpers.topY,
+        bottomY = chorus.svgHelpers.bottomY;
 
     beforeEach(function() {
-        this.task = rspecFixtures.boxplotTask({
+        this.task = backboneFixtures.boxplotTask({
             rows: [
-                { bucket: 'aardvark',   min: 1,   firstQuartile: 1,   median: 2.5, thirdQuartile: 3,   max: 4,   percentage: "25%" },
-                { bucket: 'beluga',     min: 100, firstQuartile: 100, median: 250, thirdQuartile: 300, max: 400, percentage: "33.3%" },
-                { bucket: 'chupacabra', min: 10,  firstQuartile: 10,  median: 25,  thirdQuartile: 30,  max: 40,  percentage: "81.5%" }
+                { bucket: 'aardvark', min: 1, firstQuartile: 1, median: 2.5, thirdQuartile: 3, max: 4, percentage: "25%" },
+                { bucket: 'beluga', min: 100, firstQuartile: 100, median: 250, thirdQuartile: 300, max: 400, percentage: "33.3%" },
+                { bucket: 'chupacabra', min: 10, firstQuartile: 10, median: 25, thirdQuartile: 30, max: 40, percentage: "81.5%" }
             ],
             xAxis: "foo",
             yAxis: "bar"
@@ -30,11 +28,11 @@ describe("chorus.views.visualizations.BoxPlot", function() {
             this.boxes = this.view.$("g.box");
             this.quartileRectangles = this.boxes.find(".quartile");
             this.medianLines = this.boxes.find("line.median");
-            this.minWhiskers = this.boxes.find("line.whisker.min")
-            this.maxWhiskers = this.boxes.find("line.whisker.max")
+            this.minWhiskers = this.boxes.find("line.whisker.min");
+            this.maxWhiskers = this.boxes.find("line.whisker.max");
             this.whiskers = this.boxes.find("line.whisker");
             this.midlines = this.boxes.find("line.midline");
-            this.addMatchers(chorus.svgHelpers.matchers);
+            window.addCompatibilityShimmedMatchers(chorus.svgHelpers.matchers);
         });
 
         describe("re-rendering", function() {
@@ -82,8 +80,8 @@ describe("chorus.views.visualizations.BoxPlot", function() {
 
             it("draws them with some padding in between", function() {
                 _.each(this.quartileRectangles, function(rect, i) {
-                    if (i === 0) return;
-                    expect(leftX(rect)).toBeGreaterThan(rightX(this.quartileRectangles[i-1]) + 5);
+                    if(i === 0) return;
+                    expect(leftX(rect)).toBeGreaterThan(rightX(this.quartileRectangles[i - 1]) + 5);
                 }, this);
             });
 
@@ -117,7 +115,7 @@ describe("chorus.views.visualizations.BoxPlot", function() {
 
         describe("the x positions when the ellipsized names are all the same", function() {
             beforeEach(function() {
-                this.task = rspecFixtures.boxplotTask({
+                this.task = backboneFixtures.boxplotTask({
                     rows: [
                         { bucket: 'thelongname_aardvark', min: 1, firstQuartile: 1, median: 2.5, thirdQuartile: 3, max: 4, percentage: "25%" },
                         { bucket: 'thelongname_beluga', min: 100, firstQuartile: 100, median: 250, thirdQuartile: 300, max: 400, percentage: "25%" },
@@ -133,9 +131,9 @@ describe("chorus.views.visualizations.BoxPlot", function() {
             });
 
             it("has different x positions for each bucket", function() {
-                var aardvark = this.view.$("g.box line.midline").eq(0)
-                var beluga = this.view.$("g.box line.midline").eq(1)
-                var chupacabra = this.view.$("g.box line.midline").eq(2)
+                var aardvark = this.view.$("g.box line.midline").eq(0);
+                var beluga = this.view.$("g.box line.midline").eq(1);
+                var chupacabra = this.view.$("g.box line.midline").eq(2);
 
                 expect(aardvark.attr("x1")).not.toEqual(beluga.attr("x1"));
                 expect(aardvark.attr("x1")).not.toEqual(chupacabra.attr("x1"));
@@ -143,9 +141,9 @@ describe("chorus.views.visualizations.BoxPlot", function() {
             });
 
             it("has different x positions for each tick label", function() {
-                var aardvark = this.view.$("g.label text").eq(0)
-                var beluga = this.view.$("g.label text").eq(1)
-                var chupacabra = this.view.$("g.label text").eq(2)
+                var aardvark = this.view.$("g.label text").eq(0);
+                var beluga = this.view.$("g.label text").eq(1);
+                var chupacabra = this.view.$("g.label text").eq(2);
 
                 expect(aardvark.attr("x")).not.toEqual(beluga.attr("x"));
                 expect(aardvark.attr("x")).not.toEqual(chupacabra.attr("x"));

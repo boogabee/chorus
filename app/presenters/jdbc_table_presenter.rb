@@ -1,0 +1,1 @@
+class JdbcTablePresenter < TablePresenter; end

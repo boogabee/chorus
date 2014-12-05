@@ -1,14 +1,9 @@
-class DatasetDownloadsController < GpdbController
+class DatasetDownloadsController < StreamsController
+  include DataSourceAuth
+
   def show
     dataset = Dataset.find(params[:dataset_id])
-    @streamer = DatasetStreamer.new(dataset, current_user, params[:row_limit])
-    response.headers["Content-Disposition"] = "attachment; filename=#{dataset.name}.csv"
-    response.headers["Cache-Control"] = 'no-cache'
-    response.headers["Transfer-Encoding"] = 'chunked'
-    begin
-      self.response_body = @streamer.enum
-    rescue ActiveRecord::RecordNotFound => e
-      self.response_body = e.message
-    end
+    stream_options = params.slice(:row_limit, :header)
+    stream(dataset, current_user, stream_options.merge({:quiet_null => true, :rescue_connection_errors => true}))
   end
 end

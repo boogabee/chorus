@@ -4,11 +4,11 @@ describe("chorus.alerts.EmptyCSV", function() {
     });
 
     it("has the correct title", function() {
-        expect(this.alert.title).toMatchTranslation("empty_csv.title")
+        expect(this.alert.title).toMatchTranslation("empty_csv.title");
     });
 
     it("has the correct text", function() {
-        expect(this.alert.text).toMatchTranslation("empty_csv.text")
+        expect(this.alert.text).toMatchTranslation("empty_csv.text");
     });
 
     describe("#render", function() {
@@ -21,7 +21,7 @@ describe("chorus.alerts.EmptyCSV", function() {
         });
 
         it("hides the submit button", function() {
-            expect(this.alert.$("button.submit")).toHaveClass("hidden")
+            expect(this.alert.$("button.submit")).toHaveClass("hidden");
         });
     });
-})
+});

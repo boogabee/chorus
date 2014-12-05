@@ -8,17 +8,16 @@ chorus.views.Sidebar = chorus.views.Base.extend({
         $("#sidebar_wrapper").find(".jump_to_top").unbind("click");
     },
 
-    template: function() {
-        var result = this._super('template', arguments);
-        return "<div class='spacer'/>" + result;
+    teardown: function() {
+        $("#sidebar_wrapper").find(".jump_to_top").unbind("click");
+        this._super("teardown", arguments);
     },
 
     postRender: function() {
         this._super('postRender');
 
-        var sidebar = $(this.el).closest("#sidebar");
-        this.setupScrolling(sidebar, {
-            contentWidth: sidebar.width()
+        this.setupScrolling("#sidebar", {
+            contentWidth: $("#sidebar").width()
         });
 
         $("#sidebar_wrapper .jump_to_top").bind("click", _.bind(this.jumpToTop, this));
@@ -31,7 +30,7 @@ chorus.views.Sidebar = chorus.views.Base.extend({
     cleanup: $.noop,
 
     jumpToTop: function(e) {
-        e && e.preventDefault && e.preventDefault()
+        e && e.preventDefault && e.preventDefault();
         var api = $("#sidebar").data("jsp");
         if (api) {
             api.scrollTo(0, 0);
@@ -40,13 +39,13 @@ chorus.views.Sidebar = chorus.views.Base.extend({
     },
 
     onMouseWheel: function(event, d) {
-        var api = $("#sidebar").data("jsp")
+        var api = $("#sidebar").data("jsp");
         $("#sidebar_wrapper .jump_to_top").toggleClass("clickable", api.getContentPositionY() > 10);
         event.preventDefault();
         return true;
     },
 
     recalculateScrolling: function() {
-        this._super("recalculateScrolling", [$(this.el).closest(".custom_scroll")])
+        this._super("recalculateScrolling", [$(this.el).closest(".custom_scroll")]);
     }
 });

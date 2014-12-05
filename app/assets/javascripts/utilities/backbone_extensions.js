@@ -1,12 +1,3 @@
-/*
- * Copyright (c) 2011 EMC Corporation All Rights Reserved
- *
- * This software is protected, without limitation, by copyright law
- * and international treaties. Use of this software and the intellectual
- * property contained therein is expressly limited to the terms and
- * conditions of the License Agreement under which it is provided by
- * or on behalf of EMC.
- */
 var methodMap = {
     'create': 'POST',
     'update': 'PUT',
@@ -14,61 +5,69 @@ var methodMap = {
     'read'  : 'GET'
 };
 
-Backbone.emulateJSON = true;
-
 Backbone.sync = function(method, model, options) {
+    var originalOptions = _.clone(options || {});
     method = (options && options.method) || method;
 
     var type = methodMap[method];
 
+    // Default options, unless specified.
+    _.defaults(options || (options = {}), {
+        emulateHTTP: Backbone.emulateHTTP,
+        emulateJSON: Backbone.emulateJSON
+    });
+
     // Default JSON-request options.
-    var params = _.extend({
-        type:         type,
-        dataType:     'json',
-        processData:  false
-    }, options);
+    var params = {type: type, dataType: 'json'};
 
     // Ensure that we have a URL.
-    if (!params.url) {
-        params.url = model.url({ method: method }) || urlError();
+    if (!options.url) {
+        // urlError is in scope in the actual backbone file
+        /*global urlError:true */
+        var urlOptions = _.extend(originalOptions, { method: method });
+        params.url = model.url(urlOptions) || urlError();
+        /*global urlError:false */
     }
 
     // Ensure that we have the appropriate request data.
-    if (!params.data && model && (method == 'create' || method == 'update')) {
+    var json;
+    if (!options.data && model && (method === 'create' || method === 'update' || method === 'patch')) {
         params.contentType = 'application/json';
 
         // Let the model specify its own params
         var string = JSON.stringify(model.toJSON());
-        var json = $.parseJSON(string);
+        json = $.parseJSON(string);
         _.each(json, function(property, key) {
-            if (property === null) delete json[key]
+            if (property === null) delete json[key];
         });
-        params.data = $.param(json);
+        params.data = JSON.stringify(json);
     }
 
     // For older servers, emulate JSON by encoding the request into an HTML-form.
-    if (Backbone.emulateJSON) {
+    if (options.emulateJSON) {
         params.contentType = 'application/x-www-form-urlencoded';
-        params.processData = true;
-
-        // EDC does not want the data wrapped in a model container
-//      params.data        = params.data ? {model : params.data} : {};
+        params.data = params.data ? {model: params.data} : {};
     }
 
     // For older servers, emulate HTTP by mimicking the HTTP method with `_method`
     // And an `X-HTTP-Method-Override` header.
-    if (Backbone.emulateHTTP) {
-        if (type === 'PUT' || type === 'DELETE') {
-            if (Backbone.emulateJSON) params.data._method = type;
-            params.type = 'POST';
-            params.beforeSend = function(xhr) {
-                xhr.setRequestHeader('X-HTTP-Method-Override', type);
-            };
-        }
+    if (options.emulateHTTP && (type === 'PUT' || type === 'DELETE' || type === 'PATCH')) {
+        params.type = 'POST';
+        if (options.emulateJSON) params.data._method = type;
+        var beforeSend = options.beforeSend;
+        options.beforeSend = function(xhr) {
+            xhr.setRequestHeader('X-HTTP-Method-Override', type);
+            if (beforeSend) return beforeSend.apply(this, arguments);
+        };
     }
 
-    // Make the request.
-    if (this.uploadObj && method == "create") {
+    // Don't process data on a non-GET request.
+    if (params.type !== 'GET' && !options.emulateJSON) {
+        params.processData = false;
+    }
+
+    // Make the request, allowing the user to override any Ajax options.
+    if (this.uploadObj && method === "create") {
         var uploadOptions = $(this.uploadObj.form).find("input[type=file]").data("fileupload").options;
         _.each(['success', 'error', 'url', 'type', 'dataType'], function(fieldName) {
             uploadOptions[fieldName] = params[fieldName];
@@ -76,30 +75,11 @@ Backbone.sync = function(method, model, options) {
         uploadOptions.formData = json;
         return this.uploadObj.submit();
     } else {
-        return $.ajax(params);
+        var xhr = Backbone.ajax(_.extend(params, options));
+        model.trigger('request', model, xhr, options);
+        return xhr;
     }
 };
-
-// Unbind gets attached to the prototype of the base classes, we have to clobber it down at the bottom of this file.
-Backbone.Events.unbind = function(ev, callback, context) {
-    var calls;
-    if (!ev) {
-        this._callbacks = {};
-    } else if (calls = this._callbacks) {
-        if (!callback) {
-            calls[ev] = [];
-        } else {
-            var list = calls[ev];
-            if (!list) return this;
-            for (var i = 0, l = list.length; i < l; i++) {
-                if (list[i] && callback === list[i][0] && (context == list[i][1] || context === undefined) ) {
-                    list[i] = null;
-                }
-            }
-        }
-    }
-    return this;
-}
 
 // This function overrides loadUrl from Backbone to strip off a trailing
 // slash.
@@ -109,65 +89,94 @@ Backbone.Events.unbind = function(ev, callback, context) {
 //
 Backbone.History.prototype.loadUrl = function(fragmentOverride) {
     var fragment = this.fragment = this.getFragment(fragmentOverride);
-    if (fragment[fragment.length - 1] == '/') {
+    if (fragment[fragment.length - 1] === '/') {
         fragment = fragment.substr(0,fragment.length-1);
     }
-    var matched = _.any(this.handlers, function(handler) {
+    return _.any(this.handlers, function(handler) {
         if (handler.route.test(fragment)) {
             handler.callback(fragment);
             return true;
         }
     });
-    return matched;
-}
+};
+
+// Backbone 1.0 introduced automatic attachment of url to a model from options.
+// It was promptly removed in 1.1.0, but 1.1.x introduces several more breaking changes
+// (no attachment of options to Views and Collection#add,set,reset,remove
+// return the changed model or list of models instead of the collection itself).
+// The below is the 1.0 implementation of Backbone.Model with 'url' removed from modelOptions.
+Backbone.Model = (function(Model) {
+    var modelOptions = ['urlRoot', 'collection'];
+
+    return Model.extend({
+        constructor: function(attributes, options) {
+            var defaults; // jshint ignore:line
+            var attrs = attributes || {};
+            options || (options = {});
+            this.cid = _.uniqueId('c');
+            this.attributes = {};
+            _.extend(this, _.pick(options, modelOptions));
+            if (options.parse) attrs = this.parse(attrs, options) || {};
+            /* jshint ignore:start */
+            if (defaults = _.result(this, 'defaults')) {
+                attrs = _.defaults({}, attrs, defaults);
+            }
+            /* jshint ignore:end */
+            this.set(attrs, options);
+            this.changed = {};
+            this.initialize.apply(this, arguments);
+        }
+    });
+})(Backbone.Model);
 
 // super function, taken from here:
 // -- https://gist.github.com/1542120
-;(function(Backbone) {
+;(function (Backbone) {
 
-  // The super method takes two parameters: a method name
-  // and an array of arguments to pass to the overridden method.
-  // This is to optimize for the common case of passing 'arguments'.
-  function _super(methodName, args) {
-
-    // Keep track of how far up the prototype chain we have traversed,
-    // in order to handle nested calls to _super.
-    this._superCallObjects || (this._superCallObjects = {});
-    var currentObject = this._superCallObjects[methodName] || this,
-        parentObject  = findSuper(methodName, currentObject);
-    this._superCallObjects[methodName] = parentObject;
-
-    var result;
-    if (_.isFunction(parentObject[methodName])) {
-        result = parentObject[methodName].apply(this, args || []);
-    } else {
-        result = parentObject[methodName];
+    // Find the next object up the prototype chain that has a
+    // different implementation of the method.
+    function findSuper(attributeName, childObject) {
+        var object = childObject;
+        while(object && (object[attributeName] === childObject[attributeName])) {
+            object = object.constructor.__super__;
+        }
+        return object;
     }
-    delete this._superCallObjects[methodName];
-    return result;
-  }
 
-  // Find the next object up the prototype chain that has a
-  // different implementation of the method.
-  function findSuper(attributeName, childObject) {
-    var object = childObject;
-    while (object && (object[attributeName] === childObject[attributeName])) {
-      object = object.constructor.__super__;
+    // The super method takes two parameters: a method name
+    // and an array of arguments to pass to the overridden method.
+    // This is to optimize for the common case of passing 'arguments'.
+    function _super(methodName, args) {
+
+        // Keep track of how far up the prototype chain we have traversed,
+        // in order to handle nested calls to _super.
+        this._superCallObjects || (this._superCallObjects = {});
+        var currentObject = this._superCallObjects[methodName] || this,
+            parentObject = findSuper(methodName, currentObject);
+        this._superCallObjects[methodName] = parentObject;
+
+        var result;
+        if(_.isFunction(parentObject[methodName])) {
+            result = parentObject[methodName].apply(this, args || []);
+        } else {
+            result = parentObject[methodName];
+        }
+        delete this._superCallObjects[methodName];
+        return result;
     }
-    return object;
-  }
 
-  function include(/* *modules */) {
-    var modules = _.toArray(arguments);
-    var mergedModules = _.extend.apply(_, [{}].concat(modules));
-    return this.extend(mergedModules);
-  }
+    function include(/* *modules */) {
+        var modules = _.toArray(arguments);
+        var mergedModules = _.extend.apply(_, [
+            {}
+        ].concat(modules));
+        return this.extend(mergedModules);
+    }
 
-  _.each(["Model", "Collection", "View", "Router"], function(klass) {
-    Backbone[klass].prototype._super = _super;
-    Backbone[klass].prototype.unbind = Backbone.Events.unbind;
-    Backbone[klass].include = include;
-  });
+    _.each(["Model", "Collection", "View", "Router"], function(klass) {
+        Backbone[klass].prototype._super = _super;
+        Backbone[klass].include = include;
+    });
 
 })(Backbone);
 

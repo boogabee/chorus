@@ -1,14 +1,34 @@
-;(function() {
+(function() {
     var collectionMap = {
-        hdfs: "HdfsEntrySet",
-        datasets: "DynamicDatasetSet",
+        hdfs_entries: "HdfsEntrySet",
+        datasets: "DatasetSet",
         workfiles: "WorkfileSet",
         workspaces: "WorkspaceSet",
         workspaceItems: "WorkspaceItemSet",
-        instances: "InstanceSet",
+        data_sources: "DataSourceSet",
         users: "UserSet",
-        attachments: "AttachmentSet"
+        other_files: "AttachmentSet"
     };
+
+    function makeCollectionMethod(methodName) {
+        var constructorName = collectionMap[methodName];
+        var collection, memoizedName = "_" + methodName;
+
+        return function() {
+            var ctor = chorus.collections.Search[constructorName];
+            var searchKey = ctor.prototype.searchKey;
+
+            if (!this[memoizedName]) {
+                collection = this[memoizedName] = new ctor([], { search: this });
+                collection.loaded = true;
+                if (this.get(searchKey)){
+                    collection.refreshFromSearch();
+                }
+            }
+
+            return this[memoizedName];
+        };
+    }
 
     chorus.models.SearchResult = chorus.models.Base.extend({
         constructorName: "SearchResult",
@@ -42,10 +62,16 @@
                 prefix = "workspaces/" + workspaceId + "/";
             }
 
-            if (this.isConstrained()) {
-                return prefix + "search/" + this.searchIn() + "/" + this.entityType() + "/" + encodeURIComponent(this.get("query"));
+            if (this.get("isTag")) {
+                prefix += "tags/";
             } else {
-                return prefix + "search/" + encodeURIComponent(this.get("query"));
+                prefix += "search/";
+            }
+
+            if (this.isConstrained()) {
+                return prefix + this.searchIn() + "/" + this.entityType() + "/" + encodeURIComponent(this.get("query"));
+            } else {
+                return prefix + encodeURIComponent(this.get("query"));
             }
         },
 
@@ -91,6 +117,10 @@
 
         urlParams: function() {
             var params = { query: this.get("query") };
+
+            if(this.get("isTag")){
+                params.tag = true;
+            }
             if (this.hasSpecificEntityType()) {
                 params.entityType = this.entityType();
             }
@@ -124,11 +154,11 @@
         workfiles: makeCollectionMethod("workfiles"),
         datasets: makeCollectionMethod("datasets"),
         workspaces: makeCollectionMethod("workspaces"),
-        instances: makeCollectionMethod("instances"),
+        dataSources: makeCollectionMethod("data_sources"),
         users: makeCollectionMethod("users"),
-        hdfs: makeCollectionMethod("hdfs"),
+        hdfs_entries: makeCollectionMethod("hdfs_entries"),
         workspaceItems: makeCollectionMethod("workspaceItems"),
-        attachments: makeCollectionMethod("attachments"),
+        attachments: makeCollectionMethod("other_files"),
 
         getResults: function() {
             if (this.isScopedToSingleWorkspace()) {
@@ -136,25 +166,20 @@
             }
 
             switch(this.entityType()) {
-                case "user":
-                    return this.users();
-                    break;
-                case "workspace":
-                    return this.workspaces();
-                    break;
-                case "workfile":
-                    return this.workfiles();
-                    break;
-                case "dataset":
-                    return this.datasets();
-                    break;
-                case "instance":
-                    return this.instances();
-                    break;
-                case "hdfs":
-                    return this.hdfs();
-                case "attachment":
-                    return this.attachments();
+            case "user":
+                return this.users();
+            case "workspace":
+                return this.workspaces();
+            case "workfile":
+                return this.workfiles();
+            case "dataset":
+                return this.datasets();
+            case "data_source":
+                return this.dataSources();
+            case "hdfs_entry":
+                return this.hdfs_entries();
+            case "attachment":
+                return this.attachments();
             }
         },
 
@@ -165,31 +190,11 @@
         total: function() {
             return _.reduce(_.values(this.attributes), function(sum, results) {
                 if (results && results.numFound) {
-                    return sum + results.numFound
+                    return sum + results.numFound;
                 } else {
                     return sum;
                 }
-            }, 0)
+            }, 0);
         }
     });
-
-    function makeCollectionMethod(methodName) {
-        var constructorName = collectionMap[methodName];
-        var collection, memoizedName = "_" + methodName;
-
-        return function() {
-            var ctor = chorus.collections.Search[constructorName];
-            var searchKey = ctor.prototype.searchKey;
-
-            if (!this[memoizedName]) {
-                collection = this[memoizedName] = new ctor([], { search: this });
-                collection.loaded = true;
-                if (this.get(searchKey)){
-                    collection.refreshFromSearch();
-                }
-            }
-
-            return this[memoizedName];
-        };
-    }
 })();

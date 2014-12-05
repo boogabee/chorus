@@ -12,4 +12,8 @@ class DefaultAccess
   def create_note_on?(model)
     true
   end
+
+  def owner?(model)
+    model.owner == current_user
+  end
 end

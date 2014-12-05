@@ -28,6 +28,6 @@ chorus.views.KaggleFilterWizard = chorus.views.FilterWizard.extend({
     },
 
     filterUsers: function() {
-        chorus.PageEvents.broadcast("filterKaggleUsers", this.collection);
+        chorus.PageEvents.trigger("filterKaggleUsers", this.collection);
     }
 });

@@ -13,6 +13,14 @@ events {
 
 
 http {
+
+    server_tokens off;
+
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
     include       mime.types;
     default_type  application/octet-stream;
 
@@ -33,14 +41,14 @@ http {
     #gzip  on;
 
     server {
-        listen      <%= chorus_config['server_port'] %>;
+        listen      <%if ip6_enabled %>[::]:<% end %><%= chorus_config['server_port'] %> ipv6only=off;
 
-<% if chorus_config['ssl'] == true %>
-        rewrite ^ https://$host:8443$request_uri? redirect;
+<% if chorus_config['ssl.enabled'] == true %>
+        rewrite ^ https://$host:<%= chorus_config['ssl_server_port'] %>$request_uri? redirect;
         #rewrite ^(.*) https://$host$1 permanent;
     }
     server {
-        listen      <%=  chorus_config['ssl_server_port'] %> ssl;
+        listen      <%if ip6_enabled %>[::]:<% end %><%= chorus_config['ssl_server_port'] %> ssl ipv6only=off;
         ssl_certificate <%= chorus_config['ssl_certificate'] %>;
         ssl_certificate_key <%= chorus_config['ssl_certificate_key'] %>;
         keepalive_timeout 70;
@@ -71,6 +79,44 @@ http {
             alias ../../../../system/;
         }
 
+        location ~ ^/alpinedatalabs/(js|css|images|resource)/ {
+            proxy_pass <%= chorus_config['workflow.url'] %>;
+        }
+
+        location ~ ^/(alpinedatalabs|AlpineHadoop.*)/ {
+            proxy_pass <%= chorus_config['workflow.url'] %>;
+            <% if chorus_config['ssl.enabled'] == true %>
+            proxy_redirect http:// https://;
+            <% else %>
+            proxy_redirect / /;
+            <% end %>
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+
+            proxy_set_header Host $host:$server_port;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_max_temp_file_size 0;
+
+            client_body_buffer_size    128k;
+
+            proxy_connect_timeout      90;
+            proxy_send_timeout         <%= [chorus_config['execution_timeout_in_minutes']*60, 90].max %>;
+            proxy_read_timeout         <%= [chorus_config['execution_timeout_in_minutes']*60, 90].max %>;
+
+            proxy_buffer_size          4k;
+            proxy_buffers              4 32k;
+            proxy_busy_buffers_size    64k;
+            proxy_temp_file_write_size 64k;
+
+            expires epoch;
+            add_header Cache-Control no-store;
+            add_header X-Frame-Options SAMEORIGIN;
+        }
+
         location @app {
             proxy_pass http://127.0.0.1:3000;
             proxy_redirect off;
@@ -79,18 +125,22 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Accel-Mapping /.*/system/=/system/;
+            proxy_set_header X-Forwarded-Proto $scheme;
             proxy_max_temp_file_size 0;
 
             client_body_buffer_size    128k;
 
             proxy_connect_timeout      90;
-            proxy_send_timeout         90;
-            proxy_read_timeout         90;
+            proxy_send_timeout         <%= [chorus_config['execution_timeout_in_minutes']*60, 90].max %>;
+            proxy_read_timeout         <%= [chorus_config['execution_timeout_in_minutes']*60, 90].max %>;
 
             proxy_buffer_size          4k;
             proxy_buffers              4 32k;
             proxy_busy_buffers_size    64k;
             proxy_temp_file_write_size 64k;
+
+            add_header Cache-Control no-store;
+            add_header X-Frame-Options SAMEORIGIN;
         }
 
         #error_page  404              /404.html;

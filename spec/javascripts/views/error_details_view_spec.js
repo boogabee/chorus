@@ -1,6 +1,6 @@
 describe("chorus.views.ErrorDetails", function() {
     beforeEach(function() {
-        this.model = rspecFixtures.activity.fileImportFailed({ errorMessage: this.text });
+        this.model = backboneFixtures.activity.fileImportFailed({ errorMessage: this.text });
         this.view = new chorus.views.ErrorDetails({ model: this.model });
     });
 
@@ -9,7 +9,7 @@ describe("chorus.views.ErrorDetails", function() {
             this.view.render();
             expect(this.view.$(".details .alert").html()).toMatchTranslation(
                 "activity.view_error_details");
-            expect(this.view.$(".details .alert").attr("data-alert")).toContainText("ImportFailed")
+            expect(this.view.$(".details .alert").attr("data-alert")).toContainText("ImportFailed");
 
         });
     });

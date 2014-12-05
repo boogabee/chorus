@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Process Description="" UserName="admin" Version="3.0">
+  <Operator X="91" Y="93" name="file.csv" type="com.alpine.miner.gef.runoperator.hadoop.HadoopFileOperator" uuid="1372264766854">
+    <Parameter key="connName" value="robbie"/>
+    <Parameter key="hadoopFileName" value="/file.csv"/>
+    <Parameter key="hadoopFileFormat" value="Text File"/>
+    <HadoopFileStructureModel delimiter="Comma" escapChar="\" includeHeader="false" other="" quoteChar="&quot;">
+      <columnNames columnName="Column1"/>
+      <columnNames columnName="Column2"/>
+      <columnNames columnName="Column3"/>
+      <columnTypes columnType="long"/>
+      <columnTypes columnType="long"/>
+      <columnTypes columnType="long"/>
+    </HadoopFileStructureModel>
+    <Parameter key="jobHostname" value="chorus-cloudera"/>
+    <Parameter key="groupName" value="root"/>
+    <Parameter key="hadoopVersion" value="Cloudera CDH4"/>
+    <Parameter key="jobPort" value="8021"/>
+    <Parameter key="hdfsPort" value="8020"/>
+    <Parameter key="hdfsKeyTab" value=""/>
+    <Parameter key="hdfsPrincipal" value=""/>
+    <Parameter key="securityMode" value="simple"/>
+    <Parameter key="userName" value="root"/>
+    <Parameter key="hdfsHostname" value="chorus-cloudera"/>
+    <Parameter key="mapredKeyTab" value=""/>
+    <Parameter key="mapredPrincipal" value=""/>
+    <InPutFieldList>
+      <Parameter key="connName" value="robbie"/>
+      <Parameter key="hdfsHostname" value="chorus-cloudera"/>
+      <Parameter key="hdfsPort" value="8020"/>
+      <Parameter key="hadoopVersion" value="Cloudera CDH4"/>
+      <Parameter key="jobHostname" value="chorus-cloudera"/>
+      <Parameter key="jobPort" value="8021"/>
+      <Parameter key="userName" value="root"/>
+      <Parameter key="groupName" value="root"/>
+      <Parameter key="hadoopCompressionFormat" value=""/>
+      <Parameter key="hadoopFileFormat" value="Text File"/>
+      <Parameter key="hadoopFileName" value="/file.csv"/>
+      <Parameter key="securityMode" value="simple"/>
+      <Parameter key="hdfsPrincipal" value=""/>
+      <Parameter key="hdfsKeyTab" value=""/>
+      <Parameter key="mapredPrincipal" value=""/>
+      <Parameter key="mapredKeyTab" value=""/>
+      <HadoopFileStructureModel delimiter="Comma" escapChar="\" includeHeader="false" other="" quoteChar="&quot;">
+        <columnNames columnName="Column1"/>
+        <columnNames columnName="Column2"/>
+        <columnNames columnName="Column3"/>
+        <columnTypes columnType="long"/>
+        <columnTypes columnType="long"/>
+        <columnTypes columnType="long"/>
+      </HadoopFileStructureModel>
+    </InPutFieldList>
+  </Operator>
+  <Operator X="210" Y="191" name="Row Filter" type="com.alpine.miner.gef.runoperator.hadoop.HadoopRowFilterOperator" uuid="1372264783629">
+    <Parameter key="storeResults" value="false"/>
+    <Parameter key="resultsLocation" value="/tmp"/>
+    <Parameter key="resultsName" value="@default_prefix_rowfil_0"/>
+    <Parameter key="override" value="Yes"/>
+    <RowFilterConditionModel conditionValue="1 == 1" sqlType="sql" useAll="true"/>
+    <InPutFieldList>
+      <Parameter key="connName" value="robbie"/>
+      <Parameter key="hdfsHostname" value="chorus-cloudera"/>
+      <Parameter key="hdfsPort" value="8020"/>
+      <Parameter key="hadoopVersion" value="Cloudera CDH4"/>
+      <Parameter key="jobHostname" value="chorus-cloudera"/>
+      <Parameter key="jobPort" value="8021"/>
+      <Parameter key="userName" value="root"/>
+      <Parameter key="groupName" value="root"/>
+      <Parameter key="hadoopCompressionFormat" value=""/>
+      <Parameter key="hadoopFileFormat" value="Text File"/>
+      <Parameter key="hadoopFileName" value="/file.csv"/>
+      <Parameter key="securityMode" value="simple"/>
+      <Parameter key="hdfsPrincipal" value=""/>
+      <Parameter key="hdfsKeyTab" value=""/>
+      <Parameter key="mapredPrincipal" value=""/>
+      <Parameter key="mapredKeyTab" value=""/>
+      <HadoopFileStructureModel delimiter="Comma" escapChar="\" includeHeader="false" other="" quoteChar="&quot;">
+        <columnNames columnName="Column1"/>
+        <columnNames columnName="Column2"/>
+        <columnNames columnName="Column3"/>
+        <columnTypes columnType="long"/>
+        <columnTypes columnType="long"/>
+        <columnTypes columnType="long"/>
+      </HadoopFileStructureModel>
+    </InPutFieldList>
+  </Operator>
+  <Link source="file.csv" target="Row Filter"/>
+  <VariableModel>
+    <Variable>
+      <Name>@default_schema</Name>
+      <Value>public</Value>
+    </Variable>
+    <Variable>
+      <Name>@default_prefix</Name>
+      <Value>admin</Value>
+    </Variable>
+    <Variable>
+      <Name>@default_tempdir</Name>
+      <Value>/tmp</Value>
+    </Variable>
+    <Variable>
+      <Name>@default_delimiter</Name>
+      <Value>,</Value>
+    </Variable>
+  </VariableModel>
+</Process>

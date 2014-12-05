@@ -1,0 +1,3 @@
+class PgViewPresenter < ViewPresenter
+
+end

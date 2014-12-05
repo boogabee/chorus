@@ -18,14 +18,14 @@ describe ModelMap do
       ModelMap.model_from_params("workfile", model.id).should == model
     end
 
-    it "works for greenplum instances" do
-      model = gpdb_instances(:default)
-      ModelMap.model_from_params("gpdb_instance", model.id).should == model
+    it "works for greenplum data sources" do
+      model = data_sources(:default)
+      ModelMap.model_from_params("gpdb_data_source", model.id).should == model
     end
 
-    it "works for gnip instances" do
-      model = gnip_instances(:default)
-      ModelMap.model_from_params("gnip_instance", model.id).should == model
+    it "works for gnip data sources" do
+      model = gnip_data_sources(:default)
+      ModelMap.model_from_params("gnip_data_source", model.id).should == model
     end
 
     it "works for datasets" do
@@ -44,5 +44,16 @@ describe ModelMap do
       }.to raise_error(ModelMap::UnknownEntityType)
     end
 
+    it "throws an error if the entity cannot be found" do
+      expect {
+        ModelMap.model_from_params("workspace", -1)
+      }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
+    it "throws an error if the entity is empty" do
+      expect {
+        ModelMap.model_from_params("", 1)
+      }.to raise_error(ModelMap::UnknownEntityType, "Invalid entity type")
+    end
   end
 end

@@ -1,70 +1,57 @@
 module Visualization
   class Heatmap < Base
     attr_accessor :x_bins, :y_bins, :x_axis, :y_axis, :rows, :type, :filters
-    attr_writer :dataset, :schema
 
-    def initialize(dataset=nil, attributes={})
+    def post_initialize(dataset, attributes)
       @x_axis = attributes[:x_axis]
       @y_axis = attributes[:y_axis]
       @x_bins = attributes[:x_bins].to_i
       @y_bins = attributes[:y_bins].to_i
       @filters = attributes[:filters]
       @type = attributes[:type]
-      @dataset = dataset
-      @schema = dataset.try :schema
     end
 
-    def column_information
-      Arel::Table.new(%Q{"information_schema"."columns"})
+    private
+
+    def complete_fetch(check_id)
+      fetch_min_max(@connection, check_id)
+      result = CancelableQuery.new(@connection, check_id, current_user).execute(row_sql)
+      row_data = result.rows.map { |row| {:x => row[0].to_i, :y => row[1].to_i, :value => row[2].to_i} }
+      @rows = fill_missing(row_data)
     end
 
     def build_min_max_sql
-      query = relation.project(
-        relation[@x_axis].minimum.as('xmin'), relation[@x_axis].maximum.as('xmax'),
-        relation[@y_axis].minimum.as('ymin'), relation[@y_axis].maximum.as('ymax')
+      @sql_generator.heatmap_min_max_sql(
+          :dataset => @dataset,
+          :x_axis => @x_axis,
+          :y_axis => @y_axis
       )
-
-      query.to_sql
     end
 
     def build_row_sql
-      query = "SELECT *, count(*) AS value
-      FROM (
-      SELECT width_bucket(
-      CAST(\"#{@x_axis}\" AS numeric),
-      CAST(#{@min_x} AS numeric),
-      CAST(#{@max_x} AS numeric),
-      #{x_bins}) AS x,
-      width_bucket( CAST(\"#{@y_axis}\" AS numeric),
-      CAST(#{@min_y} AS numeric),
-      CAST(#{@max_y} AS numeric),
-      #{y_bins}) AS y
-      FROM ( SELECT * FROM #{@dataset.scoped_name}"
+      opts = {
+        :dataset => @dataset,
+        :x_axis => @x_axis,
+        :y_axis => @y_axis,
+        :min_x => @min_x,
+        :min_y => @min_y,
+        :max_x => @max_x,
+        :max_y => @max_y,
+        :x_bins => @x_bins,
+        :y_bins => @y_bins,
+        :filters => @filters
+      }
 
-      query += " WHERE " + @filters.join(" AND ") if @filters.present?
-
-      query += ") AS subquery
-      WHERE \"#{@x_axis}\" IS NOT NULL
-      AND \"#{@y_axis}\" IS NOT NULL) AS foo
-      GROUP BY x, y"
-
-      query
+      @sql_generator.heatmap_row_sql(opts)
     end
 
-    def fetch_min_max(account, check_id)
-      result = SqlExecutor.execute_sql(@schema, account, check_id, min_max_sql).rows[0]
+    def fetch_min_max(connection, check_id)
+      result = CancelableQuery.new(connection, check_id, current_user).execute(min_max_sql).rows[0]
 
       @min_x = result[0].to_f
       @max_x = result[1].to_f
       @min_y = result[2].to_f
       @max_y = result[3].to_f
-    end
-
-    def fetch!(account, check_id)
-      fetch_min_max(account, check_id)
-      result = SqlExecutor.execute_sql(@schema, account, check_id, row_sql)
-      row_data = result.rows.map { |row| {:x => row[0].to_i, :y => row[1].to_i, :value => row[2].to_i} }
-      @rows = fill_missing(row_data)
     end
 
     def fill_missing(rows)

@@ -1,30 +1,27 @@
 describe("chorus.views.WorkspaceListSidebar", function() {
     beforeEach(function() {
+        this.modalSpy = stubModals();
         this.view = new chorus.views.WorkspaceListSidebar();
     });
 
     context("no workspaces exist", function() {
         it("does not have actions to add a note and to add an insight", function() {
-            expect(this.view.$(".actions a[data-dialog=NotesNew]")).not.toContainTranslation("actions.add_note");
-            expect(this.view.$(".actions a[data-dialog=InsightsNew]")).not.toContainTranslation("actions.add_insight");
+            expect(this.view.$(".actions a.new_note")).not.toExist();
+            expect(this.view.$(".actions a.new_insight")).not.toExist();
         });
     });
 
     context("a workspace exists", function() {
         beforeEach(function() {
-            this.workspace = rspecFixtures.workspace();
+            this.workspace = backboneFixtures.workspace();
 
-            chorus.PageEvents.broadcast("workspace:selected", this.workspace);
+            chorus.PageEvents.trigger("workspace:selected", this.workspace);
         });
-
-        it("displays the workspace name", function() {
-            expect(this.view.$(".name")).toContainText(this.workspace.get("name"));
-        })
 
         context("the workspace has an image", function() {
             beforeEach(function() {
                 spyOn(this.view.model, 'hasImage').andReturn(true);
-                spyOn(this.view.model, 'fetchImageUrl').andReturn("/user/456/image")
+                spyOn(this.view.model, 'fetchImageUrl').andReturn("/user/456/image");
                 this.view.render();
             });
 
@@ -36,7 +33,7 @@ describe("chorus.views.WorkspaceListSidebar", function() {
         context("the workspace does not have an image", function() {
             beforeEach(function() {
                 spyOn(this.view.model, 'hasImage').andReturn(false);
-                spyOn(this.view.model, 'fetchImageUrl').andReturn("/party.gif")
+                spyOn(this.view.model, 'fetchImageUrl').andReturn("/party.gif");
                 this.view.render();
             });
 
@@ -47,7 +44,7 @@ describe("chorus.views.WorkspaceListSidebar", function() {
 
         it("has the workspace member list", function() {
             expect(this.view.$(".workspace_member_list")[0]).toBe(this.view.workspaceMemberList.el);
-        })
+        });
 
         describe("when the activity fetch completes", function() {
             beforeEach(function() {
@@ -61,8 +58,12 @@ describe("chorus.views.WorkspaceListSidebar", function() {
         });
 
         it("has actions to add a note and to add an insight", function() {
-            expect(this.view.$(".actions a[data-dialog=NotesNew]")).toContainTranslation("actions.add_note");
-            expect(this.view.$(".actions a[data-dialog=InsightsNew]")).toContainTranslation("actions.add_insight");
+            expect(this.view.$(".actions a.new_note")).toContainTranslation("actions.add_note");
+            expect(this.view.$(".actions a.new_insight")).toContainTranslation("actions.add_insight");
         });
+
+        itBehavesLike.aDialogLauncher("a.new_note", chorus.dialogs.NotesNew);
+        itBehavesLike.aDialogLauncher("a.new_insight", chorus.dialogs.InsightsNew);
+        itBehavesLike.aDialogLauncher("a.edit_tags", chorus.dialogs.EditTags);
     });
-})
+});

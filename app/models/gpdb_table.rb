@@ -1,13 +1,12 @@
 require 'dataset'
 
-class GpdbTable < Dataset
-
+class GpdbTable < GpdbDataset
   def analyze(account)
-    table_name = '"' + schema.name + '"."'  + name + '"';
-    query_string = "analyze #{table_name}"
-    schema.with_gpdb_connection(account) do |conn|
-      conn.exec_query(query_string)
-    end
-    []
+    schema.connect_with(account).analyze_table(name)
+  end
+
+  def verify_in_source(user)
+      schema.verify_in_source(user) &&
+      schema.connect_as(user).table_exists?(name)
   end
 end

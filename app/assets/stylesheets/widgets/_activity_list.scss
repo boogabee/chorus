@@ -1,8 +1,12 @@
+@import "_browser_support";
+
 $text-padding-y: 4px;
 $big-gutter: (2 * $activity-gutter);
 $media-gutter: 10px;
 
 $system-action-color: #7C7D7D;
+
+$refresh-activity-gutter: $activity-gutter - 5;
 
 .media, .media > .bd {
     overflow: hidden;
@@ -11,60 +15,35 @@ $system-action-color: #7C7D7D;
 .media > .icon {
     float: left;
     margin-right: $activity-gutter;
+    width: $icon-image-width + 3px;
+    height: $icon-image-height + 3px;
 }
 
-.media > .icon img {
-    display: block;
-}
+/* .media > .icon img { */
+/*     display: block; */
+/* } */
 
-.activity_list_header {
-    .menus {
-        float: right;
-        margin-right: 10px;
+.notification_list, 
+.activity_list {
+    a[href=''], a:not([href]) {
+        color: $color-text3;
+        text-decoration: none;
+    }
 
-        .title {
-            @include font-content-details;
-        }
+    .more_items {
+        font-size: 12px;
+        padding: $activity-gutter 0;
+        text-align: center;
 
         a {
-            @include link-with-dotted-underline;
-
-            &.active {
-                color: black;
-                border-bottom: none;
-            }
-        }
-
-        .separator {
-            padding: 0 5px;
-            position: relative;
-            top: 2px;
-            color: $link-color;
-        }
-
-        .badge {
             display: inline-block;
+            max-width: 50%;
+            width: 100%;
+            @include panel-button(30px);
         }
     }
 
-    .title {
-        img {
-            float: left;
-        }
-        h1 {
-            padding-left: 5px;
-        }
-    }
-}
-
-.activity_list {
-
-    .more_activities {
-        font-size: 12px;
-        padding: $activity-gutter $big-gutter;
-    }
-
-    .no_activity {
+    .no_items {
         @include secondary-text-normal;
         padding: 0 $activity-gutter;
     }
@@ -76,55 +55,46 @@ $system-action-color: #7C7D7D;
     }
 
     .activity_item {
-        padding: $activity-gutter;
+        padding: $refresh-activity-gutter $refresh-activity-gutter $activity-gutter $refresh-activity-gutter;
         position: relative;
         overflow: visible;
-
-        img {
-            width: $icon-image-width;
-            height: $icon-image-height;
-        }
-
-        a[href=''], a:not([href]) {
-            color: $color-text3;
-            cursor: auto;
-        }
-
-        .insight_ribbon {
-            padding: 0;
-            position: absolute;
-            left: -15px;
-            top: -9px;
-            z-index: 10;
-            line-height: 11px;
-            height: 22px;
-
-            .left {
-                background: url(/images/ribbons/label_insight1.png) no-repeat;
-                width: 6px;
-                height: 22px;
-                display: inline-block;
-            }
-
-            .center {
-                @include database-column-type;
-                background: url(/images/ribbons/label_insight2.png) repeat-x;
-                height: 14px;
-                display: inline-block;
-                padding: 2px 8px 2px 8px;
-                vertical-align: top;
-                text-transform: uppercase;
-            }
-
-            .right {
-                background: url(/images/ribbons/label_insight3.png) no-repeat;
-                width: 8px;
-                height: 22px;
-                display: inline-block;
-            }
-        }
     }
 }
+
+.insight_ribbon {
+        padding: 0;
+        position: absolute;
+        left: -7px;
+        top: -9px;
+        z-index: 10;
+        line-height: 11px;
+        height: 22px;
+
+        .left {
+            background: url(/images/ribbons/label_insight1.png) no-repeat;
+            width: 6px;
+            height: 22px;
+            display: inline-block;
+        }
+
+        .center {
+            @include database-column-type;
+            background: url(/images/ribbons/label_insight2.png) repeat-x;
+            height: 14px;
+            display: inline-block;
+            padding: 3px 8px 2px 8px;
+            vertical-align: top;
+            @include uppercase;
+        }
+
+        .right {
+            background: url(/images/ribbons/label_insight3.png) no-repeat;
+            width: 12px;
+            height: 22px;
+            display: inline-block;
+        }
+    }
+
 
 .comment_list {
     .comments {
@@ -132,7 +102,8 @@ $system-action-color: #7C7D7D;
     }
 }
 
-.activity_content, .comment_content {
+.activity_content, 
+.comment_content {
     ul.attachments {
         img {
             vertical-align: middle;
@@ -157,14 +128,16 @@ $system-action-color: #7C7D7D;
     .activity_header, .comment_header {
         word-wrap: break-word;
         @include secondary-text-normal;
-        line-height: 18px;
-        padding-bottom: $text-padding-y;
-        .author {
+        line-height: 20px;
+        
+        .author { 
             font-weight: $semibold;
         }
     }
 
     .actions {
+        margin-top:5px;
+    
         .timestamp {
             @include secondary-text-small;
             line-height: 20px;
@@ -179,26 +152,29 @@ $system-action-color: #7C7D7D;
             }
         }
 
-        a.delete_link, a.edit_link {
+        a.delete_link,
+        a.edit_link {
             @include secondary-text-small;
             display: none;
             border-left: solid 1px;
             padding-left: 5px;
             margin-left: 5px;
 
-            img {
-                height: 12px;
-                width: 12px;
-                margin-bottom: 4px;
+            i {
+                padding-left: 4px;
+                vertical-align: middle;
+            }
+
+            span {
+                padding-left: 3px;
                 vertical-align: middle;
             }
         }
     }
 
     .links {
-        padding: 4px 0;
+        padding: 5px 0 0 0;
         font-size: 12px;
-        padding-bottom: $text-padding-y;
 
         a {
             font-size: 12px;
@@ -207,8 +183,8 @@ $system-action-color: #7C7D7D;
         .separator {
             position: relative;
             top: -1px;
-            color: $link-color;
-            margin: 0 2px;
+            color: $shadow-gray;
+            margin: 0 3px;
         }
     }
 
@@ -229,29 +205,37 @@ li .activity_content,
 
 #sidebar .activity_heading {
     padding: 12px 0;
-
     @include heading-sidebar;
     color: $color-text2;
     font-size: 16px;
 }
 
-.activity_list.workspace_detail, .activity_list.dashboard, .recent_comments_list {
+.activity_list.workspace_detail, 
+.activity_list.dashboard, 
+.recent_comments_list, 
+.notification_list {
     .comments {
         margin-left: ($icon-image-width + (2 * $activity-gutter));
     }
 
-    ul.activities {
-        > li {
-            border-bottom: 1px dotted $list-border-color;
-            padding: 0 $activity-gutter;
+    li.activity {
+        border-bottom: $border-canon;
 
-            &.insight {
-                background: white;
-                border-right: 1px dotted $list-border-color;
-                border-bottom: 1px dotted $list-border-color;
-                .activity_item {
-                    padding-top: 12px;
-                }
+        &.insight {
+            background: #FFFFFF;
+            border-bottom: $border-canon;
+            .activity_item {
+                padding-top: 12px;
+            }
+        }
+        
+        // special case when the insight is the first item in the list
+        &.insight:first-child {
+            .activity_item {
+                padding-top: 20px;
+            }
+            .insight_ribbon {
+                top: -1px;
             }
         }
     }
@@ -259,7 +243,8 @@ li .activity_content,
 
 .recent_comments_list {
     .ui-tooltip-content {
-        padding: 9px 0 0 7px;
+        padding: 0;
+        overflow: visible;
 
         ul.activities {
             > li {
@@ -275,29 +260,23 @@ li .activity_content,
     }
 }
 
-.activity_list.dashboard {
-    padding-top: $activity-gutter;
-
-    .heading {
-        display: none;
-    }
-}
-
 #sidebar .activity_list {
     li.insight {
-        background: white;
+        background: #FFFFFF;
         .insight_ribbon {
             left: -5px;
         }
     }
-
 }
 
 #sidebar {
-    &.instance_list_sidebar, &.workfile_show_sidebar {
+    &.data_source_list_sidebar, 
+    &.workfile_show_sidebar {
         .activity_list .heading {
             display: none
         }
     }
 }
+
+
 

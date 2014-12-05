@@ -1,26 +1,26 @@
 describe("chorus.collections.NotificationSet", function() {
     beforeEach(function() {
-        this.collection = rspecFixtures.notificationSet();
+        this.collection = backboneFixtures.notificationSet();
     });
 
     it("is composed of notifications", function() {
         expect(this.collection.model).toBe(chorus.models.Notification);
-    })
+    });
 
     describe("#url", function() {
         context("when constructed with no type option", function() {
             it("is correct", function() {
-                expect(this.collection.url()).toHaveUrlPath("/notifications")
+                expect(this.collection.url()).toHaveUrlPath("/notifications");
             });
         });
 
         context("when constructed with a type option", function() {
             beforeEach(function() {
-                this.collection = fixtures.notificationSet([], { type: "unread" })
+                this.collection = new chorus.collections.NotificationSet([], { type: "unread" });
             });
 
             it("is correct", function() {
-                expect(this.collection.url()).toMatchUrl("/notifications?type=unread", { paramsToIgnore: ["page", "per_page" ]})
+                expect(this.collection.url()).toMatchUrl("/notifications?type=unread", { paramsToIgnore: ["page", "per_page" ]});
             });
         });
     });
@@ -39,21 +39,14 @@ describe("chorus.collections.NotificationSet", function() {
         });
 
         it("has an activity model for each model in the notification set", function() {
-            expect(this.activities.models.length).toBe(4);
-            expect(this.activities.models[0].get("id")).toBe(this.collection.models[0].get("id"));
-            expect(this.activities.models[1].get("id")).toBe(this.collection.models[1].get("id"));
-            expect(this.activities.models[2].get("id")).toBe(this.collection.models[2].get("id"));
-            expect(this.activities.models[3].get("id")).toBe(this.collection.models[3].get("id"));
+            expect(this.activities.models.length).toBe(this.collection.length);
+            this.activities.each(function (model, index) {
+                expect(model.get('id')).toBe(this.collection.at(index).get('id'));
+            }, this);
 
             expect(this.activities.models[0].get("action")).toBe("NOTE");
-            expect(this.activities.models[1].get("action")).toBe("NOTE");
-            expect(this.activities.models[2].get("action")).toBe("NOTE");
-            expect(this.activities.models[3].get("action")).toBe("NOTE");
 
-            expect(this.activities.models[0].get("actionType")).toBe("NoteOnGreenplumInstance");
-            expect(this.activities.models[1].get("actionType")).toBe("NoteOnGreenplumInstance");
-            expect(this.activities.models[2].get("actionType")).toBe("NoteOnGreenplumInstance");
-            expect(this.activities.models[3].get("actionType")).toBe("NoteOnGreenplumInstance");
+            expect(this.activities.models[0].get("actionType")).toBe("NoteOnDataSource");
         });
     });
 
@@ -64,7 +57,7 @@ describe("chorus.collections.NotificationSet", function() {
             });
 
             it("sets 'unread' to true on each model", function() {
-                var model = fixtures.notification();
+                var model = backboneFixtures.notificationSet().at(0);
                 this.collection.add(model);
                 expect(model.get("unread")).toBeTruthy();
             });
@@ -72,7 +65,8 @@ describe("chorus.collections.NotificationSet", function() {
 
         context("when the notification set does not have the type 'unread'", function() {
             it("does not set the 'unread' attribute on the model", function() {
-                var model = fixtures.notification();
+                var model = backboneFixtures.notificationSet().at(0);
+                model.unset('unread');
                 this.collection.add(model);
                 expect(model.get("unread")).toBeUndefined();
             });
@@ -89,12 +83,12 @@ describe("chorus.collections.NotificationSet", function() {
 
         it("does not make any requests", function() {
             expect(this.server.requests.length).toBe(0);
-        })
+        });
 
         it("calls the success function", function() {
             expect(this.successSpy).toHaveBeenCalled();
-        })
-    })
+        });
+    });
 
     describe("#markAllRead with unread notifications", function() {
         beforeEach(function() {
@@ -104,12 +98,9 @@ describe("chorus.collections.NotificationSet", function() {
 
         it("calls the correct API", function() {
             expect(this.server.lastUpdate().url).toBe("/notifications/read");
-            expect(this.server.lastUpdate().params()["notification_ids[]"]).toEqual([
-                this.collection.models[0].get("id").toString(),
-                this.collection.models[1].get("id").toString(),
-                this.collection.models[2].get("id").toString(),
-                this.collection.models[3].get("id").toString()
-            ]);
+            expect(this.server.lastUpdate().params()["notification_ids[]"]).toEqual(this.collection.map(function (model) {
+                return model.get('id').toString();
+            }));
         });
 
         describe("when the call succeeds", function() {

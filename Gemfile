@@ -1,28 +1,30 @@
-source :rubygems
+source 'https://rubygems.org'
 
-gem 'rails', '3.2.5'
+gem 'rails', '3.2.18'
 
 gem 'will_paginate'
 gem 'net-ldap',      :require => false
 gem 'paperclip', '3.0.4'
-gem 'queue_classic', :github => "GreenplumChorus/queue_classic"
+gem 'cocaine', '0.2.1' # cocaine is a paperclip dependency but new versions of cocaine cause trouble. remove this line after upgrading paperclip.
+gem 'queue_classic', :github => 'Chorus/queue_classic'
 gem 'clockwork',     :require => false
 gem 'allowy'
-gem 'sunspot_rails', '2.0.0.pre.120720'
-gem 'jetpack', :github => "GreenplumChorus/jetpack", :require => false
-gem 'sunspot_solr', '2.0.0.pre.120720'
-gem 'quiet_assets'
+gem 'sunspot_rails', '~> 2.0.0'
+gem 'jetpack', :github => 'Chorus/jetpack', :branch => '6c9253195b+chorus', :require => false
 gem 'nokogiri'
-gem 'postgresql_cursor', :github => "GreenplumChorus/postgresql_cursor"
-gem 'attr_encrypted'
-gem 'tabcmd_gem', :git => "git@github.com:GreenplumChorus/tableau.git"
-gem 'turbo-sprockets-rails3'
-gem 'chorusgnip', :github => 'GreenplumChorus/gnip'
+gem 'sequel', '~> 4.0', :require => 'sequel/no_core_ext'
+gem 'attr_encrypted' #if you load attr_encrypted before sequel, it blows up saying 'sequel::model' is undefined
+gem 'chorusgnip', :github => 'Chorus/gnip'
+gem 'logger-syslog'
+gem 'newrelic_rpm'
+gem 'premailer-rails'
+gem 'messengerjs-rails'
+gem 'codemirror-rails', '3.23'
+gem 'honor_codes', '~> 0.1.0'
 
 platform :jruby do
   gem 'jruby-openssl', :require => false
-  # Pull request: https://github.com/jruby/activerecord-jdbc-adapter/pull/207
-  gem 'activerecord-jdbcpostgresql-adapter', :github => "GreenplumChorus/activerecord-jdbc-adapter", :branch => "dynamic-schema-search-path"
+  gem 'activerecord-jdbcpostgresql-adapter'
 end
 
 group :assets do
@@ -30,47 +32,52 @@ group :assets do
   gem 'compass-rails'
   gem 'handlebars_assets'
   gem 'therubyrhino'
-  gem 'uglifier', '>= 1.0.3'
+  gem 'uglifier'
   gem 'yui-compressor'
+  gem 'turbo-sprockets-rails3'
+  gem 'jquery-rails', '2.1.4'
 end
 
 group :integration do
-  gem 'capybara',            :require => false
+  gem 'capybara', "~> 2.0.0", :require => false
   gem 'headless'
   gem 'capybara-screenshot'
 end
 
-group :test, :integration, :packaging do
-  gem 'rr'
+group :test, :integration, :packaging, :ci_jasmine, :ci_legacy, :ci_next do
+  gem 'rr', :require => false
   gem 'fuubar'
   gem 'factory_girl'
-  gem 'shoulda-matchers',    :require => false
+  gem 'shoulda-matchers'
   gem 'rspec-rails'
-  gem 'journey', '1.0.3'
+  gem 'journey'
   gem 'timecop'
   gem 'hashie'
-  gem 'vcr'
+  gem 'vcr', '~> 2.3.0'
   gem 'fakefs',              :require => false
   gem 'chunky_png'
   gem 'database_cleaner',    :require => false
+  gem 'poltergeist'
 end
 
-group :test, :development, :integration, :packaging do
-  gem 'foreman', '0.46',         :require => false
+group :development, :test, :integration, :packaging, :ci_jasmine, :ci_legacy, :ci_next do
+  gem 'foreman', '>= 0.62',      :require => false
   gem 'rake',                    :require => false
-  gem 'ruby-debug',              :require => false
-  gem 'jasmine'
-  gem 'rspec_api_documentation', :github => "GreenplumChorus/rspec_api_documentation"
-  gem 'forgery'
-  gem 'sunspot_matchers', :github => "pivotal/sunspot_matchers", :branch => "sunspot_2_pre"
+  gem 'rspec',                   :require => 'rspec/core/rake_task'
+  gem 'jasmine', :github => 'pivotal/jasmine-gem'
+  gem 'jasmine-core', :github => 'pivotal/jasmine'
+  gem 'sunspot_matchers'
   gem 'fixture_builder'
-  gem 'ci_reporter'
+  gem 'ci_reporter', '>= 1.8.2'
   gem 'faker'
   gem 'fakeweb'
+  gem 'sunspot_solr', :github => 'taktsoft/sunspot', :ref => '78717a33894271d012682dbe8902458badb0ca63' # https://github.com/sunspot/sunspot/pull/267
+  gem 'backbone_fixtures_rails', :github => 'charleshansen/backbone_fixtures_rails'
+  gem 'rspec_api_documentation', :github => 'Chorus/rspec_api_documentation', :require => false
 end
 
 group :development do
-  gem 'license_finder'
-  gem 'mizuno', :github => "GreenplumChorus/mizuno", :branch => '0.6.4_changes'
-  gem 'newrelic_rpm'
+  gem 'license_finder', '~> 0.8.1', :require => false
+  gem 'mizuno'
+  gem 'bullet'
 end

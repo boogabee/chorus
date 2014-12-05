@@ -1,0 +1,7 @@
+#!/bin/bash
+if git diff --cached --name-only --diff-filter=ACM | egrep '\.js$' >/dev/null ; then
+  eval "$(rbenv init - --no-rehash)" 2> /dev/null
+  rbenv shell `cat .rbenv-version` 2> /dev/null
+
+  script/lint_changed.sh 2> /dev/null
+fi

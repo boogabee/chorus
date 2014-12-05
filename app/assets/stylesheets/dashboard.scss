@@ -1,125 +1,481 @@
-@import "_common.scss";
+$debug-browser-support: true;
 
-div[data-page="Dashboard"] {
-    $workspace-list-width: 350px;
+@import "_browser_support";
+@import "_common";
+@import "components/_button";
+@import "compass/css3/border-radius";
 
-    #left {
-        margin-right: 0;
+
+$padding-side-canon: 10px;
+$padding-top-canon: 10px;
+$padding-bottom-canon: 10px;
+
+/* height of buttons used for dashboard widget shell */
+/* e.g. configure button */
+$height-button-widgetshell: 23px;
+
+$dashboard-module-minheight: 150px;
+
+$dashboard-module-title-height: 35px;
+$dashboard-module-padding: 10px;
+$title-height: $dashboard-module-title-height - $dashboard-module-padding;
+
+
+/* PAGE styles */
+/* PAGETYPE: dashboard  */
+
+/* page layout        */
+div[data-page="Dashboard"], div[data-page="UserDashboardEdit"] {
+    #guts {
+        padding: ($header-height + $subheader-height) $page-margin-right 10px $page-margin-left;
     }
 
-    #main_content {
-        @include after-clearfix();
-    }
-
-    #help {
-      top: 50px;
-      right: $guts-padding;
-    }
-
-    #user_count {
-      top: 50px;
-      right: $help-pill-width + (2 * $guts-padding);
-    }
-
-    .content {
-        padding-right: 15px;
-    }
-
-    .main_activity_list .heading {
+    #sidebar_wrapper {
         display: none;
     }
 
-    .dashboard_sidebar {
-        float: right;
-        width: $workspace-list-width;
+    #left {
+        margin: 0;
     }
 
-    .main_content.workspace_list {
-        font-weight: $semibold;
+    #main_content {
+        border: none;
+        @include after-clearfix();
+    }
+    
+     .right {
+        float: right;
+    }   
+}
+/* END page layout */
 
-        .content_header {
-            background: transparent;
+/* page heading    */
+/* its mostly a regular page heading, but w/edit button on right */
+.dashboard_sub_header {
+    .button {
+        background-color: $shaded-background-color;
+        display: inline-block;
+        cursor: pointer;
+        i {
+            /* covers the FA and OI glyphs used, such as the cog */
+            color: $color-text3;
+            font-size: 13px;
+            line-height: $height-button-widgetshell;
+        }
+    }
+    
+    .configure {
+        /* the configure button */
+        width: 35px;
+        @include panel-button($height-button-widgetshell);
+    }
+}
+/* END: page heading */
+/* END: PAGETYPE dashboard */
+
+
+/* ************ */
+/* WIDGETS      */
+/* specific dashboard widgets */
+
+.dashboard_module {
+
+/* ************ */
+/* A dashboard_module             */
+/* widget: recent activity stream */
+
+
+    /*  note: there is additional css for activity list dashboard widget in _activity_list.scss */
+    
+    .dashboard_activity_list {        
+        .activity_wrapper {
+            border-top: $border-canon;
+            border-bottom: $border-canon;
+            
+            .activity_frame {
+            max-height: $dashboard-module-minheight * 3;
+            overflow-y: auto;
+            }
+        }
+        .activities {
+            padding-top: 10px;
+        }
+        
+        a[href=''], a:not([href]) {
+            color: $color-text3;
+            text-decoration: none;
         }
 
-        .dashboard_workspace_list {
+        .more_items {
+            font-size: 12px;
+            padding: $padding-top-canon 0 $padding-bottom-canon 0;
+            text-align: center;
+
+            a {
+                display: inline-block;
+                max-width: 50%;
+                width: 100%;
+                @include panel-button(30px);
+            }
+        }
+    }
+
+/* END: recent activity stream */
+
+
+/* ************ */
+/* A dashboard_module    */
+/* widget: site snapshot */
+
+    &.dashboard_site_snapshot {
+        ul {
+            text-align: center;
+
             li {
-                padding-bottom : 4px;
+                display: inline-block;
+                margin-right: 10px;
+                &:last-child { margin-right: 0; }
 
-                .comment {
-                    line-height : 16px;
-                    padding-top : 3px;
-                    .count {
-                        font-size: 13px;
-                        font-weight: normal;
-                        color: $link-color;
-                    }
+                .squareish {
+                    width: 220px;
+                    height: 140px;
+                }
+            }
+        }
 
-                    .date {
-                        font-size: 12px;
-                        font-weight: normal;
-                        color: $color-text2;
-                    }
+       .total {
+            padding-top: 10px;
+            @include dashboard-huge;
+        }
 
-                    .recent {
-                        font-size: 12px;
-                        font-weight: normal;
-                        color: $color-text2;
+        .model {
+            @include dashboard-snapshot-model;
+            padding-bottom: 25px;
+        }
 
-                        .author {
-                            font-weight: $semibold;
-                        }
+        .increment {
+            @include secondary-text-small;
+        }
+
+        $amber: rgb(242, 171, 13);
+        $green: rgb(86, 174, 0);
+        $blue: rgb(0, 144, 240);
+        $purple: rgb(158, 27, 116);
+
+        .workspace .total { color: $amber; }
+        .associated_dataset .total { color: $green; }
+        .workfile .total { color: $blue; }
+        .user .total { color: $purple; }
+    }
+/* END: site snapshot */
+
+
+/* ************ */
+/* dashboard_module >  */
+/* widget: workspace activity/most active chart */
+
+    &.dashboard_workspace_activity {
+        .chart {
+            text-align: center;
+
+            .axis path, .axis line {
+                fill: none;
+                stroke: $charcoal;
+                shape-rendering: crispEdges;
+            }
+        }
+    }
+/* END: workspace activity chart */
+
+
+/* ************ */
+/* A dashboard_module       */
+/* widget: recent workfiles */
+
+    &.dashboard_recent_workfiles {
+        #recent_workfiles_main_content {
+            position: relative;
+            min-height: $dashboard-module-minheight;
+
+            .clear_list {
+                width: 75px;
+                @include panel-button($height-button-widgetshell);
+                font-size: 12px;
+            }
+
+            ul li {
+                div {
+                    display: inline-block;
+                    div {
+                        display: block;
                     }
                 }
             }
+                .file_name {
+                    padding: 0 0 0 10px;
+                }
 
-            > li:last-child {
-                border-bottom:  $dotted-list-item-border;
-            }
+                .workfile_link {
+                    @include font-primary-link;
+                    padding: 0 0 1px 0;
+                    width: 500px;
+                }
+
+                .workspace_image {
+                    vertical-align: bottom;
+                    width: 18px;
+                    padding-right: 5px;
+                }
+
+                .workspace_link {
+                    @include font-secondary-link;
+                    font-weight: normal;
+                    max-width: 420px;
+                }
+                
+                /* common handling for long names */
+                .workfile_link,
+                .workspace_link {
+                    display: inline-block;
+                    @include ellipsis;
+                }
+                
+                .time_edited {
+                    float: right;
+                    margin-right: 1%;
+                    vertical-align: top;
+                    padding-top: 10px;
+                    @include secondary-text-small;
+                }
+        }
+
+        .recent_workfiles_list {
+            border-top: $border-canon;
+            border-bottom: $border-canon;
         }
     }
+/* END: recent workfiles */
 
-    .main_content.instance_list {
-        font-weight: $semibold;
+}
 
-        .dashboard_instance_list {
 
-            .main {
-                padding-bottom: 5px;
-            }
+/* ************ */
+/* general dashboard widget */
+/* panel used in configuring the widgets */
 
-            > li:last-child {
-                border-bottom:  $dotted-list-item-border;
-            }
+.dashboard_module {
+
+    .widget_configuration {
+        display: none;
+
+        .mask {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+
+            /* position to defeat the padding of the widget shell... */
+            top: -$dashboard-module-padding;
+            left: -$dashboard-module-padding;
+
+            /* ...and add to cover the shell's padding */
+            padding-bottom: ($dashboard-module-padding * 2) + 5;
+            padding-right: $dashboard-module-padding * 2;
+        
+            background-color: $lightbox-overlay-color;
+            @include border-radius($default-border-radius);
+        }
+
+        .config_content {
+            position: absolute;           
+            width: 100%;
+            
+            /* position to defeat the padding of the widget shell... */
+            top: -$dashboard-module-padding;
+            left: -$dashboard-module-padding;
+
+            /* ... match padding of normal widget shell content */
+            /* but account for the padding of the border */
+            padding: $dashboard-module-padding - 1;
+       
+            background-color: #FFFFFF;
+            @include border-radius($default-border-radius);
+            border: 1px solid #999;
+        }
+
+        .button_row {     
+            margin-top: 20px;
+            padding-top: $dashboard-module-padding;
+            padding-bottom: $dashboard-module-padding / 2;
         }
     }
+}
+/* END: widget configuration */
 
-    .content_details {
-        line-height : 27px;
-        color: $link-color;
-        border-top : none;
-        border-bottom-style: dotted;
-        padding-top: 4px;
 
-        a {
-            padding: 0 10px;
+/* ************ */
+/* general dashboard widget */
+/* provides a general style for a widget shell with common elements */
+
+.dashboard_module {
+
+    min-height: $dashboard-module-minheight;
+    padding: $dashboard-module-padding $dashboard-module-padding ($dashboard-module-padding * 1.5) $dashboard-module-padding;
+    margin-top: 20px;
+    @include border-radius($default-border-radius);
+    border: $border-canon;
+    border-top-color: $border-color-dark;
+    
+    .button {
+        background-color: $shaded-background-color;
+        display: inline-block;
+        margin-right: 3px;
+        cursor: pointer;
+        
+        /* covers the FA and OI glyphs used; i.e the cog */
+        i {
+            color: $color-text3;
             font-size: 12px;
-            font-weight: $semibold;
+            line-height: $height-button-widgetshell;
+        }
+
+        /* remove rightside margin on the rightmost button so that it is flush right */
+        &:last-child {
+            margin-right: 0px;
         }
     }
 
-    .main_content.dashboard_main {
-        margin-right:  $workspace-list-width;
+    /* the configure button */
+    .configure {
+        width: 28px;
+        @include panel-button($height-button-widgetshell);
+    }
+    
+    .module_header {
+        min-height: $title-height + $dashboard-module-padding;
+        line-height: $title-height;
+
+        .title {
+            display: inline-block;
+            @include dashboard-module-title;
+            height: $title-height;
+            line-height: $title-height;
+        }
+        
+        .menus {
+            float: none !important;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+    }
+
+    .loading_text {
+        margin-left: 0px;
+    }
+}
+    
+
+/* rules for the recent activity hovering list that is part of the workspace cards */
+
+    .tooltip {
+        /* width: 350px; */
+        li.comment {
+            .insight_ribbon {
+                top: -18px;
+            }
+            .object {
+                display: inline;
+            }
+        }
+    }
+
+
+/* TODO move this to the right location */
+/* in the css file */
+
+/* workspace most active chart: card of workspace details that displays on hover */
+  
+.hovercard {
+    width: 300px;
+    box-shadow: $shadow-canon;
+    
+	p {
+		margin: 0;
+	}
+
+	.ui-tooltip-content {
+		/* override defaults */
+		padding: 0;
+    	background-color: #FFFFFF;
+    	border-radius: $default-border-radius;
+         
+        .name_row {
+			padding: $padding-top-canon $padding-side-canon $padding-bottom-canon $padding-side-canon;
+			background-color: $greyish-blue;
+
+            .inactive {
+              @include font-primary-link;
+              color: $disabled-text;
+              line-height: normal;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              white-space: nowrap;
+              display: block;
+            }
+
+            a {
+                @include font-primary-link;
+                line-height: normal;
+				text-overflow: ellipsis;
+				overflow: hidden;
+				white-space: nowrap;
+				display: block;           
+            }
+        }
+        
+        .summary_row {
+			padding: $padding-top-canon $padding-side-canon $padding-bottom-canon $padding-side-canon;        
+        }
+
+        .activity_metric_row {
+			padding: $padding-top-canon $padding-side-canon $padding-bottom-canon + 5 $padding-side-canon;
+            border-top: 2px dotted $border-color-darkest;
+            @include font-normal-gamma;
+        }
+	}
+}
+
+
+/* ********** */
+/* ********** */
+
+/* empty and app-tip needs a better home location. */
+/* they are not specific to dashboard */
+/* empty state: general case for when a 'set' has no contents. */
+
+.empty_state {
+    color: $disabled-text;
+    p { 
+        margin-top: 10px;
     }
 }
 
-.tooltip {
-    width: 250px;
-    li.comment {
-        .insight_ribbon {
-            top: -18px;
-        }
-        .object {
-            display: inline;
-        }
+
+/* in-app intrinsic assistance text */
+$tip-text-color: $disabled-text;
+
+.text_tip {
+    margin-top: 10px;
+    padding: 10px 10px 15px 10px;
+    
+    background-color: $light-grey-yellow;
+    @include border-radius($default-border-radius);
+    
+    font-size: 13px;
+    font-weight: normal;
+    color: $tip-text-color;
+    
+    a {
+        font-size: 13px;
     }
+    p {}
 }

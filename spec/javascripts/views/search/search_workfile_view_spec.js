@@ -1,6 +1,6 @@
 describe("chorus.views.SearchWorkfile", function() {
     beforeEach(function() {
-        this.result = fixtures.searchResult({workfiles: {results: [
+        this.result = backboneFixtures.searchResult({workfiles: {results: [
             {
                 id: "1",
                 workspace: {id: "2", name: "Test"},
@@ -14,11 +14,7 @@ describe("chorus.views.SearchWorkfile", function() {
                     {highlightedAttributes: { "body": "Nice <em>cool<\/em> insight"}, "body": "Nice cool insight", "lastUpdatedStamp": "2012-02-28 14:09:56", "isPublished": false, "id": "10003", "workspaceId": "10000", "isComment": false, "isInsight": true, "owner": {"id": "InitialUser", "lastName": "Admin", "firstName": "EDC"}}
                 ],
                 versionInfo: {
-                    lastUpdatedStamp: "2012-04-02 14:56:19.34",
-                    modifiedBy: {id:"InitialUser", lastName:"Admin", firstName:"EDC"},
-                    versionFileId: "1333403779156_199",
-                    id: 1,
-                    versionOwner: "edcadmin"
+
                 }
             }
         ]}});
@@ -26,7 +22,7 @@ describe("chorus.views.SearchWorkfile", function() {
         this.model = this.result.workfiles().models[0];
         this.model.set({highlightedAttributes: {fileName : "<em>cool</em> file"}});
         this.view = new chorus.views.SearchWorkfile({model: this.model});
-        this.view.render()
+        this.view.render();
     });
 
     it("includes the correct workspace file icon", function() {
@@ -41,8 +37,8 @@ describe("chorus.views.SearchWorkfile", function() {
         expect(this.view.$('.location')).toContainTranslation(
             "workspaces_used_in.body.one",
             {workspaceLink: "Test"}
-        )
-    })
+        );
+    });
 
     it("shows matching description if any", function() {
         expect(this.view.$(".description .description_content")).toBeEmpty();
@@ -52,6 +48,22 @@ describe("chorus.views.SearchWorkfile", function() {
         expect(this.view.$(".name").html()).toContain("<em>cool</em> file");
     });
 
+    context("when the workfile has tags", function () {
+        beforeEach(function () {
+            this.model.tags().reset([{name: "tag1"}, {name: "tag2"}]);
+            this.view.render();
+        });
+
+        it("should show a list of tags", function () {
+            expect(this.view.$('.item_tag_list')).toContainTranslation("tag_list.title");
+            expect(this.view.$('.item_tag_list')).toContainText("tag1 tag2");
+        });
+
+        it("tags have links to the tag show page", function () {
+            expect(this.view.$('.item_tag_list a.tag_name:first')).toHaveHref("#/tags/tag1");
+        });
+    });
+
     describe("thumbnails", function() {
         it("uses the icon url", function() {
             this.view.render();
@@ -59,20 +71,23 @@ describe("chorus.views.SearchWorkfile", function() {
         });
     });
 
+    itBehavesLike.ItPresentsModelWithTags();
+
     describe("shows version commit messages in the comments area", function() {
         beforeEach(function() {
             this.view.model.set({
                 highlightedAttributes: {
-                    commitMessage: [
+                    versionComments: [
                         "this is a <em>cool</em> version",
                         "this is a <em>cooler</em> version"
-                    ]}
+                    ]
+                }
             });
             this.view.render();
         });
 
         it("looks correct", function() {
-            expect(this.view.$('.more_comments .comment:eq(2) .comment_type').text().trim()).toBe('');
+            expect(this.view.$('.more_comments .comment:eq(2) .comment_type').text().trim()).toBe('Version Comment:');
             expect(this.view.$('.more_comments .comment:eq(2) .comment_content').html()).toContain("this is a <em>cooler</em> version");
         });
     });

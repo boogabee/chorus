@@ -7,10 +7,16 @@ chorus.views.WorkspaceListSidebar = chorus.views.Sidebar.extend({
         ".workspace_member_list": "workspaceMemberList"
     },
 
+    events: {
+        "click .edit_tags": 'startEditingTags',
+        "click a.new_note": 'launchNotesNewDialog',
+        "click a.new_insight": 'launchInsightsNewDialog'
+    },
+
     setup: function() {
-        chorus.PageEvents.subscribe("workspace:selected", this.setWorkspace, this)
+        this.subscribePageEvent("workspace:selected", this.setWorkspace);
         this.tabs = new chorus.views.TabControl(["activity"]);
-        this.workspaceMemberList = new chorus.views.WorkspaceMemberList()
+        this.workspaceMemberList = new chorus.views.WorkspaceMemberList();
     },
 
     additionalContext: function() {
@@ -31,14 +37,14 @@ chorus.views.WorkspaceListSidebar = chorus.views.Sidebar.extend({
 
         if (model) {
             if(this.activities) {
-                this.bindings.remove(this.activities);
+                this.stopListening(this.activities);
             }
 
             this.activities = model.activities();
             this.activities.fetch();
 
-            this.bindings.add(this.activities, "changed", this.render);
-            this.bindings.add(this.activities, "reset", this.render);
+            this.listenTo(this.activities, "changed", this.render);
+            this.listenTo(this.activities, "reset", this.render);
 
             this.tabs.activity = new chorus.views.ActivityList({
                 collection: this.activities,
@@ -50,5 +56,34 @@ chorus.views.WorkspaceListSidebar = chorus.views.Sidebar.extend({
         }
 
         this.render();
+    },
+
+    startEditingTags: function(e) {
+        e.preventDefault();
+        new chorus.dialogs.EditTags({collection: new chorus.collections.Base([this.model])}).launchModal();
+    },
+
+    launchNotesNewDialog: function(e) {
+        e && e.preventDefault();
+        var dialog = new chorus.dialogs.NotesNew({
+            pageModel: this.model,
+            entityId: this.model.id,
+            entityType: "workspace",
+            workspaceId: this.model.id,
+            allowWorkspaceAttachments: true
+        });
+        dialog.launchModal();
+    },
+
+    launchInsightsNewDialog: function(e) {
+        e && e.preventDefault();
+        var dialog = new chorus.dialogs.InsightsNew({
+            pageModel: this.model,
+            entityId: this.model.id,
+            entityType: "workspace",
+            workspaceId: this.model.id,
+            allowWorkspaceAttachments: true
+        });
+        dialog.launchModal();
     }
 });

@@ -1,8 +1,10 @@
 chorus.models.Note = chorus.models.Activity.extend({
-   constructorName: "Note",
+    constructorName: "Note",
+    entityType: "note",
+
     urlTemplate:function (options) {
         if (options && options.isFile) {
-            return "notes/{{id}}/attachments"
+            return "notes/{{id}}/attachments";
         } else {
             return "notes/{{id}}";
         }
@@ -37,7 +39,7 @@ chorus.models.Note = chorus.models.Activity.extend({
     uploadFailed:function (file, e, response) {
         this.filesToBeSaved--;
         this.fileUploadErrors++;
-        if (response == "abort") {
+        if (response === "abort") {
             this.message = this.message || t('notes.new_dialog.upload_cancelled');
             this.serverErrors = {fields: {file_upload: {GENERIC: {message: this.message}}}};
         } else {
@@ -51,7 +53,7 @@ chorus.models.Note = chorus.models.Activity.extend({
     },
 
     uploadComplete:function () {
-        if (this.filesToBeSaved == 0) {
+        if (this.filesToBeSaved === 0) {
             if (this.fileUploadErrors > 0) {
                 this.trigger('fileUploadFailed');
             } else {

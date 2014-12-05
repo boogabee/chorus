@@ -8,8 +8,8 @@ chorus.collections.NotificationSet = chorus.collections.Base.extend({
     },
 
     modelAdded: function(model) {
-        if (this.attributes.type == "unread") {
-            model.set({ unread: true }, { silent: true })
+        if (this.attributes.type === "unread") {
+            model.set({ unread: true }, { silent: true });
         }
     },
 
@@ -24,7 +24,6 @@ chorus.collections.NotificationSet = chorus.collections.Base.extend({
     },
 
     markAllRead: function(options) {
-        var self = this;
         if (this.length > 0) {
             $.ajax({
                 type: "PUT",
@@ -38,4 +37,4 @@ chorus.collections.NotificationSet = chorus.collections.Base.extend({
             options.success && options.success();
         }
     }
-})
+});

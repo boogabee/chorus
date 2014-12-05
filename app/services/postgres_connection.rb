@@ -1,0 +1,1 @@
+class PostgresConnection < PostgresLikeConnection; end

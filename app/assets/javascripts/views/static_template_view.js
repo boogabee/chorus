@@ -5,9 +5,9 @@ chorus.views.StaticTemplate = function (templateName, context) {
         context:context,
 
         postRender:function () {
-            this.$(this.el).addClass((templateName || "").replace("/", "_"))
+            this.$(this.el).addClass((templateName || "").replace("/", "_"));
         }
     });
 
     return new klass();
-}
+};

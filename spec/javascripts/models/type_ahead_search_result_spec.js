@@ -1,6 +1,6 @@
 describe("chorus.models.TypeAheadSearchResult", function() {
     beforeEach(function() {
-        this.result = rspecFixtures.typeAheadSearchResult();
+        this.result = backboneFixtures.typeAheadSearchResult();
     });
 
     describe("fixtures", function() {
@@ -10,14 +10,18 @@ describe("chorus.models.TypeAheadSearchResult", function() {
                 'attachment',
                 'hdfs_file',
                 'workspace',
-                'gpdb_instance',
-                'hadoop_instance',
-                'gnip_instance',
+                'gpdb_data_source',
+                'hdfs_data_source',
+                'gnip_data_source',
+                'oracle_data_source',
+                'jdbc_data_source',
+                'pg_data_source',
                 'user',
                 'workfile',
-                'dataset'
+                'dataset',
+                'tag'
             ].sort();
-            expect(_.uniq(entityTypes).sort()).toEqual(expectedEntityTypes)
+            expect(_.uniq(entityTypes).sort()).toEqual(expectedEntityTypes.sort());
         });
     });
 
@@ -38,19 +42,20 @@ describe("chorus.models.TypeAheadSearchResult", function() {
 
         it("returns objects of the appropriate type, excluding artifacts", function() {
             var expectToContainClass = function(list, entityClass) {
-                expect(!!_.find(list, function(element) {
-                    return element instanceof entityClass
+                expect(_.find(list, function(element) {
+                    return element instanceof entityClass;
                 })).toBeTruthy();
             };
             expectToContainClass(this.searchResults, chorus.models.HdfsEntry);
             expectToContainClass(this.searchResults, chorus.models.Workspace);
-            expectToContainClass(this.searchResults, chorus.models.GpdbInstance);
-            expectToContainClass(this.searchResults, chorus.models.HadoopInstance);
-            expectToContainClass(this.searchResults, chorus.models.GnipInstance);
+            expectToContainClass(this.searchResults, chorus.models.GpdbDataSource);
+            expectToContainClass(this.searchResults, chorus.models.HdfsDataSource);
+            expectToContainClass(this.searchResults, chorus.models.GnipDataSource);
+            expectToContainClass(this.searchResults, chorus.models.OracleDataSource);
+            expectToContainClass(this.searchResults, chorus.models.JdbcDataSource);
+            expectToContainClass(this.searchResults, chorus.models.PgDataSource);
             expectToContainClass(this.searchResults, chorus.models.User);
             expectToContainClass(this.searchResults, chorus.models.Workfile);
-            expectToContainClass(this.searchResults, chorus.models.Dataset);
-//            expectToContainClass(this.searchResults, chorus.models.ChorusView);
         });
 
         it("expects all result objects to have a name and downloadUrl/showUrl method", function() {
@@ -63,7 +68,7 @@ describe("chorus.models.TypeAheadSearchResult", function() {
                 } else {
                     expect(typeof result.showUrl()).toBe('string');
                 }
-            })
+            });
         });
     });
 

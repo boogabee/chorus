@@ -1,0 +1,11 @@
+<form>
+    <div class="girdle">
+        <input type="text" name="fileName" placeholder="Name" tabindex="1" maxlength="60"></input>
+
+        {{#if userWillPickSchema}}
+            {{infoBlock "work_flows.new_dialog.info"}}
+            <div class="database_picker"></div>
+        {{/if}}
+    </div>
+    {{formControlsWithDisabledSubmit "work_flows.new_dialog.add_work_flow"}}
+</form>

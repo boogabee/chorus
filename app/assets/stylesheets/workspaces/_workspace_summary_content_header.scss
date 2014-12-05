@@ -1,0 +1,28 @@
+.workspace_summary_content_header {
+
+    .truncated_summary { display: inline-block; }
+
+    .activity_list_header {
+        .workspace_title {
+            @include heading-normal;
+            padding-top: 10px;
+        }
+
+        .menus {
+            float: none;
+            padding-bottom: 5px;
+            margin-top: 5px;
+        }
+
+        h1 {
+            padding-top: 0px;
+            padding-left: 0px;
+        }
+        clear: both;
+    }
+
+    .project_status {
+        margin-right: 10px;
+        float: right;
+    }
+}

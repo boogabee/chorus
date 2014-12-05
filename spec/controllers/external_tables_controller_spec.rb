@@ -2,98 +2,189 @@ require 'spec_helper'
 
 describe ExternalTablesController do
   let(:user) { users(:the_collaborator) }
-  let(:sandbox) { gpdb_schemas(:default) }
   let(:workspace) { workspaces(:public) }
-  let(:workspace_without_sandbox) { workspaces(:private) }
 
-  let!(:instance_account) { sandbox.gpdb_instance.account_for_user!(user) }
-  let(:hadoop_instance) { hadoop_instances(:hadoop) }
+  let!(:data_source_account) { sandbox.data_source.account_for_user!(user) }
+  let(:sandbox) { schemas(:default) }
+
+  let(:hdfs_data_source) { hdfs_data_sources(:hadoop) }
+  let(:hdfs_entry) { hdfs_entries(:hdfs_file) }
+  let(:hdfs_directory) { hdfs_entries(:directory) }
+
+  before { log_in user }
 
   describe "#create" do
-    before do
-      log_in user
+    def mock_external_table_build_success
+      mock(ExternalTable).build(anything) do |e|
+        e[:column_names].should == %w{field1 field2}
+        e[:column_types].should == %w{text text}
+        e[:connection].should be_a(GreenplumConnection)
+        e[:delimiter].should == ','
+        e[:name].should == 'tablefromhdfs'
+
+        yield e if block_given?
+        mock(Object.new).save { true }
+      end
+
+      # Please get rid of me
+      any_instance_of(Schema) do |schema|
+        stub(schema).refresh_datasets do
+          workspace.sandbox.datasets.create!(:name => 'tablefromhdfs')
+        end
+      end
     end
 
-    it_behaves_like "an action that requires authentication", :post, :create
+    let(:parameters) do
+      {
+          :column_names => %w{field1 field2},
+          :delimiter => ',',
+          :id => hdfs_data_source.id,
+          :hdfs_entry_id => hdfs_entry,
+          :pathname => "foo_fighter/twisted_sisters/",
+          :table_name => "tablefromhdfs",
+          :types => %w{text text},
+          :workspace_id => workspace.id
+      }
+    end
 
-    context "without sandbox" do
-      let(:parameters) do
-        {
-            :workspace_id => workspace_without_sandbox.id
-        }
-      end
+    it_behaves_like "an action that requires authentication", :post, :create, :workspace_id => '-1'
+
+    context "when the workspace has no sandbox" do
+      let(:workspace) { workspaces(:private) }
 
       it "fails and responds unprocessable entity" do
         post :create, parameters
         response.code.should == "422"
-
-        decoded = JSON.parse(response.body)
-        decoded['errors']['fields']['external_table'].should have_key('EMPTY_SANDBOX')
+        JSON.parse(response.body)['errors']['fields']['external_table'].should have_key('EMPTY_SANDBOX')
       end
     end
 
-    context "with sandbox" do
-      let(:parameters) do
-        {
-            :hadoop_instance_id => hadoop_instance.id,
-            :pathname => "foo_fighter/twisted_sisters/",
-            :has_header => true,
-            :column_names => ["field1", "field2"],
-            :types => ["text", "text"],
-            :delimiter => ',',
-            :table_name => "highway_to_heaven",
-            :workspace_id => workspace.id
-        }
+    context "when the path type is directory" do
+      before do
+        parameters.merge!(:file_pattern => "*.csv", :path_type => "directory")
       end
 
-      it "creates hdfs external table for a workspace with sandbox amd responds with ok" do
-        mock(Hdfs::ExternalTableCreator).create(workspace, instance_account, anything, user)
+      it "initializes and calls into ExternalTable correctly" do
+        mock_external_table_build_success do |ext_table_params|
+          ext_table_params[:sandbox_data_source].should == workspace.sandbox.data_source
+          ext_table_params[:entry_or_dataset].should == hdfs_entry
+          ext_table_params[:file_pattern].should == "*"
+        end
 
         post :create, parameters
-        response.code.should == "200"
+        response.should be_success
+      end
+
+      it 'creates an HdfsDirectoryExtTableCreated event for the directory' do
+        mock_external_table_build_success
+
+        expect {
+          post :create, parameters.merge!(:hdfs_entry_id => hdfs_directory.id)
+        }.to change(Events::HdfsDirectoryExtTableCreated, :count).by(1)
+        e = Events::Base.last
+        e.workspace.should       == workspace
+        e.dataset.name.should    == 'tablefromhdfs'
+        e.hdfs_entry.should      == hdfs_directory
       end
     end
 
-    context "failure to connect to the sandbox" do
-      let(:parameters) do
-        {
-            :hadoop_instance_id => hadoop_instance.id,
-            :workspace_id => workspace.id
-        }
-      end
+    context "when the path type is pattern" do
+      let(:path_type) { "pattern" }
 
       before do
-        mock(Hdfs::ExternalTableCreator).create.with_any_args { raise Hdfs::ExternalTableCreator::CreationFailed }
+        parameters.merge!(:file_pattern => "*.csv", :path_type => "pattern")
       end
 
-      it "responds with unprocessable entity and add specific errors" do
-        post :create, parameters
-        response.code.should == "422"
+      it "initializes and calls into ExternalTable correctly" do
+        mock_external_table_build_success do |ext_table_params|
+          ext_table_params[:sandbox_data_source].should == workspace.sandbox.data_source
+          ext_table_params[:entry_or_dataset].should == hdfs_entry
+          ext_table_params[:file_pattern].should == "*.csv"
+        end
 
-        decoded = JSON.parse(response.body)
-        decoded['errors']['fields']['external_table'].should have_key('CONNECTION_REFUSED')
+        post :create, parameters
+        response.should be_success
+      end
+
+      it 'creates an HdfsPatternExtTableCreated event for the file pattern' do
+        mock_external_table_build_success
+
+        expect {
+          post :create, parameters.merge(:file_pattern => '*.csv', :hdfs_entry_id => hdfs_directory.id)
+        }.to change(Events::HdfsPatternExtTableCreated, :count).by(1)
+        e = Events::Base.last
+        e.workspace.should    == workspace
+        e.dataset.name.should == 'tablefromhdfs'
+        e.hdfs_entry.should   == hdfs_directory
+        e.file_pattern.should == '*.csv'
       end
     end
 
-    context "failure to create table in the sandbox" do
-      let(:parameters) do
-        {
-            :hadoop_instance_id => hadoop_instance.id,
-            :workspace_id => workspace.id
-        }
-      end
+    context "when creating from an HDFS dataset" do
+      let(:hdfs_dataset) { datasets(:hadoop) }
 
       before do
-        mock(Hdfs::ExternalTableCreator).create.with_any_args { raise Hdfs::ExternalTableCreator::AlreadyExists }
+        parameters.merge!(:hdfs_dataset_id => hdfs_dataset.id)
+        parameters.delete(:hdfs_entry_id)
       end
 
-      it "responds with unprocessable entity and add specific errors" do
+      it "initializes and calls into ExternalTable correctly" do
+        mock_external_table_build_success do |ext_table_params|
+          ext_table_params[:sandbox_data_source].should == workspace.sandbox.data_source
+          ext_table_params[:entry_or_dataset].should == hdfs_dataset
+          ext_table_params[:file_pattern].should be_nil
+        end
+
         post :create, parameters
-        response.code.should == "422"
-
-        decoded = JSON.parse(response.body)
-        decoded['errors']['fields']['external_table'].should have_key('EXISTS')
       end
+
+      it 'creates an HdfsDatasetExtTableCreated event for the dataset' do
+        mock_external_table_build_success
+
+        expect {
+          post :create, parameters
+        }.to change(Events::HdfsDatasetExtTableCreated, :count).by(1)
+        e = Events::Base.last
+        e.workspace.should    == workspace
+        e.dataset.name.should == 'tablefromhdfs'
+        e.hdfs_dataset.should   == hdfs_dataset
+      end
+    end
+
+    describe "creating an external table form a file" do
+      it "initializes and calls into ExternalTable correctly" do
+        mock_external_table_build_success do |ext_table_params|
+          ext_table_params[:sandbox_data_source].should == workspace.sandbox.data_source
+          ext_table_params[:entry_or_dataset].should == hdfs_entry
+          ext_table_params[:file_pattern].should be_nil
+        end
+
+        post :create, parameters
+      end
+
+      it "creates an HdfsFileExtTableCreated event with the hdfs file" do
+        mock_external_table_build_success
+
+        expect {
+          post :create, parameters
+        }.to change(Events::HdfsFileExtTableCreated, :count).by(1)
+
+        e = Events::Base.last
+        e.workspace.should == workspace
+        e.dataset.name.should == 'tablefromhdfs'
+        e.hdfs_entry.should == hdfs_entry
+      end
+    end
+
+    it "presents any errors that come from the model" do
+      mock(ExternalTable).build(anything) do
+        o = ExternalTable.new
+        mock(o).save { o.errors.add(:name, :TAKEN); false }
+      end
+
+      post :create, parameters
+      response.code.should == "422"
+      JSON.parse(response.body)['errors']['fields']['name'].should have_key('TAKEN')
     end
   end
 end

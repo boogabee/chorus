@@ -1,6 +1,6 @@
 describe("chorus.alerts.ExecutionError", function() {
     beforeEach(function() {
-        this.modelWithErrors = rspecFixtures.userWithErrors();
+        this.modelWithErrors = backboneFixtures.userWithErrors();
         this.alert = new chorus.alerts.ExecutionError({ model: this.modelWithErrors });
     });
     

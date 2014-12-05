@@ -1,0 +1,130 @@
+CREATE USER "<%= schema_name %>" IDENTIFIED BY "oracle";
+GRANT UNLIMITED TABLESPACE to "<%= schema_name %>";
+GRANT CREATE TABLE, DROP ANY TABLE, ALTER ANY TABLE TO system;
+
+CREATE TABLE "<%= schema_name %>".NEWTABLE (id NUMBER, rowname VARCHAR(20));
+<% (1..10).each do |x| %>
+    <%= %Q{INSERT INTO "#{schema_name}".NEWTABLE (id, rowname) values (#{x}, 'row_#{x}');} %>
+<% end %>
+CREATE TABLE "<%= schema_name %>".NEWERTABLE ("id" NUMBER);
+CREATE VIEW "<%= schema_name %>".NEWVIEW AS SELECT * FROM "<%= schema_name %>".NEWERTABLE;
+CREATE TABLE "<%= schema_name %>".TWO_COLUMN_TABLE ("id" NUMBER, "column2" NUMBER);
+CREATE TABLE "<%= schema_name %>".ALL_COLUMN_TABLE (
+  "BIN_DOUBLE" BINARY_DOUBLE
+, "BIN_FLOAT" BINARY_FLOAT
+, "CHARACTER" CHAR
+, "CHAR_BLOB" CLOB
+, "DAY" DATE
+, "DECIMAL_COL" NUMBER
+, "INTEGER_COL" INT
+, "UNICODE_CHAR" NCHAR
+, "UNICODE_CLOB" NCLOB
+, "NUMBER_COL" NUMBER
+, "UNICODE_VARCHAR" NVARCHAR2(20)
+, "ROW_ID" ROWID
+, "TIMESTAMP_COL" TIMESTAMP
+, "UNIVERSAL_ROW_ID" UROWID
+, "VARIABLE_CHARACTER" VARCHAR(20)
+, "VARIABLE_CHARACTER_2" VARCHAR2(20)
+, "LONG_COLUMN" LONG
+);
+
+INSERT INTO "<%= schema_name %>".ALL_COLUMN_TABLE VALUES
+  (2.3, 5.3, 'c', 'some long text and stuff', to_date('2011-12-23', 'YYYY-MM-DD'), 123, 42, 'Ü', 'long Ümlaut', 432, 'stuff', NULL, TO_TIMESTAMP('10-SEP-0214:10:10.123000','DD-MON-RRHH24:MI:SS.FF'), NULL, 'some string', 'some other string', 'long content');
+
+CREATE TABLE "<%= schema_name %>".WITH_COMPOSITE_KEY (
+  COLUMN1 NUMBER NOT NULL
+, COLUMN2 VARCHAR2(20) NOT NULL
+, CONSTRAINT WITH_COMPOSITE_KEY_PK PRIMARY KEY ( COLUMN2 , COLUMN1 ) ENABLE
+);
+
+CREATE TABLE "<%= schema_name %>".UNSUPPORTED_COLUMNS (
+  "BINARY_FILE" BFILE
+, "BLOBBY" BLOB
+, "RAW_LONG" LONG RAW
+, "LABEL_THING" MLSLABEL
+, "RAW_COL" RAW(20)
+, "XML_COL" XMLTYPE
+);
+
+INSERT INTO "<%= schema_name %>".UNSUPPORTED_COLUMNS VALUES (NULL, NULL, NULL, NULL, NULL, '<xml/>');
+
+CREATE TABLE "<%= schema_name %>".SPECIAL_CHARACTERS (
+  "COLUMN" VARCHAR(20)
+);
+
+INSERT INTO "<%= schema_name %>".SPECIAL_CHARACTERS VALUES ('\0');
+INSERT INTO "<%= schema_name %>".SPECIAL_CHARACTERS VALUES ('\');
+INSERT INTO "<%= schema_name %>".SPECIAL_CHARACTERS VALUES ('|');
+INSERT INTO "<%= schema_name %>".SPECIAL_CHARACTERS VALUES ('\r');
+INSERT INTO "<%= schema_name %>".SPECIAL_CHARACTERS VALUES ('\n');
+INSERT INTO "<%= schema_name %>".SPECIAL_CHARACTERS VALUES ('foo,bar');
+
+CREATE VIEW "<%= schema_name %>".ALL_COLUMN_VIEW as SELECT * from "<%= schema_name %>".ALL_COLUMN_TABLE;
+
+CREATE TABLE "<%= schema_name %>".PARTITIONED_INTEGERS
+(num  NUMBER)
+PARTITION BY RANGE(num)
+(
+PARTITION low_part VALUES LESS THAN(5),
+PARTITION high_part VALUES LESS THAN(MAXVALUE)
+);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (1);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (2);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (3);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (4);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (5);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (6);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (7);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (8);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (9);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (10);
+INSERT INTO "<%= schema_name %>".PARTITIONED_INTEGERS VALUES (0);
+
+CREATE TABLE "<%= schema_name %>".BASE_TABLE1 (id NUMBER, column1 NUMBER, column2 NUMBER, category CLOB, time_value TIMESTAMP);
+CREATE TABLE "<%= schema_name %>"."lowercase_table" (id NUMBER, column1 NUMBER, column2 NUMBER, category CLOB, time_value TIMESTAMP);
+CREATE VIEW "<%= schema_name %>"."lowercase_view" AS SELECT * FROM "<%= schema_name %>"."lowercase_table";
+
+CREATE TABLE "<%= schema_name %>"."base_table1"
+    ("id" INTEGER, "column1" INTEGER, "column2" INTEGER, "category" VARCHAR(128), "time_value" TIMESTAMP);
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 0,0,0, 'apple', TIMESTAMP '2012-03-01 00:00:02' );
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 1,1,1, 'apple', TIMESTAMP '2012-03-02 00:00:02' );
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 2,0,2, 'orange' , TIMESTAMP '2012-04-01 00:00:02');
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 3,1,3, 'orange' , TIMESTAMP '2012-03-05 00:00:02');
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 4,1,4, 'orange' , TIMESTAMP '2012-03-04 00:02:02');
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 5,0,5, 'papaya' , TIMESTAMP '2012-05-01 00:02:02');
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 6,1,6, 'papaya' , TIMESTAMP '2012-04-08 00:10:02');
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 7,1,7, 'papaya' , TIMESTAMP '2012-05-11 00:10:02');
+  INSERT INTO "<%= schema_name %>"."base_table1" VALUES ( 8,1,8, 'papaya' , TIMESTAMP '2012-04-09 00:00:02');
+
+CREATE TABLE "<%= schema_name %>"."heatmap_table"
+  ("id" INTEGER, "column1" INTEGER, "column2" INTEGER, "category" VARCHAR(255));
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 0, 2, 2, 'red');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 1, 2, 4, 'red');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 2, 2, 6, 'red');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 3, 4, 2, 'red');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 4, 4, 4, 'red');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 5, 4, 6, 'red');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 6, 6, 2, 'red');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 7, 6, 4, 'cornflower blue');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 8, 6, 6, 'red');
+  INSERT INTO "<%= schema_name %>"."heatmap_table" VALUES ( 9, 6, 6, 'green');
+
+    CREATE TABLE "<%= schema_name %>"."allcaps_candy" (
+    id NUMBER,
+    "STUFF" INTEGER,
+    "KITKAT" INTEGER,
+    "SNICKERS" VARCHAR(20)
+  );
+
+  CREATE TABLE "<%= schema_name %>"."table_with_nulls"
+    ("id" INTEGER, "all_nulls" INTEGER, "some_nulls" INTEGER, "category" VARCHAR(255), "time_value" TIMESTAMP );
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 0,NULL,5, 'apple',  TIMESTAMP '2012-03-01 00:00:02' );
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 1,NULL,NULL, 'apple',  TIMESTAMP '2012-03-02 00:00:02' );
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 2,NULL,7, 'orange' ,  TIMESTAMP '2012-04-01 00:00:02');
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 3,NULL,1, 'orange' ,  TIMESTAMP '2012-04-01 00:00:02');
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 4,NULL,2, 'orange' ,  TIMESTAMP '2012-04-01 00:00:02');
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 5,NULL,7, 'apple' ,  TIMESTAMP '2012-04-01 00:00:02');
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 6,NULL,NULL, 'orange' ,  TIMESTAMP '2012-04-01 00:00:02');
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 7,NULL,3, 'orange' ,  TIMESTAMP '2012-04-01 00:00:02');
+  INSERT INTO "<%= schema_name %>"."table_with_nulls" VALUES ( 8,NULL,14, 'apple',  TIMESTAMP '2012-03-02 00:00:02' );

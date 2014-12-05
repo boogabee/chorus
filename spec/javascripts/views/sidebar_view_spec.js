@@ -1,8 +1,8 @@
 describe("chorus.views.Sidebar", function() {
     beforeEach(function() {
-        stubDefer();
         chorus.page = new chorus.pages.Base();
         this.page = chorus.page;
+        $('#jasmine_content').append(this.page.el);
         this.page.sidebar = new chorus.views.Sidebar();
         this.page.sidebar.templateName = "user/sidebar";
         this.page.sidebar.subviews = {
@@ -36,7 +36,7 @@ describe("chorus.views.Sidebar", function() {
 
     describe("#recalculateScrolling", function() {
         beforeEach(function() {
-            spyOn(chorus.views.Bare.prototype, "recalculateScrolling")
+            spyOn(chorus.views.Bare.prototype, "recalculateScrolling");
             this.page.sidebar.recalculateScrolling();
         });
 
@@ -47,18 +47,17 @@ describe("chorus.views.Sidebar", function() {
 
     describe("#jumpToTop", function() {
         beforeEach(function() {
-            $('#jasmine_content').append(this.page.el);
             this.page.render();
             this.fakeApi = {
                 scrollTo: jasmine.createSpy("scrollTo")
-            }
-            this.page.$("#sidebar").data("jsp", this.fakeApi)
+            };
+            this.page.$("#sidebar").data("jsp", this.fakeApi);
             this.page.$('#sidebar_wrapper .jump_to_top').addClass("clickable");
             this.page.$('#sidebar_wrapper .jump_to_top').click();
         });
 
         it("should scroll to the top", function() {
-            expect(this.fakeApi.scrollTo).toHaveBeenCalledWith(0, 0)
+            expect(this.fakeApi.scrollTo).toHaveBeenCalledWith(0, 0);
         });
     });
 });

@@ -1,7 +1,6 @@
 describe("chorus.dialogs.VisualizationNotesNew", function() {
     describe("when in workspace context ( in Data tab )", function() {
         beforeEach(function() {
-            stubDelay();
             spyOn(chorus.dialogs.MemoNew.prototype, "modelSaved").andCallThrough();
 
             this.dialog = new chorus.dialogs.VisualizationNotesNew({
@@ -10,7 +9,7 @@ describe("chorus.dialogs.VisualizationNotesNew", function() {
                 workspaceId: "22",
                 entityType: "dataset",
                 allowWorkspaceAttachments: "true",
-                pageModel: newFixtures.workspaceDataset.sandboxTable(),
+                pageModel: backboneFixtures.workspaceDataset.datasetTable(),
                 attachVisualization: {
                     fileName: "hello-frequency.png",
                     svgData: "<svg/>"
@@ -43,7 +42,7 @@ describe("chorus.dialogs.VisualizationNotesNew", function() {
             it("display the chart image and chart fileName", function() {
                 expect(this.dialog.$(".options_area")).not.toHaveClass("hidden");
                 expect(this.dialog.$(".options_area .row.file_details.visualization .name")).toHaveText("hello-frequency.png");
-                expect(this.dialog.$(".icon").attr("src")).toBe("images/workfiles/medium/img.png");
+                expect(this.dialog.$(".icon").attr("src")).toBe("images/workfiles/icon/img.png");
                 expect(this.dialog.$("a.remove")).toHaveClass("hidden");
             });
         });
@@ -52,7 +51,8 @@ describe("chorus.dialogs.VisualizationNotesNew", function() {
             beforeEach(function() {
                 this.dialog.$("textarea[name=body]").val("The body of a note");
                 this.dialog.$("form").trigger("submit");
-                this.server.completeSaveFor(this.dialog.model, _.extend({id: 2}, this.dialog.model.attributes));
+                spyOnEvent(this.dialog.pageModel, "invalidated");
+                this.server.completeCreateFor(this.dialog.model, _.extend({id: 2}, this.dialog.model.attributes));
             });
 
             it("calls super#modelSaved", function() {
@@ -61,7 +61,7 @@ describe("chorus.dialogs.VisualizationNotesNew", function() {
 
             it("saves the visualization chart as an attachment to the note", function() {
                 expect(this.server.lastCreate().url).toEqual("/notes/2/attachments");
-                expect(this.server.lastCreate().params()).toEqual({ file_name : 'hello-frequency.png', svg_data : '<svg/>' });
+                expect(this.server.lastCreate().json()).toEqual({ file_name : 'hello-frequency.png', svg_data : '<svg/>' });
             });
 
             describe("after the v11n attachment has been saved", function() {
@@ -70,9 +70,8 @@ describe("chorus.dialogs.VisualizationNotesNew", function() {
                     this.server.lastCreate().succeed();
                 });
 
-                it("refreshes the dataset's activity stream after the v11n attachment has been saved", function() {
-                    this.server.lastCreate().succeed();
-                    expect(this.dialog.pageModel.activities()).toHaveBeenFetched();
+                it("triggers invalidated on the dataset (to refresh the dataset's activity stream) after the v11n attachment has been saved", function() {
+                    expect("invalidated").toHaveBeenTriggeredOn(this.dialog.pageModel);
                 });
 
                 it("pops toast", function() {

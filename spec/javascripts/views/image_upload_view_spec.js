@@ -1,14 +1,14 @@
 describe("chorus.views.ImageUpload", function() {
     beforeEach(function() {
-        this.user = rspecFixtures.user({
+        loadConfig();
+        this.user = backboneFixtures.user({
             username: "franklin",
             id : 13,
             image: { original: "/foo", icon: "/icon" }
         });
         this.view = new chorus.views.ImageUpload({model : this.user});
         this.view.model.loaded = true;
-        this.imageJson = rspecFixtures.imageJson();
-        this.server.completeFetchFor(chorus.models.Config.instance(), rspecFixtures.config());
+        this.imageJson = backboneFixtures.imageJson();
     });
 
     describe("#render", function() {
@@ -48,7 +48,7 @@ describe("chorus.views.ImageUpload", function() {
             });
 
             it("the image is hidden", function() {
-                expect(this.view.$("img")).toHaveClass('hidden')
+                expect(this.view.$("img")).toHaveClass('hidden');
             });
         });
 
@@ -67,7 +67,7 @@ describe("chorus.views.ImageUpload", function() {
             });
 
             it("the image is not hidden", function() {
-                expect(this.view.$("img")).not.toHaveClass('hidden')
+                expect(this.view.$("img")).not.toHaveClass('hidden');
             });
         });
 
@@ -121,7 +121,7 @@ describe("chorus.views.ImageUpload", function() {
                     });
 
                     it("removes the hidden class from the image", function() {
-                        expect(this.view.$("img")).not.toHaveClass('hidden')
+                        expect(this.view.$("img")).not.toHaveClass('hidden');
                     });
 
                     it("updates the cachebuster", function() {
@@ -220,7 +220,7 @@ describe("chorus.views.ImageUpload", function() {
 
                 it("shows an error", function () {
                     var maxFileSize = chorus.models.Config.instance().get("fileSizesMbUserIcon");
-                    expect(this.user.serverErrors["fields"]["base"]["FILE_SIZE_EXCEEDED"]["count"]).toEqual(maxFileSize)
+                    expect(this.user.serverErrors["fields"]["base"]["FILE_SIZE_EXCEEDED"]["count"]).toEqual(maxFileSize);
                 });
 
                 it("triggers validationFailed", function() {
@@ -243,6 +243,13 @@ describe("chorus.views.ImageUpload", function() {
                 });
             });
 
+        });
+
+        it("does not automatically listen to paste events on the document", function() {
+            //cannot simulate originalEvent of paste events, so check widget option
+            // $(null).length == 0
+            var widget = this.view.$('input').data('fileupload');
+            expect(widget.options.pasteZone.length).toBe(0);
         });
     });
 });

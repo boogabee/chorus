@@ -1,0 +1,23 @@
+{{#if displayName}}
+<div class="actions">
+    <label>{{t "sidebar.selected.one"}}</label>
+    <ul>
+        <li><a class="edit_tags">{{t "sidebar.edit_tags"}}</a></li>
+        {{#if permission}}
+            {{#unless isInEditMode}}
+            <li><a href="#/users/{{id}}/edit" class="edit_user">{{t "actions.edit_profile"}}</a></li>
+            {{/unless}}
+
+            {{#if deleteAvailable}}
+            <li><a href="#" class="alert delete_user">{{t "actions.delete_user"}}</a></li>
+            {{/if}}
+
+            {{#if changePasswordAvailable}}
+            <li><a href="#" class="dialog change_password">{{t "actions.change_password"}}</a></li>
+            {{/if}}
+        {{/if}}
+    </ul>
+</div>
+
+<div class="tab_control"></div>
+{{/if}}

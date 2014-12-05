@@ -1,16 +1,72 @@
-stage:
+stage: &stage
   host: chorus-staging
   install_path: ~/chorusrails-deploy-new
   postgres_build: 2
+  kill_workers: true
+  kill_alpine: true
+
+daily:
+  host: alpineqa3.alpinenow.local
+  install_path: ~/chorusrails-deploy-new
+  postgres_build: 2
+  kill_workers: true
+  kill_alpine: true
+
+demo:
+  host: chorus-demo.alpinenow.local
+  install_path: ~/chorusrails-deploy-new
+  postgres_build: 2
+  kill_workers: true
+  kill_alpine: true
+
+alpineqa4:
+  host: alpineqa4.alpinenow.local
+  install_path: ~/chorusrails-deploy-new
+  postgres_build: 2
+  kill_workers: true
+  kill_alpine: true
 
 upgrade21:
   host: chorus-chorus21-upgrade
   legacy_path: ~/chorus
   postgres_build: 2
   install_path: ~/chorusrails
+  legacy_data_host: chorus-chorus21
 
 fresh_install:
   host: chorus-freshinstall
   postgres_build: 2
   install_path: ~/chorusrails_freshinstall
   clean_install: true
+  kill_workers: true
+  kill_alpine: true
+
+load_test:
+  <<: *stage
+  host: chorus-load-test
+  install_path: ~/chorus
+
+vprevious:
+  host: chorus-vprevious
+  install_path: ~/chorus
+  postgres_build: 2
+
+vnext:
+  host: chorus-vnext
+  install_path: ~/chorus
+  postgres_build: 2
+
+qasmoke:
+  host: qasmoke.alpinenow.local
+  install_path: /usr/local/chorus
+  postgres_build: 2
+  kill_workers: true
+  kill_alpine: true
+
+branch:
+  host: qabranch.alpinenow.local
+  install_path: ~/chorusrails-deploy-new
+  postgres_build: 2
+  kill_workers: true
+  kill_alpine: true
+  postgres_build: 2

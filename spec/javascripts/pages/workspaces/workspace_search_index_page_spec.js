@@ -3,6 +3,7 @@ describe("chorus.pages.WorkspaceSearchIndexPage", function() {
         this.workspaceId = '101';
         this.query = 'foo';
         this.page = new chorus.pages.WorkspaceSearchIndexPage(this.workspaceId, "this_workspace", "all", this.query);
+        this.workspace = this.page.search.workspace();
     });
 
     it("fetches the right search result", function() {
@@ -11,7 +12,17 @@ describe("chorus.pages.WorkspaceSearchIndexPage", function() {
     });
 
     it("fetches the workspace", function() {
-        expect(this.page.search.workspace()).toHaveBeenFetched();
+        expect(this.workspace).toHaveBeenFetched();
+    });
+
+    context("when the workspace fetch completes", function () {
+        beforeEach(function () {
+            this.server.completeFetchFor(this.workspace);
+        });
+
+        it("has a titlebar", function() {
+            expect(this.page.$(".page_sub_header")).toContainText(this.workspace.name());
+        });
     });
 
     describe("when the workspace and search are fetched", function() {
@@ -21,24 +32,16 @@ describe("chorus.pages.WorkspaceSearchIndexPage", function() {
                 this.server.completeFetchFor(this.page.search.workspace(), { id: "101", name: "Bob the workspace" });
             });
 
-            it("includes the workspace in the breadcrumbs", function() {
-                var crumbs = this.page.$("#breadcrumbs li");
-                expect(crumbs.length).toBe(3);
-                expect(crumbs.eq(0)).toContainTranslation("breadcrumbs.home");
-                expect(crumbs.eq(1).text().trim()).toBe("Bob the workspace");
-                expect(crumbs.eq(1).find("a")).toHaveHref(this.page.search.workspace().showUrl());
-                expect(crumbs.eq(2)).toContainTranslation("breadcrumbs.search_results");
-            });
-
-            it("disables the 'instances', 'people', 'hdfs entries' and 'workspaces' options in the filter menu", function() {
+            it("disables the 'data sources', 'people', 'hdfs entries' and 'workspaces' options in the filter menu", function() {
                 var menuOptions = this.page.$(".default_content_header .link_menu.type li");
                 expect(menuOptions.find("a").length).toBe(4);
 
-                expect(menuOptions.filter("[data-type=instance]")).not.toContain("a");
+                expect(menuOptions.filter("[data-type=data_source]")).not.toContain("a");
                 expect(menuOptions.filter("[data-type=user]")).not.toContain("a");
                 expect(menuOptions.filter("[data-type=workspace]")).not.toContain("a");
-                expect(menuOptions.filter("[data-type=hdfs]")).not.toContain("a");
+                expect(menuOptions.filter("[data-type=hdfs_entry]")).not.toContain("a");
 
+                expect(menuOptions.filter("[data-type=attachment]")).toContain("a");
                 expect(menuOptions.filter("[data-type=workfile]")).toContain("a");
                 expect(menuOptions.filter("[data-type=dataset]")).toContain("a");
                 expect(menuOptions.filter("[data-type=all]")).toContain("a");
@@ -67,14 +70,37 @@ describe("chorus.pages.WorkspaceSearchIndexPage", function() {
             it("enables all options in the filter menu", function() {
                 var menuOptions = this.page.$(".default_content_header li");
 
-                expect(menuOptions.filter("[data-type=instance]")).toContain("a");
+                expect(menuOptions.filter("[data-type=data_source]")).toContain("a");
                 expect(menuOptions.filter("[data-type=user]")).toContain("a");
                 expect(menuOptions.filter("[data-type=workspace]")).toContain("a");
-                expect(menuOptions.filter("[data-type=hdfs]")).toContain("a");
+                expect(menuOptions.filter("[data-type=hdfs_entry]")).toContain("a");
                 expect(menuOptions.filter("[data-type=workfile]")).toContain("a");
                 expect(menuOptions.filter("[data-type=dataset]")).toContain("a");
                 expect(menuOptions.filter("[data-type=all]")).toContain("a");
             });
+        });
+
+        context("called resourcesLoaded only when both workspace and search fetches completes", function () {
+            beforeEach(function () {
+                this.server.completeFetchFor(this.page.search.workspace(), { id: "101", name: "Bob the workspace" });
+            });
+
+            it("doesn't create mainContentView", function () {
+                expect(this.page.mainContent).toBeUndefined();
+            });
+
+            it("includes a section for every type of item when both fetches completes", function() {
+                this.server.completeFetchFor(this.page.search, backboneFixtures.searchResult());
+
+                var sections = this.page.$(".search_result_list ul");
+                expect(sections.filter(".user_list.selectable")).toExist();
+                expect(sections.filter(".workfile_list.selectable")).toExist();
+                expect(sections.filter(".attachment_list.selectable")).toExist();
+                expect(sections.filter(".workspace_list.selectable")).toExist();
+                expect(sections.filter(".hdfs_entry_list.selectable")).toExist();
+                expect(sections.filter(".data_source_list.selectable")).toExist();
+            });
+
         });
     });
 

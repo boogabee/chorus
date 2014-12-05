@@ -1,39 +1,27 @@
-.tab_control {
-    .tabbed_area {
-        margin-right: 10px;
+.primary_action_panel {
+    .panel {
+        @include sidebar-panel;
+        @include font-action-link;
     }
+}
 
+.tab_control {
+    @include sidebar-panel;
     .tabs {
-        margin: 13px 10px 16px 0;
-        @include tab-gradient;
-        border-bottom: 1px solid $link-color;
+        $pill-padding: 0px;
 
-        li {
-            position: relative;
-            padding: 0 7px;
-            @include list-section-heading;
+        text-align: center;
+        padding: 0 $pill-padding;
+        border-bottom: $border-canon;
+        min-height: 40px;
+        line-height: 40px;
 
-            display: inline-block;
-            color : $link-color;
-            line-height: 24px;
-            vertical-align: middle;
+        background: $accent;
+        .tab {
+            padding: 0 $pill-padding;
             cursor: pointer;
-
-
-            &.selected {
-                background-image: none;
-                color: white;
-                background-color: $link-color;
-                &:after {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: -8px;
-                    background: url("/images/blue_triangle.png") no-repeat bottom center
-                }
-            }
+            display: inline;
+            @include pill-tab(40px);
         }
     }
 

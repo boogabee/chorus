@@ -1,9 +1,30 @@
-.modal_controls {
-    margin-top: 25px;
+@mixin vertical-align {
+  position: relative;
+  top: 50%;
+  -webkit-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
 
+.popup .form_controls {
+    height: 50px;
+    background-color: $dialog-header-background;
+    border-top: $border-canon;
+
+    .links,
     button {
-        float: right;
-        margin-left: 14px;
+         @include vertical-align;
+    }
+
+    .links { margin-left: 14px; float: left; }
+}
+
+.form_controls {
+    margin-top: 15px;
+
+    button { 
+        float: right; 
+        margin-right: 10px;
     }
 
     label {
@@ -17,7 +38,7 @@
     @include after-clearfix;
 }
 
-.controls, .modal_controls {
+.controls, .form_controls {
     button {
         display: inline-block;
         div[aria-role=progressbar] {
@@ -37,4 +58,3 @@
         }
     }
 }
-

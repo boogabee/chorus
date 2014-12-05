@@ -1,0 +1,19 @@
+<div>{{t "dataset.import.not_importable.message"}}</div>
+
+<br />
+
+<p>{{t "dataset.import.not_importable.unsupported_data_types"}}</p>
+<ul>
+    {{#each invalidColumns}}
+        <li>{{this}}</li>
+    {{/each}}
+</ul>
+
+<br />
+
+<p>{{t "dataset.import.not_importable.supported_data_types"}}</p>
+<ul>
+    {{#each supportedColumnTypes}}
+    <li>{{this}}</li>
+    {{/each}}
+</ul>

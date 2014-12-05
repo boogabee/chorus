@@ -10,12 +10,12 @@ resource "Activities" do
   end
 
   post "/comments" do
-    parameter :text, "Text of the comment"
+    parameter :body, "Text of the comment"
     parameter :event_id, "Event id"
 
-    required_parameters :text, :event_id
+    required_parameters :body, :event_id
 
-    let(:text) { "cookiemonster" }
+    let(:body) { "cookiemonster" }
     let(:event_id) { event.id }
 
     example_request "Create a comment on an activity" do

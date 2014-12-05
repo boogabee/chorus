@@ -1,9 +1,9 @@
 describe("chorus.views.SearchAttachment", function() {
     beforeEach(function() {
-        var search = rspecFixtures.searchResultWithAttachmentOnWorkspaceNote();
+        var search = backboneFixtures.searchResultWithAttachmentOnWorkspaceNote();
         this.result = search.attachments().at(0);
         this.view = new chorus.views.SearchAttachment({model: this.result});
-        this.view.render()
+        this.view.render();
     });
 
     it("shows the thumbnail for an image", function() {
@@ -11,7 +11,7 @@ describe("chorus.views.SearchAttachment", function() {
     });
 
     it("shows the iconUrl for a non-image", function() {
-        this.result.set({fileType: "OTHER"})
+        this.result.set({fileType: "OTHER"});
         expect(this.view.$("img.icon").attr("src")).toBe(this.result.iconUrl());
     });
 
@@ -21,7 +21,7 @@ describe("chorus.views.SearchAttachment", function() {
 
     context("with tabular data", function() {
         beforeEach(function() {
-            var search = rspecFixtures.searchResultWithAttachmentOnDatasetNote();
+            var search = backboneFixtures.searchResultWithAttachmentOnDatasetNote();
             this.result = search.attachments().at(0);
             this.view = new chorus.views.SearchAttachment({model: this.result});
             this.view.render();
@@ -40,7 +40,7 @@ describe("chorus.views.SearchAttachment", function() {
 
     context("with workfile in a workspace", function() {
         beforeEach(function() {
-            var search = rspecFixtures.searchResultWithAttachmentOnWorkfileNote();
+            var search = backboneFixtures.searchResultWithAttachmentOnWorkfileNote();
             this.result = search.attachments().at(0);
             this.view = new chorus.views.SearchAttachment({model: this.result});
             this.view.render();
@@ -66,7 +66,7 @@ describe("chorus.views.SearchAttachment", function() {
 
     context("with file in a hdfs", function() {
         beforeEach(function() {
-            var search = rspecFixtures.searchResultWithAttachmentOnHdfsNote();
+            var search = backboneFixtures.searchResultWithAttachmentOnHdfsNote();
             this.result = search.attachments().at(0);
             this.view = new chorus.views.SearchAttachment({model: this.result});
             this.view.render();
@@ -74,12 +74,12 @@ describe("chorus.views.SearchAttachment", function() {
 
         it("shows the file", function() {
             var hdfs = this.result.hdfsFile();
-            var hadoop_instance = this.result.hadoopInstance();
+            var hdfsDataSource = this.result.hdfsDataSource();
             expect(
                 this.view.$(".description .found_in").html()).toContainTranslation(
                 "attachment.found_in.file_in_hdfs",
                 {
-                    hdfsFileLink: '<a href="#/hadoop_instances/' + hadoop_instance.id +  '/browseFile/' + hdfs.id  +'">'+hdfs.name()+'</a>'
+                    hdfsFileLink: '<a href="#/hdfs_data_sources/' + hdfsDataSource.id +  '/browseFile/' + hdfs.id  +'">'+hdfs.name()+'</a>'
                 }
             );
         });
@@ -87,7 +87,7 @@ describe("chorus.views.SearchAttachment", function() {
 
     context("with workspace", function() {
         beforeEach(function() {
-            var search = rspecFixtures.searchResultWithAttachmentOnWorkspaceNote();
+            var search = backboneFixtures.searchResultWithAttachmentOnWorkspaceNote();
             this.result = search.attachments().at(0);
             this.view = new chorus.views.SearchAttachment({model: this.result});
             this.view.render();
@@ -106,21 +106,21 @@ describe("chorus.views.SearchAttachment", function() {
         });
     });
 
-    context("with instance", function() {
+    context('with data source', function() {
         beforeEach(function() {
-            var search = rspecFixtures.searchResultWithAttachmentOnInstanceNote();
+            var search = backboneFixtures.searchResultWithAttachmentOnDataSourceNote();
             this.result = search.attachments().at(0);
             this.view = new chorus.views.SearchAttachment({model: this.result});
             this.view.render();
         });
 
         it("shows the file", function() {
-            var instance = this.result.instance();
+            var dataSource = this.result.dataSource();
             expect(
                 this.view.$(".description .found_in").html()).toContainTranslation(
-                "attachment.found_in.instance",
+                "attachment.found_in.data_source",
                 {
-                    instanceLink: '<a href="#/instances/'+instance.id+'/databases">'+instance.name()+'</a>'
+                    dataSourceLink: '<a href="#/data_sources/'+dataSource.id+'/databases">'+dataSource.name()+'</a>'
                 }
             );
         });
@@ -132,6 +132,6 @@ describe("chorus.views.SearchAttachment", function() {
     });
 
     it("shows matching name", function() {
-        expect(this.view.$(".name").html()).toContain("<em>searchquery<\/em>_<em>workspace<\/em>");
+        expect(this.view.$(".name").html()).toContain("<em>searchquery</em>_<em>workspace<\/em>");
     });
 });

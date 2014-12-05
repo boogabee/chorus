@@ -44,7 +44,7 @@ describe WorkfileDownloadController do
 
     context "in the case of draft" do
       before do
-        workfile_drafts(:default).tap do |draft|
+        workfile_drafts(:draft_default).tap do |draft|
           draft.content = "Valid content goes here"
           draft.workfile_id = workfile.id
           draft.save!
@@ -59,6 +59,16 @@ describe WorkfileDownloadController do
         response.headers['Content-Disposition'].should include('filename="some.txt"')
         response.headers['Content-Type'].should == 'text/plain'
       end
+
+      it_behaves_like "prefixed file downloads" do
+        let(:do_request) { get :show, :workfile_id => workfile.id }
+        let(:expected_filename) { "some.txt" }
+      end
+    end
+
+    it_behaves_like "prefixed file downloads" do
+      let(:do_request) { get :show, :workfile_id => workfile.id }
+      let(:expected_filename) { "some.txt" }
     end
   end
 end

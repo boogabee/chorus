@@ -5,59 +5,28 @@ require File.expand_path("../../config/environment", __FILE__)
 require 'sunspot_matchers'
 require 'rspec/rails'
 require 'rspec/autorun'
-require "paperclip/matchers"
+require 'paperclip/matchers'
 require 'rspec_api_documentation'
 require 'rspec_api_documentation/dsl'
 require 'allowy/rspec'
 require 'shoulda-matchers'
-
-module Shoulda # :nodoc:
-  module Matchers
-    module ActiveModel # :nodoc:
-      module Helpers
-        def default_error_message(key, options = {})
-          model_name = options.delete(:model_name)
-          attribute = options.delete(:attribute)
-          [key, options]
-        end
-      end
-    end
-  end
-end
+require 'factory_girl'
 
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
 Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f unless f.match /fixture_builder/ }
 
+require 'external_service_detector'
+
 # If this offset is not here and you have pre-built fixture_builder, the ids/usernames/etc of new
 # models from Factory Girl will clash with the fixtures
 FACTORY_GIRL_SEQUENCE_OFFSET = 44444
-require_relative "factories"
+FactoryGirl.find_definitions
 
 require 'support/fixture_builder'
-silence_warnings do
-  FACTORY_GIRL_SEQUENCE_OFFSET = 0
-end
+silence_warnings { FACTORY_GIRL_SEQUENCE_OFFSET = 0 }
 
 RSpec.configure do |config|
-
-  config.filter_run_excluding :legacy_migration => true
-
-  unless ENV['GPDB_HOST']
-    warn "No Greenplum instance detected in environment variable 'GPDB_HOST'.  Skipping Greenplum integration tests.  See the project wiki for more information on running tests"
-    config.filter_run_excluding :database_integration => true
-  end
-
-  unless ENV['HDFS_HOST']
-    warn "No Hadoop instance detected in environment variable 'HDFS_HOST'.  Skipping Hadoop integration tests.  See the project wiki for more information on running tests"
-    config.filter_run_excluding :hdfs_integration => true
-  end
-
-  unless Chorus::Application.config.chorus['kaggle'] && Chorus::Application.config.chorus['kaggle']['api_key']
-    warn "No Kaggle API key detected in chorus.yml.  Skipping Kaggle API tests.  See the project wiki for more information on running tests"
-    config.filter_run_excluding :kaggle_api => true
-  end
-
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_path = "#{::Rails.root}/spec/fixtures"
 
@@ -70,7 +39,20 @@ RSpec.configure do |config|
 
   config.before(:all) do
     self.class.set_fixture_class :events => Events::Base
-    self.class.fixtures :all unless self.class.metadata[:legacy_migration]
+    self.class.fixtures :all
+  end
+
+  config.before(:each) do
+    Rails.logger.info "Started test: #{example.full_description}"
+  end
+
+  config.before(:each) do
+    stub(License.instance).[](:vendor) { License::OPEN_CHORUS }
+    ActionMailer::Base.deliveries.clear
+  end
+
+  config.after(:each) do
+    Rails.logger.info "Finished test: #{example.full_description}"
   end
 
   config.before :type => :controller do
@@ -89,8 +71,10 @@ RSpec.configure do |config|
   config.after do
     QC::Conn.disconnect
     Sunspot.session = Sunspot.session.original_session if Sunspot.session.is_a? SunspotMatchers::SunspotSessionSpy
+    set_current_user nil
   end
 
+  config.include CurrentUserHelpers
   config.include FileHelper
   config.include FakeRelations
   config.include AuthHelper, :type => :controller
@@ -100,11 +84,10 @@ RSpec.configure do |config|
   config.include MockPresenters, :type => :controller
   config.include JsonHelper, :type => :controller
   config.include JsonHelper, :type => :request
-  config.include FixtureGenerator, :type => :controller
   config.include Paperclip::Shoulda::Matchers
   config.include GpdbTestHelpers
   config.include AllowyRSpecHelpers
-  config.include GpdbIntegration, :database_integration => true
+  config.include GreenplumIntegration, :greenplum_integration => true
   config.include SunspotMatchers
   config.include SolrHelpers
   config.extend ApiDocHelper, :api_doc_dsl => :endpoint

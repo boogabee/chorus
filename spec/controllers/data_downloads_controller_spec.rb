@@ -20,5 +20,13 @@ describe DataDownloadsController do
       response.headers['Content-Disposition'].should == 'attachment; filename="myDownload.csv"'
       response.body.should == "I am CSV"
     end
+
+    it_behaves_like "prefixed file downloads" do
+      let(:do_request) { post :download_data,
+                              :content => "I am CSV",
+                              :mime_type => "text/csv",
+                              :filename => "myDownload.csv" }
+      let(:expected_filename) { "myDownload.csv" }
+    end
   end
 end

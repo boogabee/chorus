@@ -12,6 +12,7 @@
 #
 src_files:
   - assets/application.js
+  - assets/backbone_fixtures.js
 
 non_spec_src_files:
 
@@ -36,9 +37,14 @@ stylesheets:
 #   - helpers/**/*.js
 #
 helpers:
-  - helpers/fixture_definitions.js
-  - helpers/fixture_generator.js
+  - helpers/backbone_fixture_definitions.js
+  - helpers/shared_examples/_init.js
+  - helpers/jasmine-jquery.js
+  - helpers/sinon.js
+  - helpers/sinon_extensions.js
+  - helpers/spec_helper.js
   - helpers/**/*.js
+  - phantom/*.js
 
 # spec_files
 #
@@ -48,9 +54,10 @@ helpers:
 # EXAMPLE:
 #
 # spec_files:
-#   - **/*[sS]pec.js
-#
+ #   - **/*[sS]pec.js
+ #
 spec_files:
+  - "**/*[sS]pec.js"
 
 # src_dir
 #

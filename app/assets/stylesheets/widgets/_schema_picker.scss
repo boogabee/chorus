@@ -1,27 +1,35 @@
-.schema_picker {
-    $inner-width: 350px;
+.remove_source {
+    margin: 0px 0px 0px 12px;
+    position: absolute;
+    right: 50px;
+    bottom: 7px;
+}
 
-	div {
-        width: $inner-width;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
+.schema_picker, .database_picker, .location_picker {
     a {
         font-size: 13px;
     }
 
-    select {
-        display: block;
-        width: $inner-width;
+    $select_width: 375px;
+
+    .execution_location_picker {
+        position: relative;
     }
 
-    .instance .header_container {
-        margin-top: 0;
+    .half-width {
+        width: $select_width;
+        display: inline-block;
+
+        select {
+            width: $select_width;
+        }
+    }
+
+    .data_source {
+        margin-right: 25px;
     }
 
     .header_container {
-        margin-top: 15px;
         margin-bottom: 3px;
 
         a {
@@ -35,19 +43,11 @@
     }
 
     .create_container {
-        input {
-            margin: 0;
-            width: $inner-width;
-        }
-
         a.cancel {
             display: none;
         }
 
         &.show_cancel_link {
-            input {
-                width: 285px;
-            }
 
             a.cancel {
                 display: inline;

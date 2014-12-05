@@ -1,4 +1,6 @@
-chorus.models.Attachment = chorus.models.Base.extend({
+chorus.models.Attachment = chorus.models.Base.include(
+    chorus.Mixins.Attachment
+).extend({
     constructorName: "Attachment",
     entityType: "attachment",
 
@@ -7,15 +9,15 @@ chorus.models.Attachment = chorus.models.Base.extend({
         var datasetUrl = this.dataset() && this.dataset().showUrl();
         var workfileUrl = this.workfile() && this.workfile().showUrl();
         var hdfsFileUrl = this.hdfsFile() && this.hdfsFile().showUrl();
-        var instanceUrl = this.instance() && this.instance().showUrl();
-        var hadoopInstanceUrl = this.hadoopInstance() && this.hadoopInstance().showUrl();
+        var dataSource = this.dataSource() && this.dataSource().showUrl();
+        var hdfsDataSourceUrl = this.hdfsDataSource() && this.hdfsDataSource().showUrl();
 
         return datasetUrl ||
             (workspaceUrl && workfileUrl) ||
             hdfsFileUrl ||
             workspaceUrl ||
-            instanceUrl ||
-            hadoopInstanceUrl;
+            dataSource ||
+            hdfsDataSourceUrl;
     },
 
     iconUrl: function(options) {
@@ -23,6 +25,15 @@ chorus.models.Attachment = chorus.models.Base.extend({
             return this.get('iconUrl');
         }
         return chorus.urlHelpers.fileIconUrl(this.get("type") || this.get("fileType"), options && options.size);
+    },
+
+    contentUrl: function() {
+        if (this.get('contentUrl')) {
+            return this.get('contentUrl');
+        }
+        else {
+            return null;
+        }
     },
 
     downloadUrl:function () {
@@ -62,31 +73,34 @@ chorus.models.Attachment = chorus.models.Base.extend({
         return this._hdfsFile;
     },
 
-    instance: function() {
-        if (!this._instance) {
-            this._instance = this.get('instance') && new chorus.models.DynamicInstance(this.get('instance'));
+    dataSource: function() {
+        if (!this._dataSource) {
+            this._dataSource = this.get('dataSource') && new chorus.models.DynamicDataSource(this.get('dataSource'));
         }
-        return this._instance;
+        return this._dataSource;
     },
 
-    hadoopInstance: function() {
-        if (!this._hadoopInstance) {
+    hdfsDataSource: function() {
+        if (!this._hdfsDataSource) {
             if (this.hdfsFile()) {
-                this._hadoopInstance = this.hdfsFile().getHadoopInstance();
+                this._hdfsDataSource = this.hdfsFile().getHdfsDataSource();
             } else {
-                this._hadoopInstance = this.get('hadoopInstance') && new chorus.models.HadoopInstance(this.get('hadoopInstance'));
+                this._hdfsDataSource = this.get('hdfsDataSource') && new chorus.models.HdfsDataSource(this.get('hdfsDataSource'));
             }
         }
-        return this._hadoopInstance;
+        return this._hdfsDataSource;
     },
 
     dataset: function() {
         if(!this._dataset) {
-            if(this.get("dataset")) {
-                if(_.isEmpty(this.get("workspace"))) {
-                    this._dataset = new chorus.models.Dataset(this.get('dataset'));
+            var dataset = this.get("dataset");
+            if(dataset) {
+                if (dataset.entitySubtype === "CHORUS_VIEW") {
+                    this._dataset = new chorus.models.ChorusView(dataset);
+                } else if(_.isEmpty(this.get("workspace"))) {
+                    this._dataset = new chorus.models.DynamicDataset(dataset);
                 } else {
-                    this._dataset = new chorus.models.WorkspaceDataset(this.get('dataset'));
+                    this._dataset = new chorus.models.WorkspaceDataset(dataset);
                     this._dataset.set({ workspace: this.get('workspace') });
                 }
             }

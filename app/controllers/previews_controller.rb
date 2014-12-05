@@ -1,30 +1,36 @@
-class PreviewsController < GpdbController
+class PreviewsController < ApplicationController
+  include DataSourceAuth
+
   wrap_parameters :task, :exclude => [:id, :dataset_id]
 
   def create
     dataset = Dataset.find(params[:dataset_id])
-    instance_account = authorized_gpdb_account(dataset)
+    authorize_data_source_access(dataset)
 
-    result = SqlExecutor.preview_dataset(dataset, instance_account, params[:task][:check_id])
+    check_id = params[:task][:check_id]
+    query = CancelableQuery.new(dataset.connect_as(current_user), check_id, current_user)
+    result = query.execute(dataset.preview_sql, :limit => ChorusConfig.instance['default_preview_row_limit'])
     present(result, :status => :created)
-  end
+  end 
 
   def destroy
     dataset = Dataset.find(params[:dataset_id])
-    instance_account = authorized_gpdb_account(dataset)
+    authorize_data_source_access(dataset)
 
-    SqlExecutor.cancel_query(dataset, instance_account, params[:id])
+    CancelableQuery.cancel(params[:id], current_user)
     head :ok
   end
 
   def preview_sql
     task = params[:task]
     schema = GpdbSchema.find(task[:schema_id])
-    instance_account = authorized_gpdb_account(schema)
+    authorize_data_source_access(schema)
 
-    sql_without_semicolon = task[:query].gsub(';', '');
-    sql = "SELECT * FROM (#{sql_without_semicolon}) AS chorus_view LIMIT 500;"
-    result = SqlExecutor.execute_sql(schema, instance_account, task[:check_id], sql)
+    sql_without_semicolon = task[:query].gsub(';', '')
+    sql = "SELECT * FROM (#{sql_without_semicolon}) AS chorus_view;"
+    connection = schema.connect_as(current_user)
+    query = CancelableQuery.new(connection, task[:check_id], current_user)
+    result = query.execute(sql, :limit => ChorusConfig.instance['default_preview_row_limit'])
     present(result, :status => :ok)
   end
 end

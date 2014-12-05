@@ -11,7 +11,8 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         "click .remove": "removeAttachment",
         "click .add_workfile": "launchWorkfileDialog",
         "click .add_dataset": "launchDatasetDialog",
-        "click .cancel_upload": "cancelUpload"
+        "click .cancel_upload": "cancelUpload",
+        "click .file-wrapper": "launchDesktopFileDialog"
     },
 
     setup: function() {
@@ -19,12 +20,12 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         this.subviews = {
             '.notification_recipients': 'notifications',
             '.recipients_menu': 'recipients'
-        }
+        };
         this.config = chorus.models.Config.instance();
     },
 
     onSelectRecipients: function(selection) {
-        var shouldHide = (selection == "none");
+        var shouldHide = (selection === "none");
         this.$(".notification_recipients").toggleClass("hidden", shouldHide);
 
         if (!shouldHide) {
@@ -53,19 +54,19 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         });
 
         _.defer(_.bind(function() {
-            this.makeEditor($(this.el), ".toolbar", "body", { width: 566, height: 150 });
+            this.makeEditor($(this.el), ".toolbar", "body", { width: 'auto', height: 150 });
         }, this));
     },
 
     makeModel: function() {
         this._super("makeModel", arguments);
 
-        this.bindings.add(this.model, "saved", this.modelSaved);
-        this.bindings.add(this.model, "fileUploadSuccess", this.saved);
-        this.bindings.add(this.model, "fileUploadFailed", this.saveFailed);
-        this.bindings.add(this.model, "saveFailed", this.saveFailed);
-        this.bindings.add(this.model, "validationFailed", this.saveFailed);
-        this.bindings.add(this.model, "fileUploadDone", this.uploadDone);
+        this.listenTo(this.model, "saved", this.modelSaved);
+        this.listenTo(this.model, "fileUploadSuccess", this.saved);
+        this.listenTo(this.model, "fileUploadFailed", this.saveFailed);
+        this.listenTo(this.model, "saveFailed", this.saveFailed);
+        this.listenTo(this.model, "validationFailed", this.saveFailed);
+        this.listenTo(this.model, "fileUploadDone", this.uploadDone);
 
         this.workspaceId = this.model.get("workspaceId");
         this.model.datasets = new chorus.collections.WorkspaceDatasetSet();
@@ -75,7 +76,7 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
     cancelUpload: function() {
         _.each(this.model.files, function(fileModel) {
             fileModel.cancelUpload();
-        })
+        });
     },
 
     modelSaved: function() {
@@ -104,18 +105,18 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         }
 
         this.$(".workfile .upload_finished").removeClass("hidden");
-        this.$(".modal_controls .cancel_upload").removeClass("hidden");
-        this.$(".modal_controls .cancel").addClass("hidden");
+        this.$(".form_controls .cancel_upload").removeClass("hidden");
+        this.$(".form_controls .cancel").addClass("hidden");
         this.uploadingFiles = true;
     },
 
     updateProgressBar: function(e, data) {
-        if (data.total != data.loaded) {
+        if (data.total !== data.loaded) {
             data.fileDetailsElement.find(".progress_bar span").css('right', parseInt((data.total - data.loaded) / data.total * 100, 10));
         } else {
-            data.fileDetailsElement.find(".progress_bar").addClass("hidden")
-            data.fileDetailsElement.find(".progress_text").addClass("hidden")
-            data.fileDetailsElement.find(".upload_finished").removeClass("hidden")
+            data.fileDetailsElement.find(".progress_bar").addClass("hidden");
+            data.fileDetailsElement.find(".progress_text").addClass("hidden");
+            data.fileDetailsElement.find(".upload_finished").removeClass("hidden");
         }
     },
 
@@ -137,7 +138,7 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
     saved: function() {
         this.pageModel.trigger("invalidated");
         this.$("button.submit").stopLoading();
-        this.closeModal();
+        this.closeModal(true);
     },
 
     saveFailed: function() {
@@ -151,8 +152,8 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         this.$(".progress_bar").addClass("hidden");
         this.$(".progress_text").addClass("hidden");
         this.$(".upload_finished").addClass("hidden");
-        this.$(".modal_controls .cancel_upload").addClass("hidden");
-        this.$(".modal_controls .cancel").removeClass("hidden");
+        this.$(".form_controls .cancel_upload").addClass("hidden");
+        this.$(".form_controls .cancel").removeClass("hidden");
         this.$(".attachment_links").removeClass("disabled");
         this.saving = false;
     },
@@ -169,7 +170,6 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
             this.markInputAsInvalid($input, model.errors.body, true);
 
             this.$("iframe").contents().find("body").css("margin-right", "20px");
-            this.$(".cleditorMain").css("width", "545px");
         }
     },
 
@@ -186,6 +186,10 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         e && e.preventDefault();
         this.$(".options_text").addClass("hidden");
         this.$(".options_area").removeClass("hidden");
+    },
+
+    launchDesktopFileDialog: function(e) {
+        this.clearErrors();
     },
 
     launchWorkfileDialog: function(e) {
@@ -211,7 +215,7 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         this.model.addFileUpload(uploadModel);
         var file = data.files[0];
         var extension = _.last(file.name.split('.'));
-        var iconSrc = chorus.urlHelpers.fileIconUrl(extension, "medium");
+        var iconSrc = chorus.urlHelpers.fileIconUrl(extension, "icon");
 
         file.isUpload = true;
         if (this.validateFileSize()) {
@@ -222,7 +226,6 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
     },
 
     validateFileSize: function() {
-        this.clearErrors();
         this.$("button.submit").removeAttr("disabled");
         if (!this.model) return;
 
@@ -231,8 +234,15 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         var isValid = true;
         _.each( this.model.files, function(file) {
             if (file.get("files")[0].size > (maxFileSize * 1024 * 1024) ) {
-                this.model.serverErrors = {"fields":{"base":{"FILE_SIZE_EXCEEDED":{"count": maxFileSize }}}}
-                this.$("button.submit").prop("disabled", true);
+                this.model.serverErrors = {
+                    "fields": {
+                        "base": {
+                            "FILE_SIZE_EXCEEDED": {
+                                "count": maxFileSize
+                            }
+                        }
+                    }
+                };
                 this.showErrors(this.model);
                 isValid = false;
             }
@@ -250,7 +260,7 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         }, this);
 
         this.model.workfiles.each(function(workfile) {
-            var iconUrl = workfile.iconUrl({size: 'medium'});
+            var iconUrl = workfile.iconUrl({size: "icon"});
             this.showFile(workfile, workfile.get("fileName"), iconUrl);
         }, this);
     },
@@ -273,7 +283,7 @@ chorus.dialogs.MemoNew = chorus.dialogs.Base.include(
         var datasetDetailsRow = $(Handlebars.helpers.renderTemplate("notes_new_file_attachment").toString());
         this.$(".options_area").append(datasetDetailsRow);
 
-        var iconSrc = dataset.iconUrl({size: 'medium'});
+        var iconSrc = dataset.iconUrl({size: 'icon'});
         datasetDetailsRow.find('img.icon').attr('src', iconSrc);
         datasetDetailsRow.find('span.name').text(dataset.get("objectName")).attr('title', dataset.get("objectName"));
         datasetDetailsRow.data("attachment", dataset);

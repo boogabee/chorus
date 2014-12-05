@@ -6,7 +6,6 @@ chorus.dialogs.DatasetsAttach = chorus.dialogs.PickItems.extend({
     searchPlaceholderKey: "dataset.dialog.search",
     selectedEvent: 'datasets:selected',
     modelClass: "WorkspaceDataset",
-    serverSideSearch: true,
     pagination: true,
     multiSelection: true,
 
@@ -22,7 +21,7 @@ chorus.dialogs.DatasetsAttach = chorus.dialogs.PickItems.extend({
     collectionModelContext: function (model) {
         return {
             name: model.get("objectName"),
-            imageUrl: model.iconUrl({size: 'medium'})
-        }
+            imageUrl: model.iconUrl({size: 'icon'})
+        };
     }
 });

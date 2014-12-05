@@ -36,6 +36,10 @@ function start () {
     $bin/start-postgres.sh;
     EXIT_STATUS=`expr $EXIT_STATUS + $?`;
   fi
+  if should_handle solr;      then
+    $bin/start-solr.sh;
+    EXIT_STATUS=`expr $EXIT_STATUS + $?`;
+  fi
   if should_handle workers;   then
     $bin/start-workers.sh;
     EXIT_STATUS=`expr $EXIT_STATUS + $?`;
@@ -44,17 +48,19 @@ function start () {
     $bin/start-scheduler.sh;
     EXIT_STATUS=`expr $EXIT_STATUS + $?`;
   fi
-  if should_handle solr;      then
-    $bin/start-solr.sh;
-    EXIT_STATUS=`expr $EXIT_STATUS + $?`;
-  fi
   if should_handle webserver; then
     $bin/start-webserver.sh;
     EXIT_STATUS=`expr $EXIT_STATUS + $?`;
   fi
+  if should_handle alpine; then
+    if [ "$ALPINE_HOME" != "" ]; then
+        $bin/start-alpine.sh;
+        EXIT_STATUS=`expr $EXIT_STATUS + $?`;
+    fi
+  fi
   popd > /dev/null
   if (($EXIT_STATUS > 0)); then
-    exit $EXIT_STATUS;
+    exit_control $EXIT_STATUS;
   fi
 }
 
@@ -65,10 +71,6 @@ function stop () {
     $bin/stop-webserver.sh;
     EXIT_STATUS=`expr $EXIT_STATUS + $?`;
   fi
-  if should_handle solr;       then
-    $bin/stop-solr.sh;
-    EXIT_STATUS=`expr $EXIT_STATUS + $?`;
-  fi
   if should_handle scheduler;  then
     $bin/stop-scheduler.sh;
     EXIT_STATUS=`expr $EXIT_STATUS + $?`;
@@ -77,13 +79,23 @@ function stop () {
     $bin/stop-workers.sh;
     EXIT_STATUS=`expr $EXIT_STATUS + $?`;
   fi
+  if should_handle solr;       then
+    $bin/stop-solr.sh;
+    EXIT_STATUS=`expr $EXIT_STATUS + $?`;
+  fi
   if should_handle postgres;   then
     $bin/stop-postgres.sh;
     EXIT_STATUS=`expr $EXIT_STATUS + $?`;
   fi
+  if should_handle alpine;   then
+    if [ "$ALPINE_HOME" != "" ]; then
+        $bin/stop-alpine.sh;
+        EXIT_STATUS=`expr $EXIT_STATUS + $?`;
+    fi
+  fi
   popd > /dev/null
   if (($EXIT_STATUS > 0)); then
-    exit $EXIT_STATUS;
+    exit_control $EXIT_STATUS;
   fi
 }
 
@@ -110,22 +122,47 @@ function backup () {
                ;;
            ?)
                usage
-               exit
+               exit_control 0
                ;;
        esac
   done
 
   if [ -z "$BACKUP_DIR" ]; then
-     read -p "Please enter the destination directory for your backup: " BACKUP_DIR
+     read -p "Please enter the destination directory for your backup [/data/chorus/bak]: " BACKUP_DIR
+     if [ -z "$BACKUP_DIR" ]; then
+        BACKUP_DIR=/data/chorus/bak
+     fi
   fi
+  COMPLETION_MESSAGE=""
 
-  echo "Backing up chorus data..."
-  run_in_root_dir_with_postgres "rake backup:create[$BACKUP_DIR,$ROLLING_DAYS]"
+  echo "Backing up chorus data to $BACKUP_DIR..."
+  run_in_root_dir_with_postgres "$RUBY -S $RAKE backup:create[$BACKUP_DIR,$ROLLING_DAYS]" "$COMPLETION_MESSAGE"
 }
 
 function restore () {
 
-  BACKUP_FILENAME=${@}
+  if kill -0 `head -1 $POSTGRES_PID_FILE 2>&1` >& /dev/null; then
+     echo "Chorus is already running.  Please shutdown Chorus prior to running a restore."
+     exit_control 1
+  fi
+
+  SILENT=""
+
+  while getopts "s" OPTION
+  do
+       case $OPTION in
+           s)
+               SILENT="true"
+               shift
+               ;;
+           ?)
+               usage
+               exit_control 0
+               ;;
+       esac
+  done
+
+  BACKUP_FILENAME=$1
   while true; do
       if [ -z "$BACKUP_FILENAME" ]; then
           read -p "Please enter the name of a backup file to restore: " BACKUP_FILENAME
@@ -141,8 +178,15 @@ function restore () {
   BACKUP_ABSOLUTE_DIR=`cd $BACKUP_DIR && echo $PWD`
   BACKUP_ABSOLUTE_FILENAME="$BACKUP_ABSOLUTE_DIR/"`basename $BACKUP_FILENAME`
 
+  COMPLETION_MESSAGE="
+Restore of $BACKUP_ABSOLUTE_FILENAME completed.
+To start Chorus, run the following commands:
+
+    source $ORIGINAL_CHORUS_HOME/chorus_path.sh
+    chorus_control.sh start"
+
   echo "Restoring chorus data..."
-  run_in_root_dir_with_postgres "rake backup:restore[$BACKUP_ABSOLUTE_FILENAME] --trace"
+  run_in_root_dir_with_postgres "$RUBY -S $RAKE backup:restore[$BACKUP_ABSOLUTE_FILENAME,$SILENT] --trace" "$COMPLETION_MESSAGE"
 }
 
 function run_in_root_dir_with_postgres () {
@@ -153,10 +197,16 @@ function run_in_root_dir_with_postgres () {
       $bin/start-postgres.sh
   fi
 
-  ${@}
+  RAILS_ENV=$RAILS_ENV CHORUS_HOME=$CHORUS_HOME ${1}
+
+  EXIT_STATUS=$?
 
   if [ -n "$postgres_started" ]; then
       $bin/stop-postgres.sh
+  fi
+
+  if [ -n "$2" ] && [ "$EXIT_STATUS" -eq 0 ]; then
+    echo "$2"
   fi
 
   popd > /dev/null
@@ -174,7 +224,11 @@ function usage () {
   echo "  $script backup  [-d dir] [-r days] backup Chorus data"
   echo "  $script restore [file]             restore Chorus data"
   echo
-  echo "The following services are available: postgres, workers, scheduler, solr, webserver."
+  if [ "$ALPINE_HOME" != "" ]; then
+    echo "The following services are available: postgres, workers, scheduler, solr, webserver, alpine."
+  else
+    echo "The following services are available: postgres, workers, scheduler, solr, webserver."
+  fi
   echo "If no services are specified on the command line, $script manages all services."
   echo
   echo Examples:
@@ -220,3 +274,5 @@ case $command in
        usage
        ;;
 esac
+
+exit_control 0

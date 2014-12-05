@@ -7,7 +7,7 @@ chorus.models.DatabaseColumn = chorus.models.Base.extend({
     urlParams: function() {
         return {
             filter: this.get("name")
-        }
+        };
     },
 
     initialize: function() {
@@ -17,13 +17,13 @@ chorus.models.DatabaseColumn = chorus.models.Base.extend({
     },
 
     toText: function() {
-        return this.safePGName(this.get("name"));
+        return this.ensureDoubleQuoted(this.get("name"));
     },
 
     quotedName: function() {
         return this.dataset &&
             this.get("name") &&
-            this.safePGName(this.dataset.selectName(), this.get("name"));
+            this.ensureDoubleQuoted(this.dataset.selectName(), this.get("name"));
     }
 }, {
     humanTypeMap: {

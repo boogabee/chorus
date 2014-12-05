@@ -3,6 +3,7 @@ window.Chorus = function chorus$Global() {
     self.models = {};
     self.views = {};
     self.views.visualizations = {};
+    self.views.LocationPicker = {};
     self.pages = {};
     self.presenters = {};
     self.Mixins = {};
@@ -11,18 +12,19 @@ window.Chorus = function chorus$Global() {
     self.templates = {};
     self.features = {};
     self.utilities = {};
+    self.handlebarsHelpers = {};
     self.locale = 'en';
     self.cleanupFunctions = [];
     self.viewsToTearDown = [];
 
     self.initialize = function() {
         // Check and prompt for Chrome Frame install if applicable
-        if (!window.jasmine && BrowserDetect.browser == "Explorer" && BrowserDetect.version <= "8") {
+        if (!window.jasmine && BrowserDetect.browser === "Explorer" && BrowserDetect.version <= "8") {
             CFInstall.check({
                 mode: "overlay"
             });
         }
-        self.PageEvents = new chorus.utilities.PageEvents();
+        self.PageEvents = _.extend({}, Backbone.Events);
         self.session = new chorus.models.Session();
         self.router = new chorus.Router(self);
         self.detectFeatures();
@@ -33,8 +35,13 @@ window.Chorus = function chorus$Global() {
         self.bindGlobalCallbacks();
         self.bindModalLaunchingClicks();
 
+        self.debug = self.pageParams().debug;
+
         self.startHistory();
         self.updateCachebuster();
+
+        //set qtip to appear above dialogs
+        $.fn.qtip.zindex = 17000;
     };
 
     // to enable development mode, run `rake enable_dev_mode`
@@ -52,15 +59,16 @@ window.Chorus = function chorus$Global() {
         var firstArg = arguments[0];
         var target = arguments.length ? firstArg.el : document;
         $(target).
-            on("click.chorus_modal", "button.dialog, a.dialog", null,
+            on("click.chorus_modal", "[data-dialog]", null,
             function(e) { (firstArg || self.page).createDialog(e); }).
-            on("click.chorus_modal", "button.alert, a.alert", null,
-            function(e) { (firstArg || self.page).createAlert(e); }).
-            on("click.chorus_modal", "#help a", null, function(e) { (firstArg || self.page).showHelp(e); });
+            on("click.chorus_modal", "[data-alert]", null,
+            function(e) { (firstArg || self.page).createAlert(e); });
 
         if (window.jasmine) {
             var spec = window.jasmine.getEnv().currentSpec;
-            spec && spec.after(function() {$(target).off("click.chorus_modal"); });
+            if (spec) {
+                window.afterSpecFunctions.push(function() {$(target).off("click.chorus_modal"); });
+            }
         }
     };
 
@@ -76,15 +84,21 @@ window.Chorus = function chorus$Global() {
         self.router.navigate("/login");
     };
 
+    self.fileDownload = function(route, options) {
+        var optsWithToken = _.extend({data: {}}, options);
+        optsWithToken.data.authenticity_token = $('meta[name="csrf-token"]').attr('content');
+        $.fileDownload(route, optsWithToken);
+    };
+
     self.detectFeatures = function() {
         self.features.fileProgress = !$.browser.msie;
     };
 
     self.toast = function(message, options) {
         options = options || {};
-        var defaultOpts = {sticky: false, life: 5000};
-        var toastOpts = _.extend(defaultOpts, options.toastOpts);
-        $.jGrowl(t(message, options), toastOpts);
+        var toastText = options.skipTranslation ? message : t(message, options);
+        var toastOpts = _.extend({message: toastText}, options.toastOpts);
+        Messenger().post(toastOpts);
     };
 
     self.afterNavigate = function(func) {
@@ -92,14 +106,14 @@ window.Chorus = function chorus$Global() {
     };
 
     self._navigated = function() {
-        self.PageEvents.reset();
+        self.PageEvents.off();
 
         while (!_.isEmpty(self.viewsToTearDown)) {
             var view = self.viewsToTearDown.pop();
             view.teardown();
         }
 
-        //TODO remove cleanupFunctions after dealing with bindHotKeys in views.js
+        // remove hotkey bindings and bindings to dom elements not managed by a view
         _.each(self.cleanupFunctions, function(func) {
             func();
         });
@@ -109,75 +123,6 @@ window.Chorus = function chorus$Global() {
     self.unregisterView = function(view) {
         var index = self.viewsToTearDown.indexOf(view);
         if(index > -1) self.viewsToTearDown.splice(index, 1);
-    };
-
-    self.menu = function(menuElement, options) {
-        self.afterNavigate(function() {$(menuElement).remove();});
-
-        options = options || {};
-        var classes = ((options.classes || "") + " tooltip-white").trim();
-        if (menuElement.length) {
-            if ($(menuElement).closest(".dialog").length) {
-                classes += " tooltip-modal";
-            }
-        }
-
-        var qtipArgs = {
-            content: options.content,
-            show: {
-                event: 'click',
-                delay: 0
-            },
-            hide: 'unfocus',
-            position: {
-                container: options.container,
-                my: "top center",
-                at: "bottom center"
-            },
-            style: _.extend({
-                classes: classes,
-                tip: {
-                    mimic: options.mimic || "top center",
-                    width: 20,
-                    height: 15
-                }
-            }, options.style)
-        };
-
-        _.extend(qtipArgs, options.qtipArgs);
-
-        if(options.position) {
-            _.extend(qtipArgs.position, options.position)
-        }
-
-        if (options.orientation === "right") {
-            qtipArgs.position.my = "top left";
-            qtipArgs.style.tip.offset = 40;
-        } else if (options.orientation === "left") {
-            qtipArgs.position.my = "top right";
-            qtipArgs.style.tip.offset = 40;
-        }
-
-        if (options.contentEvents) {
-            qtipArgs.events || (qtipArgs.events = {});
-            qtipArgs.events.render = function(event, api) {
-                _.each(options.contentEvents, function(callback, selector) {
-                    var wrappedCallback = function(event) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        callback(event, api);
-                        api.hide();
-                    };
-                    $(api.elements.content).find(selector).click(wrappedCallback);
-                })
-            };
-        }
-
-        menuElement.click(function(e) {
-            e.preventDefault();
-        });
-
-        menuElement.qtip(qtipArgs);
     };
 
     self.styleSelect = function(element, options) {
@@ -221,10 +166,10 @@ window.Chorus = function chorus$Global() {
                     "dateset": [
                         function() {
                             _.defer(function() {
-                                for (formElement in formElementParams) {
+                                for (var formElement in formElementParams) {
                                     $("#" + formElement).trigger("paste");
                                 }
-                            })
+                            });
                         }
                     ]
                 }
@@ -232,7 +177,7 @@ window.Chorus = function chorus$Global() {
 
             options && options.disableBeforeToday && _.each(formElementParams, function(v, k) {
                 datePickerController.setDisabledDates(k, {
-                  "00000101" : new Date($.now() - (1000  * 60 * 60 * 24)).toString("yyyyMMdd")
+                    "00000101" : new Date($.now() - (1000  * 60 * 60 * 24)).toString("yyyyMMdd")
                 });
             });
         });
@@ -240,17 +185,6 @@ window.Chorus = function chorus$Global() {
 
     self.placeholder = function(element) {
         $(element).placeholder();
-    };
-
-    self.search = function(options) {
-        var input = options.input;
-        var textChangeFunction = options.onTextChange || _.bind(onTextChange, this, options);
-
-        input.unbind("textchange.filter").bind("textchange.filter", textChangeFunction);
-        input.addClass("chorus_search");
-        input.each(function(i, el) {
-            self.addClearButton(el);
-        });
     };
 
     function onTextChange(options, e) {
@@ -276,17 +210,28 @@ window.Chorus = function chorus$Global() {
 
         if (afterFilter) afterFilter();
         if (eventName) {
-            chorus.PageEvents.broadcast(eventName);
+            chorus.PageEvents.trigger(eventName);
         }
     }
+
+    self.search = function(options) {
+        var input = options.input;
+        var textChangeFunction = options.onTextChange || _.bind(onTextChange, this, options);
+
+        input.unbind("textchange.filter").bind("textchange.filter", textChangeFunction);
+        input.addClass("chorus_search");
+        input.each(function(i, el) {
+            self.addClearButton(el);
+        });
+    };
 
     self.addClearButton = function(input) {
         if ($(input).parent().is(".chorus_search_container")) return;
 
         var $input = $(input);
         var clearLink = $("<a href='#'/>")
+            .append("<i class='oi search_clear' data-glyph='x'></i>")
             .addClass("chorus_search_clear hidden")
-            .append("<img src='/images/icon_clear_search.png'></a>")
             .bind('click', function(e) {
                 e.preventDefault();
                 $input.val("").trigger('textchange').blur();
@@ -301,13 +246,13 @@ window.Chorus = function chorus$Global() {
         container.append($input).append(clearLink);
     };
 
-    self.hotKeyMeta = BrowserDetect.OS == "Mac" ? "ctrl" : "alt";
+    self.hotKeyMeta = BrowserDetect.OS === "Mac" ? "ctrl" : "alt";
 
     self.hotKeyEvent = function(keyChar) {
         var ev = $.Event("keydown", { which: keyChar.toUpperCase().charCodeAt(0)});
-        if (chorus.hotKeyMeta == "ctrl") {
+        if (chorus.hotKeyMeta === "ctrl") {
             ev.ctrlKey = true;
-        } else if (chorus.hotKeyMeta == "alt") {
+        } else if (chorus.hotKeyMeta === "alt") {
             ev.altKey = true;
         }
 
@@ -315,18 +260,16 @@ window.Chorus = function chorus$Global() {
     };
 
     self.triggerHotKey = function(keyChar) {
-        $(document).trigger(chorus.hotKeyEvent(keyChar))
-    };
-
-    self.help = function() {
-        var helpId = (chorus.page && chorus.page.helpId) || "home";
-        FMCOpenHelp(helpId, null, null, null, "/help") ;
+        $(document).trigger(chorus.hotKeyEvent(keyChar));
     };
 
     self.namedConstructor = function(ctor, name) {
-        return eval("(function " + name + "() { " +
+        /*jshint evil: true */
+        var result = eval("(function " + name + "() { " +
             "return ctor.apply(this, arguments); " +
         "})");
+        /*jshint evil: false */
+        return result;
     };
 
     self.classExtend = function(protoProps, classProps) {
@@ -366,7 +309,19 @@ window.Chorus = function chorus$Global() {
     self.updateCachebuster = function() {
         self._cachebuster = $.now();
     };
+
+    self.scrollToTop = function() {
+        window.scroll(0, 0);
+    };
+
+    self.pageParams = function () {
+        if (window.location.hash.search("\\?") === -1) { return {}; }
+
+        var path = window.location.hash.substring(window.location.hash.search("\\?")+1);
+        var decoded = decodeURI(path).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"');
+
+        return JSON.parse('{"' + decoded + '"}');
+    };
 };
 
-window.chorus = window.chorus || new Chorus();
-
+window.chorus = window.chorus || new window.Chorus();

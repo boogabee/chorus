@@ -1,0 +1,1 @@
+class JdbcSchemaPresenter < SchemaPresenter; end

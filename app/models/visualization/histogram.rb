@@ -1,52 +1,49 @@
 module Visualization
   class Histogram < Base
     attr_accessor :rows, :bins, :category, :filters, :type
-    attr_writer :dataset, :schema
 
-    def initialize(dataset=nil, attributes={})
+    def post_initialize(dataset, attributes)
       @type = attributes[:type]
       @bins = attributes[:bins].to_i
       @category = attributes[:x_axis]
       @filters = attributes[:filters]
-      @dataset = dataset
-      @schema = dataset.try :schema
     end
 
-    def build_row_sql
-      category = %Q{#{@dataset.scoped_name}."#{@category}"}
+    private
 
-      width_bucket = "width_bucket(CAST(#{category} as numeric), CAST(#{@min} as numeric), CAST(#{@max} as numeric), #{@bins})"
-
-      query = relation.
-          group(width_bucket).
-          project(Arel.sql(width_bucket).as("bucket"), Arel.sql("COUNT(#{width_bucket})").as('frequency')).
-          where(relation[@category].not_eq(nil))
-
-      query = query.where(Arel.sql(@filters.join(" AND "))) if @filters.present?
-
-      query.to_sql
-    end
-
-    def build_min_max_sql
-      query = relation.
-          project(relation[@category].minimum.as('min'), relation[@category].maximum.as('max'))
-
-      query.to_sql
-    end
-
-    def fetch!(account, check_id)
-
-      min_max_result = SqlExecutor.execute_sql(@schema, account, check_id, min_max_sql)
+    def complete_fetch(check_id)
+      min_max_result = CancelableQuery.new(@connection, check_id, current_user).execute(min_max_sql)
 
       @min = min_max_result.rows[0][0].to_f
       @max = min_max_result.rows[0][1].to_f
 
-      result = SqlExecutor.execute_sql(@schema, account, check_id, row_sql)
+      result = CancelableQuery.new(@connection, check_id, current_user).execute(row_sql)
       row_data = result.rows.map { |row| {:bin => row[0].to_i, :frequency => row[1].to_i} }
 
       @rows = massage(row_data)
     end
 
+    def build_row_sql
+      opts = {
+          :dataset => @dataset,
+          :category => @category,
+          :min => @min,
+          :max => @max,
+          :bins => @bins,
+          :filters => @filters
+      }
+
+      @sql_generator.histogram_row_sql(opts)
+    end
+
+    def build_min_max_sql
+      opts = {
+          :dataset => @dataset,
+          :category => @category
+      }
+
+      @sql_generator.histogram_min_max_sql(opts)
+    end
 
     def massage(row_data)
       new_row_data = []

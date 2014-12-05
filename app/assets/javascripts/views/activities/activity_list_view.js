@@ -5,33 +5,48 @@ chorus.views.ActivityList = chorus.views.Base.extend({
 
     events:{
         "click .morelinks a.more, .morelinks a.less": "toggleCommentList",
-        "click .more_activities a": "fetchMoreActivities"
+        "click .more_items a": "fetchMoreActivities"
+    },
+
+    setup: function() {
+        this.subscribePageEvent('note:deleted', this.noteDeleted);
+        this.subscribePageEvent('note:saved', this.noteSaved);
+    },
+
+    noteDeleted: function(note) {
+        if (this.collection.get(note.id)) {
+            this.collection.remove(note);
+            this.collection.fetch();
+        }
+    },
+
+    noteSaved: function(note) {
+        var collectionNote = this.collection.get(note.id);
+        if (collectionNote) {
+            collectionNote.set('body', note.get('body'));
+            this.render();
+        }
     },
 
     toggleCommentList:function (event) {
         event.preventDefault();
         $(event.target).closest(".comments").toggleClass("more");
-        chorus.PageEvents.broadcast("content:changed")
+        chorus.PageEvents.trigger("content:changed");
     },
 
     fetchMoreActivities:function (ev) {
         ev.preventDefault();
-        var pageToFetch = parseInt(this.collection.pagination.page) + 1;
-        this.collection.fetchPage(pageToFetch, { add: true, success: _.bind(this.render, this) });
+        var pageToFetch = parseInt(this.collection.pagination.page, 10) + 1;
+        this.collection.fetchPage(pageToFetch, { reset: false, remove: false, success: _.bind(this.render, this) });
     },
 
     additionalContext:function () {
         var ctx = { activityType: this.options.type };
         if (this.collection.loaded && this.collection.pagination) {
-            var page = parseInt(this.collection.pagination.page);
-            var total = parseInt(this.collection.pagination.total);
+            var page = parseInt(this.collection.pagination.page, 10);
+            var total = parseInt(this.collection.pagination.total, 10);
 
-            if (this.collection.pagination.total != -1) {
-                ctx.showMoreLink = total > page;
-            } else {
-                var maxSize = this.collection.attributes.pageSize * page;
-                ctx.showMoreLink = this.collection.length == maxSize;
-            }
+            ctx.showMoreLink = total > page;
         } else {
             ctx.showMoreLink = false;
         }
@@ -61,11 +76,11 @@ chorus.views.ActivityList = chorus.views.Base.extend({
                 this.registerSubView(view);
                 ul.append(view.render().el);
             } catch (err) {
-                chorus.log("error", err, "processing activity", model);
+                chorus.log(err.message, err, "processing activity", model);
                 if (chorus.isDevMode()) {
                     var action, id;
-                    try {action = model.get("action");  id = model.id;} catch(err) {}
-                    chorus.toast("bad_activity", {type: action, id: id, toastOpts: {theme: "bad_activity"}});
+                    try {action = model.get("action");  id = model.id;} catch(err2) {}
+                    chorus.toast("bad_activity", {type: action, id: id, toastOpts: {type: "error"}});
                 }
             }
         }, this);

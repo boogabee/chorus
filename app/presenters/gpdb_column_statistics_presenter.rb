@@ -6,7 +6,8 @@ class GpdbColumnStatisticsPresenter < Presenter
       :common_values => model.common_values,
       :null_fraction => model.null_fraction,
       :min => model.min,
-      :max => model.max
+      :max => model.max,
+      :entity_type => model.entity_type_name
     }
   end
 

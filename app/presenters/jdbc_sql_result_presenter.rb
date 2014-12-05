@@ -1,0 +1,1 @@
+class JdbcSqlResultPresenter < SqlResultPresenter; end

@@ -3,70 +3,68 @@ require 'model_map'
 
 module Events
   class Note < Base
-    validates_presence_of :actor_id
-    belongs_to :promoted_by, :class_name => 'User'
+    include SearchableHtml
 
-    searchable do
-      text :body, :stored => true do
-        search_body
-      end
-      string :grouping_id
-      string :type_name
-      string :security_type_name
-    end
-    attr_accessible :dataset_ids, :workfile_ids
+    validates_presence_of :actor_id
+    validate :no_note_on_archived_workspace, :on => :create
+    validates_presence_of :workspace, :if => :has_workspace?
+
+    searchable_html :body
+    searchable_model
+
+    attr_accessible :note_target, :workspace_id, :is_insight, :insight, :as => :create
+    attr_accessible :dataset_ids, :workfile_ids, :as => [:create, :default]
 
     has_additional_data :body
 
-    delegate :grouping_id, :type_name, :to => :primary_target
+    delegate :grouping_id, :type_name, :security_type_name, :to => :primary_target
 
-    def self.create_from_params(params, creator)
-      body = params[:body]
-      entity_id = params[:entity_id]
-      entity_type = params[:entity_type]
-      workspace_id = params[:workspace_id]
-      insight = params[:is_insight]
+    before_validation :set_promoted_info, :if => lambda { insight && insight_changed? }
+    before_validation :set_actor_to_current_user, :if => lambda { current_user && !actor }
 
-      model = ModelMap.model_from_params(entity_type, entity_id)
-      raise ActiveRecord::RecordNotFound unless model
-      event_params = {
-        entity_type => model,
-        "body" => body,
-        'dataset_ids' => params[:dataset_ids],
-        'workfile_ids' => params[:workfile_ids],
-        'insight' => insight
-      }
+    before_create :build_activities
 
-      if insight
-        event_params["promoted_by"] = creator
-        event_params["promotion_time"] = Time.now
+    alias_attribute :is_insight, :insight
+
+    def self.build_for(model, params)
+      params[:note_target] = model
+
+      model_class = case model
+                      when Workfile then
+                        Workfile
+                      when HdfsEntry then
+                        HdfsFile
+                      when Dataset
+                        params[:workspace_id] ? 'WorkspaceDataset' : Dataset
+                      when DataSource
+                        DataSource
+                      else
+                        model.class
+                    end
+      note = Events.const_get("NoteOn#{model_class}").new(params, :as => :create)
+
+      build_work_flow_results(note, params)
+
+      note
+    end
+
+    def self.build_work_flow_results(note, params)
+      if params[:result_id]
+        note.notes_work_flow_results.build(:result_id => params[:result_id])
       end
-
-      event_params["workspace"] = Workspace.find(workspace_id) if workspace_id
-      event_class = event_class_for_model(model, workspace_id)
-      event_class.by(creator).add(event_params)
     end
 
     def self.insights
       where(:insight => true)
     end
 
-    def search_body
-      result = ""
-      doc = Nokogiri::HTML(body)
-      doc.xpath("//text()").each do |node|
-        if result.length > 0
-          result += " "
-        end
-        result += node.to_s
-      end
-      result
+    def promote_to_insight
+      self.insight = true
+      save!
     end
 
-    def promote_to_insight(actor)
-      self.insight = true
-      self.promoted_by = actor
-      touch(:promotion_time)
+    def demote_from_insight
+      self.insight = false
       save!
     end
 
@@ -75,44 +73,48 @@ module Events
       save!
     end
 
+    def note_target=(model)
+      self.target1 = model
+    end
+
+    def note_target
+      self.target1
+    end
+
+    def demotable_by(user)
+      return true if user.admin?
+      return true if user == promoted_by
+      return true if workspace && user == workspace.owner
+      return false
+    end
+
+    private
+
+    def has_workspace?
+      false
+    end
+
+    def no_note_on_archived_workspace
+      errors.add(:workspace, :archived) if workspace.present? && workspace.archived?
+    end
+
+    def set_promoted_info
+      self.promoted_by = current_user
+      self.promotion_time = Time.current
+      true
+    end
+
+    def set_actor_to_current_user
+      self.actor = current_user
+    end
+
     class << self
       private
 
       def include_shared_search_fields(target_name)
-        klass = ModelMap::CLASS_MAP[target_name.to_s]
+        klass = ModelMap.class_from_type(target_name.to_s)
         define_shared_search_fields(klass.shared_search_fields, target_name)
-      end
-
-      def event_class_for_model(model, workspace_id)
-        case model
-          when GpdbInstance
-            Events::NoteOnGreenplumInstance
-          when GnipInstance
-            Events::NoteOnGnipInstance
-          when HadoopInstance
-            Events::NoteOnHadoopInstance
-          when Workspace
-            Events::NoteOnWorkspace
-          when Workfile
-            Events::NoteOnWorkfile
-          when HdfsEntry
-            Events::NoteOnHdfsFile
-          when Dataset
-            workspace_id ? Events::NoteOnWorkspaceDataset : Events::NoteOnDataset
-          else
-            raise StandardError, "Unknown model type #{model.class.name}"
-        end
       end
     end
   end
 end
-
-# Preload all note classes, otherwise, attachment.note will not work in dev mode.
-require 'events/note_on_dataset'
-require 'events/note_on_greenplum_instance'
-require 'events/note_on_gnip_instance'
-require 'events/note_on_hadoop_instance'
-require 'events/note_on_hdfs_file'
-require 'events/note_on_workfile'
-require 'events/note_on_workspace'
-require 'events/note_on_workspace_dataset'

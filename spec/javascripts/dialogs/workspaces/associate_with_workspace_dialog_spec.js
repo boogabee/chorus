@@ -2,16 +2,22 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
     describe("after workspaces are fetched", function() {
         context("when the model is a source table/view with multiple workspaces", function() {
             beforeEach(function() {
-                this.model = rspecFixtures.dataset();
+                this.model = backboneFixtures.dataset({
+                    associatedWorkspaces: [
+                        {id: "123"},
+                        {id: "645"}
+                    ],
+                    schema: { id: 2000002 }
+                });
                 this.dialog = new chorus.dialogs.AssociateWithWorkspace({ model: this.model });
                 this.server.completeFetchFor(chorus.session.user().workspaces(), [
-                    rspecFixtures.workspace({ name: "im_also_the_current_one'", id: "123" }),
-                    rspecFixtures.workspace({ name: "im_not_the_current_one" }),
-                    rspecFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
+                    backboneFixtures.workspace({ name: "im_also_the_current_one'", id: "123" }),
+                    backboneFixtures.workspace({ name: "im_not_the_current_one" }),
+                    backboneFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
                 ]);
             });
 
-            xit("shows all workspaces except for the ones the source table is already associated with", function() {
+            it("shows all workspaces except for the ones the source table is already associated with", function() {
                 expect(this.dialog.$("li").length).toBe(1);
                 expect(this.dialog.$('li:eq(0) .name')).toContainText("im_not_the_current_one");
             });
@@ -19,13 +25,15 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
 
         context("when the model is a source table/view with no workspaces", function() {
             beforeEach(function() {
-                this.model = rspecFixtures.workspaceDataset.datasetTable();
+                this.model = backboneFixtures.workspaceDataset.datasetTable({
+                    schema: { id: 2000002 }
+                });
                 this.model.unset("associatedWorkspaces");
                 this.dialog = new chorus.dialogs.AssociateWithWorkspace({ model: this.model });
                 this.server.completeFetchFor(chorus.session.user().workspaces(), [
-                    rspecFixtures.workspace({ name: "im_not_the_current_one'" }),
-                    rspecFixtures.workspace({ name: "me_neither" }),
-                    rspecFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
+                    backboneFixtures.workspace({ name: "im_not_the_current_one'" }),
+                    backboneFixtures.workspace({ name: "me_neither" }),
+                    backboneFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
                 ]);
             });
 
@@ -36,14 +44,19 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
                 expect(this.dialog.$('li:eq(2) .name')).toContainText("yes_im_the_current_one");
             });
         });
+
         context("when the model is a sandbox table/view or a chorus view (in a workspace)", function() {
             beforeEach(function() {
-                this.model = newFixtures.workspaceDataset.sandboxTable({workspace: {id: "645"}});
+                this.model = backboneFixtures.workspaceDataset.datasetTable({
+                    schema: { id: 2000002 },
+                    workspace: {id: "645"}
+                }
+                );
                 this.dialog = new chorus.dialogs.AssociateWithWorkspace({ model: this.model });
                 this.server.completeFetchFor(chorus.session.user().workspaces(), [
-                    rspecFixtures.workspace({ name: "im_not_the_current_one'" }),
-                    rspecFixtures.workspace({ name: "me_neither" }),
-                    rspecFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
+                    backboneFixtures.workspace({ name: "im_not_the_current_one'" }),
+                    backboneFixtures.workspace({ name: "me_neither" }),
+                    backboneFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
                 ]);
             });
 
@@ -53,19 +66,47 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
                 expect(this.dialog.$('li:eq(1) .name')).toContainText("me_neither");
             });
         });
+
+        context("when the model is a dataset found through the dataSource browser", function () {
+            beforeEach(function() {
+                this.model = backboneFixtures.dataset({
+                    schema: { id: 2000002 }
+                });
+                this.dialog = new chorus.dialogs.AssociateWithWorkspace({ model: this.model });
+
+                var targetWorkspace = backboneFixtures.workspace({
+                    name: "my_sandbox_is_your_schema"
+                });
+                targetWorkspace.set('show_sandbox_datasets', true);
+                targetWorkspace.set('sandbox_info', this.model.schema().attributes);
+
+                this.server.completeFetchFor(chorus.session.user().workspaces(), [
+                    backboneFixtures.workspace({ name: "im_not_your_schemas_workspace'" }),
+                    backboneFixtures.workspace({ name: "me_neither" })
+                ]);
+            });
+
+            it("it shows all workspaces except for those using the model's schema as their sandbox, and who show sandbox datasets", function() {
+                expect(this.dialog.$("li").length).toBe(2);
+                expect(this.dialog.$('li:eq(0) .name')).toContainText("im_not_your_schemas_workspace");
+                expect(this.dialog.$('li:eq(1) .name')).toContainText("me_neither");
+            });
+        });
     });
 
     describe("clicking Associate Dataset", function() {
         context("for a dataset that is not a chorus_view", function() {
             beforeEach(function() {
-                this.model = rspecFixtures.dataset();
-                this.workspace = rspecFixtures.workspace({ name: "im_not_the_current_one" });
+                this.model = backboneFixtures.dataset({
+                    schema: { id: 2000002 }
+                });
+                this.workspace = backboneFixtures.workspace({ name: "im_not_the_current_one" });
 
                 this.dialog = new chorus.dialogs.AssociateWithWorkspace({ model: this.model });
                 this.server.completeFetchFor(chorus.session.user().workspaces(), [
-                    rspecFixtures.workspace({ name: "im_also_the_current_one'", id: "123" }),
+                    backboneFixtures.workspace({ name: "im_also_the_current_one'", id: "123" }),
                     this.workspace,
-                    rspecFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
+                    backboneFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
                 ]);
 
                 spyOn(chorus.router, "navigate");
@@ -73,7 +114,6 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
                 spyOn(this.dialog, "closeModal");
 
                 this.dialog.render();
-                spyOn(this.model.activities(), "fetch");
                 this.dialog.$('li:eq(1)').click();
                 this.dialog.$("button.submit").click();
             });
@@ -82,11 +122,6 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
                 var uri = new URI(this.server.lastCreate().url);
 
                 expect(uri.path()).toEqual("/workspaces/" + this.workspace.get("id") + "/datasets");
-                expect(uri.query(true)).toEqual({
-                    'dataset_ids': this.model.id,
-                    page: '1',
-                    per_page: '50'
-                });
             });
 
             it("starts loading", function() {
@@ -96,7 +131,7 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
 
             describe("when the API is successful", function() {
                 beforeEach(function() {
-                    spyOn(chorus.PageEvents, "broadcast");
+                    spyOn(chorus.PageEvents, "trigger");
                     this.server.lastCreate().succeed();
                 });
 
@@ -112,12 +147,12 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
                     expect(chorus.router.navigate).not.toHaveBeenCalled();
                 });
 
-                it("fetch the activities for the dataset", function() {
-                    expect(this.model.activities().fetch).toHaveBeenCalled();
+                it("fetches the activities for the dataset", function() {
+                    expect(this.model.activities()).toHaveBeenFetched();
                 });
 
-                it("broadcasts workspace:associated without arguments", function() {
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("workspace:associated");
+                it("fetches the dataset", function() {
+                    expect(this.dialog.model).toHaveBeenFetched();
                 });
             });
 
@@ -147,9 +182,9 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
 
         context("when the dataset is a Chorus View", function() {
             beforeEach(function() {
-                this.currentWorkspace = rspecFixtures.workspace({ name: "im_also_the_current_one'", id: "987" });
-                this.workspace = rspecFixtures.workspace({ name: "im_not_the_current_one", id: "123"});
-                this.model = newFixtures.workspaceDataset.chorusView({ workspace: { id: "987" } });
+                this.currentWorkspace = backboneFixtures.workspace({ name: "im_also_the_current_one'", id: "987" });
+                this.workspace = backboneFixtures.workspace({ name: "im_not_the_current_one", id: "123"});
+                this.model = backboneFixtures.workspaceDataset.chorusView({ workspace: { id: "987" } });
 
                 this.dialog = new chorus.dialogs.AssociateWithWorkspace({ model: this.model });
                 this.dialog.render();
@@ -157,11 +192,10 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
                 this.server.completeFetchFor(chorus.session.user().workspaces(), [
                     this.currentWorkspace,
                     this.workspace,
-                    rspecFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
+                    backboneFixtures.workspace({ name: "yes_im_the_current_one", id: "645" })
                 ]);
 
                 spyOn(chorus, "toast");
-                spyOn(this.model.activities(), "fetch");
                 spyOn(chorus.router, "navigate");
                 spyOn(this.dialog, "closeModal");
 
@@ -170,11 +204,12 @@ describe("chorus.dialogs.AssociateWithWorkspace", function() {
             });
 
             it("calls the API for associating datasets with a workspace", function() {
-                var uri = new URI(this.server.lastCreate().url);
+                var lastCreate = this.server.lastCreate();
+                var uri = new URI(lastCreate.url);
 
+                expect(lastCreate.json()['dataset_ids']).toEqual([this.model.id]);
                 expect(uri.path()).toEqual("/workspaces/" + this.workspace.get("id") + "/datasets");
                 expect(uri.query(true)).toEqual({
-                    'dataset_ids': this.model.id,
                     page: '1',
                     per_page: '50'
                 });

@@ -18,15 +18,15 @@ chorus.dialogs.JoinConfiguration = chorus.dialogs.Base.extend({
         this.destinationObject = this.options.destinationObject;
         this.destinationColumns = this.destinationObject.columns();
         this.requiredResources.push(this.destinationColumns);
-        this.bindings.add(this.destinationColumns, "fetchFailed", this.columnFetchFailed);
+        this.listenTo(this.destinationColumns, "fetchFailed", this.columnFetchFailed);
         this.destinationColumns.fetchIfNotLoaded();
-        this.sourceColumnsSelect = new chorus.views.ColumnSelect({collection: this.model.aggregateColumnSet, showAliasedName: true})
-        this.destinationColumnsSelect = new chorus.views.ColumnSelect({collection: this.destinationColumns})
+        this.sourceColumnsSelect = new chorus.views.ColumnSelect({collection: this.model.aggregateColumnSet, showAliasedName: true});
+        this.destinationColumnsSelect = new chorus.views.ColumnSelect({collection: this.destinationColumns});
     },
 
     columnFetchFailed: function() {
         this.model.serverErrors = this.destinationColumns.serverErrors;
-        this.closeModal()
+        this.closeModal();
         this.previousModal.showErrors(this.model);
     },
 
@@ -34,7 +34,7 @@ chorus.dialogs.JoinConfiguration = chorus.dialogs.Base.extend({
         return {
             destinationObjectName: this.destinationObject.get("objectName"),
             joinMap: chorus.models.ChorusView.joinMap
-        }
+        };
     },
 
     postRender: function() {
@@ -48,7 +48,7 @@ chorus.dialogs.JoinConfiguration = chorus.dialogs.Base.extend({
             this.sourceColumnsSelect.getSelectedColumn(),
             this.destinationColumnsSelect.getSelectedColumn(),
             this.$('select.join_type').val()
-        )
-        this.closeModal()
+        );
+        this.closeModal();
     }
 });

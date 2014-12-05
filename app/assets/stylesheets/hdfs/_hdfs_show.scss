@@ -1,24 +1,10 @@
-#page[data-page=HdfsShowFile] {
-    .hdfs_show_file_view {
-        .hdfs_content {
-            .hdfs_file_content {
-                padding: $padding-y $padding-x;
-                overflow-x: auto;
-            }
-        }
+
+.hdfs_show_file_details {
+    text-align: right;
+    vertical-align: middle;
+
+    .errors {
+        margin-left: -$padding-x;
+        margin-right: -$padding-x;
     }
-
-    .content_details {
-         background: $content-details-action-background-color;
-         height: 31px;
-         line-height: 30px;
-         vertical-align: middle;
-         color: $content-details-action-link-color;
-         text-align: right;
-
-         .plain_text {
-             @include results-console-message;
-             color: $content-details-action-link-color;
-         }
-     }
 }

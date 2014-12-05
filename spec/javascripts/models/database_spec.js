@@ -1,6 +1,6 @@
 describe("chorus.models.Database", function() {
     beforeEach(function() {
-        this.model = rspecFixtures.database({ id: '2', name: "love_poems", instance: {id: '1', name: "insta_whip"} });
+        this.model = backboneFixtures.database({ id: '2', name: "love_poems", dataSource: {id: '1', name: "insta_whip"} });
     });
 
     describe("#urlTemplate", function() {
@@ -9,10 +9,15 @@ describe("chorus.models.Database", function() {
         });
     });
 
-    describe("#instance", function() {
-        it("returns an instance with the right id and name", function() {
-            expect(this.model.instance().id).toEqual('1');
-            expect(this.model.instance().name()).toEqual('insta_whip');
+    describe("#dataSource", function() {
+        it("returns a data source with the right id and name and class", function() {
+            expect(this.model.dataSource().id).toEqual('1');
+            expect(this.model.dataSource().name()).toEqual('insta_whip');
+            expect(this.model.dataSource()).toBeA(chorus.models.GpdbDataSource);
+        });
+
+        it("memoizes", function() {
+            expect(this.model.dataSource()).toBe(this.model.dataSource());
         });
     });
 
@@ -28,6 +33,27 @@ describe("chorus.models.Database", function() {
 
         it("memoizes", function() {
             expect(this.schemas).toBe(this.model.schemas());
+        });
+    });
+
+    it("includes DataSourceCredentials mixin", function() {
+        expect(this.model.dataSourceRequiringCredentials).toBeTruthy();
+    });
+
+    describe("for a pg_database", function () {
+        beforeEach(function () {
+            this.model = backboneFixtures.pgDatabase();
+        });
+
+        describe("#dataSource", function() {
+            it("returns a data source with the right class", function() {
+                expect(this.model.get("entityType")).toBe("pg_database");
+                expect(this.model.dataSource()).toBeA(chorus.models.PgDataSource);
+            });
+
+            it("memoizes", function() {
+                expect(this.model.dataSource()).toBe(this.model.dataSource());
+            });
         });
     });
 });

@@ -1,0 +1,42 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:8981/solr/select?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: fq=type%3A%28Attachment+OR+Events%5C%3A%5C%3ANote+OR+Comment%29&fq=type_name_s%3A%28Attachment%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000015+OR+1000017+OR+1000018+OR+1000019+OR+1000020+OR+1000025+OR+1000027+OR+1000028+OR+1000029%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&q=attachmentsearch&fl=%2A+score&qf=name_texts+body_texts+name_stemmed_texts+body_stemmed_texts&defType=edismax&hl=on&hl.simple.pre=%40%40%40hl%40%40%40&hl.simple.post=%40%40%40endhl%40%40%40&hl.snippets=100&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true
+    headers:
+      content-type:
+      - application/x-www-form-urlencoded; charset=UTF-8
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>3,'params'=>{'group.ngroups'=>'true','group.limit'=>'3','qf'=>'name_texts\
+        \ body_texts name_stemmed_texts body_stemmed_texts','hl.simple.pre'=>'@@@hl@@@','wt'=>'ruby','hl'=>'on','rows'=>'50','defType'=>'edismax','fl'=>'*\
+        \ score','hl.snippets'=>'100','start'=>'0','q'=>'attachmentsearch','group.truncate'=>'true','group.field'=>'grouping_id_s','hl.simple.post'=>'@@@endhl@@@','group'=>'true','fq'=>['type:(Attachment\
+        \ OR Events\\\\:\\\\:Note OR Comment)','type_name_s:(Attachment)','-(security_type_name_sm:RelationalDataset\
+        \ AND -data_source_account_ids_im:(1000001 OR 1000004 OR 1000002 OR 1000006\
+        \ OR 1000007 OR 1000008 OR 1000010 OR 1000011 OR 1000012 OR 1000013 OR 1000014\
+        \ OR 1000015 OR 1000017 OR 1000018 OR 1000019 OR 1000020 OR 1000025 OR 1000027\
+        \ OR 1000028 OR 1000029))','-(security_type_name_sm:ChorusView AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:HdfsDataset AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:(Workspace) AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:(Workfile) AND -member_ids_im:1000006\
+        \ AND -public_b:true)']}},'grouped'=>{'grouping_id_s'=>{'matches'=>1,'ngroups'=>1,'groups'=>[{'groupValue'=>'Attachment\
+        \ 1000012','doclist'=>{'numFound'=>1,'start'=>0,'maxScore'=>2.1113688E7,'docs'=>[{'id'=>'Attachment\
+        \ 1000012','name_texts'=>['attachmentsearch'],'name_stemmed_texts'=>['attachmentsearch'],'score'=>2.1113688E7}]}}]}},'highlighting'=>{'Attachment\
+        \ 1000012'=>{'name_texts'=>['@@@hl@@@attachmentsearch@@@endhl@@@'],'name_stemmed_texts'=>['@@@hl@@@attachmentsearch@@@endhl@@@']}}}"
+    http_version: '1.1'
+  recorded_at: Mon, 16 Jun 2014 20:55:00 GMT
+recorded_with: VCR 2.3.0

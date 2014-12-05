@@ -13,13 +13,13 @@ chorus.views.visualizations.Timeseries = chorus.views.Base.extend({
 
         var timeFormat;
 
-        if(this.model.get("timeType").toLowerCase() == "date") {
+        if(this.model.get("timeType").toLowerCase() === "date") {
             timeFormat = d3.time.format("%Y-%m-%d");
         }
-        else if(this.model.get("timeType").toLowerCase() == "time") {
+        else if(this.model.get("timeType").toLowerCase() === "time") {
             timeFormat = d3.time.format("%H:%M:%S");
         } else {
-            timeFormat = d3.time.format("%Y-%m-%d %H:%M:%S")
+            timeFormat = d3.time.format("%Y-%m-%d %H:%M:%S");
         }
 
         this.axes = new chorus.views.visualizations.Axes({

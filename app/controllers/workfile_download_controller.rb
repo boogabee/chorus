@@ -1,4 +1,5 @@
 class WorkfileDownloadController < ApplicationController
+  include FileDownloadHelper
 
   def show
     authorize! :show, workfile.workspace
@@ -19,7 +20,7 @@ class WorkfileDownloadController < ApplicationController
     send_data draft.content,
               :disposition => 'attachment',
               :type => last_version.contents_content_type,
-              :filename => last_version.contents_file_name
+              :filename => filename_for_download(last_version.contents_file_name)
   end
 
   def send_version(version_id)
@@ -32,7 +33,9 @@ class WorkfileDownloadController < ApplicationController
 
     send_file download_workfile.contents.path,
               :disposition => 'attachment',
-              :type => download_workfile.contents_content_type
+              :type => download_workfile.contents_content_type,
+              :filename => filename_for_download(download_workfile.contents_file_name)
+    ActiveRecord::Base.connection.close
   end
 
   def workfile

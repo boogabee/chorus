@@ -4,22 +4,28 @@ describe("backbone_extensions", function() {
             spyOn($, "ajax").andCallThrough();
             this.model = new chorus.models.Base();
             this.model.urlTemplate = "my_items/{{id}}";
-        })
+        });
 
         it("passes the method to the model's url method", function() {
             spyOn(this.model, 'url').andReturn("foo");
             this.model.save();
-            expect(this.model.url).toHaveBeenCalledWith({ method: 'create' });
+            expect(this.model.url).toHaveBeenCalledWith(jasmine.objectContaining({ method: 'create' }));
 
             this.model.url.reset();
             this.model.fetch();
-            expect(this.model.url).toHaveBeenCalledWith({ method: 'read' });
+            expect(this.model.url).toHaveBeenCalledWith(jasmine.objectContaining({ method: 'read' }));
 
             this.model.url.reset();
             this.model.id = '24';
             this.model.save();
             
-            expect(this.model.url).toHaveBeenCalledWith({ method: 'update' });
+            expect(this.model.url).toHaveBeenCalledWith(jasmine.objectContaining({ method: 'update' }));
+        });
+
+        it("passes the options to the model's url method", function() {
+            spyOn(this.model, 'url').andReturn("foo");
+            this.model.fetch({foo: 'bar'});
+            expect(this.model.url).toHaveBeenCalledWith(jasmine.objectContaining({ foo: 'bar'}));
         });
 
         it("allows method override through options", function() {
@@ -30,16 +36,16 @@ describe("backbone_extensions", function() {
             expect(this.server.lastUpdate()).toBeUndefined();
             this.model.save({}, { method : 'update' });
             expect(this.server.lastUpdate().method).toBe("PUT");
-        })
+        });
 
         context("with a non-file upload model", function() {
             describe("#save", function() {
                 it("uses AJAX", function() {
                     this.model.save();
                     expect($.ajax).toHaveBeenCalled();
-                })
-            })
-        })
+                });
+            });
+        });
 
         context("with a file upload model", function() {
             beforeEach(function() {
@@ -74,7 +80,7 @@ describe("backbone_extensions", function() {
 
             context("with an existing object", function() {
                 beforeEach(function() {
-                    this.model.set({id: '123'})
+                    this.model.set({id: '123'});
                     this.model.save();
                 });
 
@@ -115,14 +121,14 @@ describe("backbone_extensions", function() {
         describe("when the child calls super parent", function() {
             it("the parent should get called", function() {
                 expect(child.testFunction()).toEqual('parent');
-                expect(parentClass.prototype.testFunction.callCount).toEqual(1);
-                expect(grandParentClass.prototype.testFunction.callCount).toEqual(0);
+                expect(parentClass.prototype.testFunction.calls.count()).toEqual(1);
+                expect(grandParentClass.prototype.testFunction.calls.count()).toEqual(0);
             });
 
             it("works if the method is called more than once", function() {
                 expect(child.testFunction()).toEqual('parent');
                 expect(child.testFunction()).toEqual('parent');
-                expect(parentClass.prototype.testFunction.callCount).toEqual(2);
+                expect(parentClass.prototype.testFunction.calls.count()).toEqual(2);
             });
 
             describe("when it calls through to the grandParent", function() {
@@ -135,8 +141,8 @@ describe("backbone_extensions", function() {
 
                 it("the grandParent should get called", function() {
                     expect(child.testFunction()).toEqual('grandParent');
-                    expect(parentClass.prototype.testFunction.callCount).toEqual(1);
-                    expect(grandParentClass.prototype.testFunction.callCount).toEqual(1);
+                    expect(parentClass.prototype.testFunction.calls.count()).toEqual(1);
+                    expect(grandParentClass.prototype.testFunction.calls.count()).toEqual(1);
                 });
 
                 it("passes arguments", function() {
@@ -153,14 +159,38 @@ describe("backbone_extensions", function() {
 
                 it("calls through to the grandParent", function() {
                     expect(child.testFunction()).toEqual('grandParent');
-                    expect(grandParentClass.prototype.testFunction.callCount).toEqual(1);
+                    expect(grandParentClass.prototype.testFunction.calls.count()).toEqual(1);
                 });
-            })
+            });
         });
     });
 
     describe("_super", function() {
         var Friend, Animal, Mammal, Pet, Dog, CockerSpaniel;
+
+        function itCallsTheOverriddenMethodCorrectly() {
+            it("passes the given arguments to the overridden method", function() {
+                var greeting = this.friend.greet("Barbara", "morning");
+                expect(greeting).toContain("Good morning, Barbara.");
+            });
+
+            it("calls the overridden method on the recieving object", function() {
+                var greeting = this.friend.greet("Barbara", "morning");
+                expect(greeting).toContain("My name is Benjie.");
+            });
+
+            it("calls the overridden method only once", function() {
+                this.friend.greet("Barbara", "morning");
+                expect(Friend.prototype.greet.calls.count()).toBe(1);
+                expect(Mammal.prototype.greet.calls.count()).toBe(1);
+            });
+
+            it("can be called multiple times with the same results", function() {
+                var greeting = this.friend.greet("Barbara", "morning");
+                expect(this.friend.greet("Barbara", "morning")).toBe(greeting);
+                expect(this.friend.greet("Barbara", "morning")).toBe(greeting);
+            });
+        }
 
         beforeEach(function() {
             Friend = Backbone.Model.extend({
@@ -225,7 +255,7 @@ describe("backbone_extensions", function() {
 
                 it("does not call the object's own method more than once", function() {
                     this.friend.greet("Barbara", "morning");
-                    expect(Mammal.prototype.greet.callCount).toBe(1);
+                    expect(Mammal.prototype.greet.calls.count()).toBe(1);
                 });
             });
         });
@@ -253,7 +283,7 @@ describe("backbone_extensions", function() {
 
                 it("does not call the object's own method more than once", function() {
                     this.friend.greet("Barbara", "morning");
-                    expect(Dog.prototype.greet.callCount).toBe(1);
+                    expect(Dog.prototype.greet.calls.count()).toBe(1);
                 });
             });
         });
@@ -262,7 +292,7 @@ describe("backbone_extensions", function() {
             beforeEach(function() {
                 Mammal.prototype.greet = function(personName, timeOfDay) {
                     return Mammal.__super__.greet.apply(this, arguments) + " I'm a mammal.";
-                }
+                };
                 spyOn(Mammal.prototype, 'greet').andCallThrough();
 
                 this.friend = new CockerSpaniel({ name: "Benjie" });
@@ -270,34 +300,10 @@ describe("backbone_extensions", function() {
 
             itCallsTheOverriddenMethodCorrectly();
         });
-
-        function itCallsTheOverriddenMethodCorrectly() {
-            it("passes the given arguments to the overridden method", function() {
-                var greeting = this.friend.greet("Barbara", "morning");
-                expect(greeting).toContain("Good morning, Barbara.");
-            });
-
-            it("calls the overridden method on the recieving object", function() {
-                var greeting = this.friend.greet("Barbara", "morning");
-                expect(greeting).toContain("My name is Benjie.");
-            });
-
-            it("calls the overridden method only once", function() {
-                this.friend.greet("Barbara", "morning");
-                expect(Friend.prototype.greet.callCount).toBe(1);
-                expect(Mammal.prototype.greet.callCount).toBe(1);
-            });
-
-            it("can be called multiple times with the same results", function() {
-                var greeting = this.friend.greet("Barbara", "morning");
-                expect(this.friend.greet("Barbara", "morning")).toBe(greeting);
-                expect(this.friend.greet("Barbara", "morning")).toBe(greeting);
-            });
-        }
     });
 
     describe("unbind", function() {
-        var fakeContext = function(name) { this.name = name };
+        var fakeContext = function(name) { this.name = name; };
         beforeEach(function() {
             this.callback = jasmine.createSpy();
             this.context1 = new fakeContext("1");
@@ -310,16 +316,16 @@ describe("backbone_extensions", function() {
         it("does not unbind both events when unbind is called with a context", function() {
             this.model.unbind('fake', this.callback, this.context2);
             this.model.trigger('fake');
-            expect(this.callback.callCount).toBe(1);
-            expect(this.callback.mostRecentCall.object).toBe(this.context1);
+            expect(this.callback.calls.count()).toBe(1);
+            expect(this.callback.lastCall().object).toBe(this.context1);
         });
 
         it("unbinds all events that match a given event, callback, and context", function() {
             this.model.bind("fake", this.callback, this.context2);
             this.model.unbind('fake', this.callback, this.context2);
             this.model.trigger('fake');
-            expect(this.callback.callCount).toBe(1);
-            expect(this.callback.mostRecentCall.object).toBe(this.context1);
+            expect(this.callback.calls.count()).toBe(1);
+            expect(this.callback.lastCall().object).toBe(this.context1);
         });
 
         it("unbinds all events that match a given event and callback when no context is passed", function() {
@@ -337,16 +343,17 @@ describe("backbone_extensions", function() {
             };
             spyOn(this.newHandler, "callback");
             var handlers = [this.newHandler];
-            Backbone.History.prototype.handlers = handlers;
+            chorus.startHistory();
+            Backbone.history.handlers = handlers;
         });
 
         afterEach(function(){
-            Backbone.History.prototype.handlers = undefined;
+            Backbone.history.handlers = undefined;
         });
 
         it("removes the trailing slash from the end of a URL", function() {
-            Backbone.History.prototype.loadUrl("#/users/");
-            expect(this.newHandler.callback).toHaveBeenCalledWith("/users")
+            Backbone.history.loadUrl("#/users/");
+            expect(this.newHandler.callback).toHaveBeenCalledWith("/users");
         });
     });
 
@@ -354,9 +361,9 @@ describe("backbone_extensions", function() {
         var Klass, module1, module2, module3;
 
         beforeEach(function() {
-            module1 = { foo1: function() { return "bar1" } };
-            module2 = { foo2: function() { return "bar2" } };
-            module3 = { foo3: function() { return "bar3" } };
+            module1 = { foo1: function() { return "bar1"; } };
+            module2 = { foo2: function() { return "bar2"; } };
+            module3 = { foo3: function() { return "bar3"; } };
             Klass = chorus.models.Base.include(module1, module2, module3);
         });
 
@@ -388,7 +395,7 @@ describe("backbone_extensions", function() {
             it("makes the included module methods accessible via 'super'", function() {
                 var instance = new SubKlass();
                 expect(instance.foo1()).toBe("bar1baz");
-                expect(new (SubKlass.include({}))).toBeA(SubKlass);
+                expect(new (SubKlass.include({}))()).toBeA(SubKlass);
             });
         });
     });

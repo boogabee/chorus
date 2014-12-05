@@ -1,11 +1,41 @@
 describe("chorus.pages.SearchIndexPage", function() {
+    function smallSearchResult () {
+        var searchResult = backboneFixtures.searchResult();
+        var attributeKeys = _.keys(searchResult.attributes);
+        _.each(attributeKeys, function (attribute) {
+            if (attribute === 'completeJson') { return; }
+
+            var truncatedLength = (attribute === 'datasets') ? 3 : 2;
+
+            var value = searchResult.get(attribute);
+            value.numFound = Math.min(value.results.length, truncatedLength);
+            value.results = value.results.splice(0, truncatedLength);
+        });
+        return searchResult;
+    }
+
     beforeEach(function() {
         this.query = "50/50";
+        this.modalSpy = stubModals();
     });
 
     it("has a helpId", function() {
         this.page = new chorus.pages.SearchIndexPage(this.query);
-        expect(this.page.helpId).toBe("search")
+        expect(this.page.helpId).toBe("search");
+    });
+
+    context("when the search returns with unprocessableEntity", function() {
+        beforeEach(function() {
+            this.page = new chorus.pages.SearchIndexPage(this.query);
+            spyOn(Backbone.history, 'loadUrl');
+            this.server.lastFetchFor(this.page.model).failUnprocessableEntity();
+        });
+
+        it("shows a nice error popup", function() {
+            expect(Backbone.history.loadUrl).toHaveBeenCalledWith('/unprocessableEntity');
+            expect(chorus.pageOptions.title).toMatchTranslation('search.bad_entity_type.title');
+            expect(chorus.pageOptions.text).toMatchTranslation('search.bad_entity_type.text');
+        });
     });
 
     describe("when searching for all items, across all of chorus", function() {
@@ -21,12 +51,16 @@ describe("chorus.pages.SearchIndexPage", function() {
 
         describe("when the search result fetch completes", function() {
             beforeEach(function() {
-                this.server.completeFetchFor(this.page.search, rspecFixtures.searchResult());
+                this.server.completeFetchFor(this.page.search, smallSearchResult());
+            });
+
+            it("doesn't display the list content details", function() {
+                expect(this.page.mainContent.contentDetails).toBeUndefined();
             });
 
             it("has breadcrumbs", function() {
                 expect(this.page.$(".breadcrumbs li:eq(0)")).toContainTranslation('breadcrumbs.home');
-                expect((this.page.$(".breadcrumbs li:eq(0) a")).attr("href")).toBe("#/");
+                expect(this.page.$(".breadcrumbs li:eq(0) a").attr("href")).toBe("#/");
 
                 expect(this.page.$(".breadcrumbs li:eq(1) .slug")).toContainTranslation('breadcrumbs.search_results');
             });
@@ -36,17 +70,17 @@ describe("chorus.pages.SearchIndexPage", function() {
             });
 
             it("has a 'Show All Results' link", function() {
-                expect(this.page.$('.default_content_header .type .title')).toContainTranslation("search.show")
-                expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.all")
+                expect(this.page.$('.default_content_header .type .title')).toContainTranslation("search.show");
+                expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.all");
             });
 
             it("has filtered result links", function() {
                 expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.workfile");
-                expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.hdfs");
+                expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.hdfs_entry");
                 expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.dataset");
                 expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.workspace");
                 expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.user");
-                expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.instance");
+                expect(this.page.$('.default_content_header .type a')).toContainTranslation("search.type.data_source");
             });
 
             describe("filtering by result type", function() {
@@ -74,7 +108,7 @@ describe("chorus.pages.SearchIndexPage", function() {
 
             it("navigates to the right page when 'my workspaces' is selected from the 'search in' menu", function() {
                 spyOn(chorus.router, "navigate");
-                chorus.PageEvents.broadcast("choice:search_in", "my_workspaces");
+                chorus.PageEvents.trigger("choice:search_in", "my_workspaces");
                 expect(this.page.search.entityType()).toBe("all");
                 expect(this.page.search.searchIn()).toBe("my_workspaces");
                 expect(chorus.router.navigate).toHaveBeenCalledWith(this.page.search.showUrl());
@@ -88,22 +122,22 @@ describe("chorus.pages.SearchIndexPage", function() {
                 it("shows a list of search results", function() {
                     expect(this.workfileLIs.length).toBeGreaterThan(0);
                 });
-
-                it("selects the first workfile by default", function() {
-                    expect(this.workfileLIs.eq(0)).toHaveClass("selected");
-                });
-
+                
                 describe("clicking on a workfile search result", function() {
                     beforeEach(function() {
-                        this.workfileLIs.eq(1).trigger("click");
+                        this.searchedWorkfile = this.workfileLIs.eq(1);
+                        this.searchedWorkfile.trigger("click");
                     });
 
                     it("selects that workfile", function() {
-                        expect(this.workfileLIs.eq(1)).toHaveClass("selected");
+                        expect(this.searchedWorkfile).toHaveClass("checked");
                     });
 
-                    it("shows that workfile in the sidebar", function() {
-                        expect(this.page.sidebar.$(".fileName")).toHaveText("Public");
+                    it('shows the right links', function(){
+                        expect(this.page.sidebar.$('.actions')).toContainTranslation('actions.copy_workfile');
+                        expect(this.page.sidebar.$('.actions')).toContainTranslation('actions.download');
+                        expect(this.page.sidebar.$('.actions')).not.toContainTranslation('actions.add_note');
+                        expect(this.page.sidebar.$('.actions')).not.toContainTranslation('workfile.delete.button');
                     });
 
                     it("sets the workfile as the selectedItem on the search result", function() {
@@ -122,25 +156,24 @@ describe("chorus.pages.SearchIndexPage", function() {
                 });
 
                 describe("clicking on a workspace search result", function() {
+                    var selectedIndex;
+
                     beforeEach(function() {
-                        this.workspaceLIs.eq(1).trigger("click");
+                        selectedIndex = 1;
+                        this.workspaceLIs.eq(selectedIndex).trigger("click");
                     });
 
                     it("selects that workspace", function() {
-                        expect(this.workspaceLIs.eq(1)).toHaveClass("selected");
-                    });
-
-                    it("shows that workspace in the sidebar", function() {
-                        expect(this.page.sidebar.$(".info .name")).toHaveText("Private");
+                        expect(this.workspaceLIs.eq(selectedIndex)).toHaveClass("checked");
                     });
 
                     it("show the 'add a note' link in the sidebar", function() {
-                        expect(this.page.sidebar.$("a[data-dialog='NotesNew']")).toExist()
+                        expect(this.page.sidebar.$("a.new_note")).toExist();
                     });
 
                     it("show the 'add an insight' link in the sidebar", function() {
-                        expect(this.page.sidebar.$("a[data-dialog='InsightsNew']")).toExist()
-                    })
+                        expect(this.page.sidebar.$("a.new_insight")).toExist();
+                    });
                 });
             });
 
@@ -155,15 +188,17 @@ describe("chorus.pages.SearchIndexPage", function() {
 
                 describe("clicking on a tabular data search result", function() {
                     beforeEach(function() {
-                        this.datasetLIs.eq(2).trigger("click");
+                        this.dataset = this.page.model.datasets().find(function (dataset) {
+                            return dataset.get('objectName') === 'searchquery_shared_table';
+                        });
+                        this.datasetResult = this.datasetLIs.find('.name:contains("' + this.dataset.name() + '")').closest('li');
+                        this.datasetResult.trigger("click");
+                        //The sidebar requires extra setup for a chorus view
+                        expect(this.dataset.isChorusView()).toBeFalsy();
                     });
 
                     it("selects that tabular data item", function() {
-                        expect(this.datasetLIs.eq(2)).toHaveClass("selected");
-                    });
-
-                    it("shows the tabular data item in the sidebar", function() {
-                        expect(this.page.sidebar.$(".info .name")).toHaveText("typeahead");
+                        expect(this.datasetResult).toHaveClass("checked");
                     });
 
                     it("shows the associate-with-workspace link in the sidebar", function() {
@@ -172,28 +207,23 @@ describe("chorus.pages.SearchIndexPage", function() {
                 });
             });
 
-            describe("the instance section", function() {
+            describe('the data source section', function() {
                 beforeEach(function() {
-                    this.instanceLIs = this.page.$(".instance_list li");
+                    this.dataSourceLIs = this.page.$(".data_source_list li");
                 });
 
                 it("shows a list of search results", function() {
-                    expect(this.instanceLIs.length).toBe(3)
+                    expect(this.dataSourceLIs.length).toBeGreaterThan(0);
                 });
 
-                describe("clicking on an instance search result", function() {
+                describe('clicking on a data source search result', function() {
                     beforeEach(function() {
-                        spyOn(this.page.sidebars.instance, "setInstance");
-                        this.instanceLIs.eq(0).trigger("click");
+                        spyOn(this.page.sidebars.dataSource, "setDataSource");
+                        this.dataSourceLIs.eq(0).trigger("click");
                     });
 
-                    it("selects that instance", function() {
-                        expect(this.instanceLIs.eq(0)).toHaveClass("selected");
-                    });
-
-                    it("shows the instance in the sidebar", function() {
-                        expect($(this.page.sidebar.el)).toHaveClass("instance_list_sidebar")
-                        expect(this.page.sidebars.instance.setInstance).toHaveBeenCalledWith(this.page.search.instances().at(0))
+                    it('selects that data source', function() {
+                        expect(this.dataSourceLIs.eq(0)).toHaveClass("checked");
                     });
                 });
             });
@@ -215,34 +245,23 @@ describe("chorus.pages.SearchIndexPage", function() {
                     });
 
                     it("selects that user", function() {
-                        expect(this.userLis.eq(0)).toHaveClass("selected");
+                        expect(this.userLis.eq(0)).toHaveClass("checked");
                     });
 
                     it("fetches the user's activities'", function() {
                         expect(this.clickedUser.activities()).toHaveBeenFetched();
-                    });
-
-                    describe("when all of the sidebar's fetches complete", function() {
-                        beforeEach(function() {
-                            this.server.completeFetchFor(this.clickedUser.activities(), []);
-                            this.server.completeFetchFor(chorus.models.Config.instance());
-                        });
-
-                        it("shows that user in the sidebar", function() {
-                            expect(this.page.sidebar.$(".info .full_name")).toHaveText(this.users.at(0).displayName());
-                        });
                     });
                 });
             });
 
             describe("the hdfs section", function() {
                 beforeEach(function() {
-                    this.files = this.page.search.hdfs();
+                    this.files = this.page.search.hdfs_entries();
                     this.fileLis = this.page.$(".hdfs_list li");
                 });
 
                 it("shows a list of search results", function() {
-                    expect(this.fileLis.length).toBe(1);
+                    expect(this.fileLis.length).toBe(2);
                 });
 
                 describe("clicking on a file search result", function() {
@@ -252,21 +271,11 @@ describe("chorus.pages.SearchIndexPage", function() {
                     });
 
                     it("selects that file", function() {
-                        expect(this.fileLis.eq(0)).toHaveClass("selected");
+                        expect(this.fileLis.eq(0)).toHaveClass("checked");
                     });
 
                     it("fetches the file's activities'", function() {
                         expect(this.clickedFile.activities()).toHaveBeenFetched();
-                    });
-
-                    describe("when all of the sidebar's fetches complete", function() {
-                        beforeEach(function() {
-                            this.server.completeFetchFor(this.clickedFile.activities(), []);
-                        });
-
-                        it("shows that file in the sidebar", function() {
-                            expect(this.page.sidebar.$(".info .name")).toHaveText(this.clickedFile.get('name'));
-                        });
                     });
                 });
             });
@@ -278,7 +287,7 @@ describe("chorus.pages.SearchIndexPage", function() {
                 });
 
                 it("shows a list of search results", function() {
-                    expect(this.attachmentLis.length).toBe(7);
+                    expect(this.attachmentLis.length).toBeGreaterThan(0);
                 });
 
                 describe("clicking on a search result", function() {
@@ -288,11 +297,7 @@ describe("chorus.pages.SearchIndexPage", function() {
                     });
 
                     it("selects that file", function() {
-                        expect(this.attachmentLis.eq(0)).toHaveClass("selected");
-                    });
-
-                    it("shows that file in the sidebar", function() {
-                        expect(this.page.sidebar.$(".info .name")).toHaveText(this.clickedFile.get("name"));
+                        expect(this.attachmentLis.eq(0)).toHaveClass("checked");
                     });
                 });
             });
@@ -312,7 +317,7 @@ describe("chorus.pages.SearchIndexPage", function() {
 
         describe("when the search result is fetched", function() {
             beforeEach(function() {
-                this.server.completeFetchFor(this.page.search, rspecFixtures.searchResult());
+                this.server.completeFetchFor(this.page.search, smallSearchResult());
             });
 
             it("selects the 'all of chorus' option in the 'search in' menu", function() {
@@ -351,7 +356,7 @@ describe("chorus.pages.SearchIndexPage", function() {
 
         describe("when the search result is fetched", function() {
             beforeEach(function() {
-                this.server.completeFetchFor(this.page.search, rspecFixtures.searchResult());
+                this.server.completeFetchFor(this.page.search, smallSearchResult());
             });
 
             it("selects the 'my workspaces' option in the 'search in' menu", function() {
@@ -368,6 +373,7 @@ describe("chorus.pages.SearchIndexPage", function() {
         beforeEach(function() {
             this.page = new chorus.pages.SearchIndexPage("my_workspaces", "workfile", this.query);
             this.search = this.page.search;
+            spyOn(this.search, "workspace").andReturn(backboneFixtures.workspace());
         });
 
         it("fetches the right search result", function() {
@@ -378,7 +384,7 @@ describe("chorus.pages.SearchIndexPage", function() {
 
         describe("when the search result is fetched", function() {
             beforeEach(function() {
-                this.server.completeFetchFor(this.page.search, fixtures.searchResult(this.page.search.attributes));
+                this.server.completeFetchFor(this.page.search, smallSearchResult());
             });
 
             it("selects the 'my workspaces' option in the 'search in' menu", function() {
@@ -388,6 +394,25 @@ describe("chorus.pages.SearchIndexPage", function() {
             it("selects the search result type in the menu", function() {
                 expect(this.page.$(".default_content_header .type .chosen")).toContainTranslation("search.type.workfile");
             });
+
+            it("doesn't display the list content details", function() {
+                expect(this.page.mainContent.contentDetails).toBeUndefined();
+            });
+        });
+    });
+
+    describe(".resourcesLoaded", function() {
+        beforeEach(function() {
+            this.page = new chorus.pages.SearchIndexPage(this.query);
+            this.page.resourcesLoaded();
+        });
+
+        it("sets the searchPage option for DatasetSidebar to true", function() {
+            expect(this.page.sidebars.dataset.options.searchPage).toEqual(true);
+        });
+
+        it("sets the searchPage option for DataSourceSidebar to true", function() {
+            expect(this.page.sidebars.dataSource.options.searchPage).toEqual(true);
         });
     });
 });

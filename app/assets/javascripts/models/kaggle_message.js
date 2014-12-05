@@ -1,5 +1,5 @@
 chorus.models.KaggleMessage = chorus.models.Base.extend({
-    urlTemplate: "workspaces/{{workspace.id}}/kaggle/messages",
+    urlTemplate: "kaggle/messages",
 
     paramsToSave: ['replyTo', 'subject', 'htmlBody', 'recipientIds'],
 

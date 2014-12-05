@@ -1,0 +1,184 @@
+# Server Settings
+
+# public_url is the url of the Chorus application as seen from another computer (like a Greenplum Server)
+# do not include the 'http:' or the port
+public_url = mycomputer.example.com
+server_port = 8080
+postgres_port = 8543
+solr_port = 8983
+
+java_options = -Djava.security.egd=file:/dev/./urandom -server -Xmx2048m -Xms512m -XX:MaxPermSize=128m
+
+# SSL Settings
+
+ssl.enabled = false
+ssl_server_port = 8443
+ssl_certificate =
+ssl_certificate_key =
+
+# Runtime Settings
+
+# The default session timeout time (length of time that you need to remain
+# inactive for you to be logged out) is 8 hours.
+session_timeout_minutes = 480
+
+clean_expired_sessions_interval_hours = 24
+delete_unimported_csv_files_interval_hours = 1
+delete_unimported_csv_files_after_hours = 12
+instance_poll_interval_minutes = 5
+reindex_search_data_interval_hours = 24
+reset_counter_cache_interval_hours = 24
+
+sandbox_recommended_size_in_gb = 5
+
+# The number of rows to be shown in a preview by default.
+default_preview_row_limit = 500
+
+# Maximum execution time of visualizations and workfiles, in minutes
+execution_timeout_in_minutes = 10
+
+# Database connection login timeout, in seconds
+database_login_timeout = 10
+
+# Concurrency Settings
+
+# Configure thread pool size of webserver and worker processes.
+#
+# The # of web server threads determines the maximum number of simultaneous web
+# requests. The # of worker threads determines the maximum number of
+# asynchronous jobs, such as table copying or importing, that can be run
+# simultaneously.
+#
+# Each web or worker thread may use its own connection to the local Postgresql
+# database, thus the sum of 'worker_threads' + 'webserver_threads' must be less
+# than the 'max_connections' configured in postgresql.conf.
+#
+# The 'max_connections' parameter may be based on your operating system's
+# kernel shared memory size. For example, on OS X this parameter will default
+# to 20.  You can also set the number of database threads per process here with
+# the 'database_threads' property. This overrides postgresql.conf.
+
+worker_threads = 1
+webserver_threads = 20
+database_threads = 25
+
+# File Size Settings
+
+file_sizes_mb.workfiles = 10
+file_sizes_mb.csv_imports = 100
+file_sizes_mb.user_icon = 5
+file_sizes_mb.workspace_icon = 5
+file_sizes_mb.attachment = 10
+file_sizes_mb.hd_upload = 4096
+
+# Log Settings
+
+# The valid logging.loglevel settings are:
+#  * debug
+#  * info
+#  * warn
+#  * error
+#  * fatal
+logging.loglevel = info
+
+logging.syslog.enabled = true
+
+# File Download Settings
+
+# This string is prefixed on all generated filenames. For instance, if a user
+# downloads a dataset, the name of the file downloaded will be the prefix
+# followed by the dataset name then the csv extension.
+# Only the first 20 characters of the prefix will be used.
+file_download.name_prefix =
+
+# This string is displayed on all visualizations. Both when displaying and when saving.
+# Only the first 40 characters of the prefix will be used.
+visualization.overlay_string =
+
+# Gpfdist Settings
+
+# To enable data movement between databases, gpfdist must be installed and
+# running on the Chorus host.  Two gpfdist processes must be started with
+# different ports pointing to the same directory.  SSL Certificate must be
+# installed on all segment servers
+gpfdist.ssl.enabled = false
+gpfdist.url = sample-gpfdist-server
+gpfdist.write_port = 8000
+gpfdist.read_port = 8001
+gpfdist.data_dir = /tmp
+
+# Tableau Settings
+
+tableau.enabled = false
+tableau.url = 10.80.129.44
+tableau.port = 80
+
+# Gnip Settings
+
+gnip.enabled = true
+gnip.csv_import_max_file_size_mb = 50
+
+# Kaggle Settings
+
+kaggle.enabled = false
+kaggle.api_key = KAGGLE_API_KEY
+
+# LDAP Settings
+
+ldap.host = 10.32.88.212
+ldap.enable = false
+ldap.start_tls = false
+ldap.port = 389
+ldap.base = DC =greenplum,DC =com
+ldap.user_dn = greenplum\chorus
+ldap.password = secret
+ldap.dn_template = greenplum\{0}
+ldap.attribute.uid = sAMAccountName
+ldap.attribute.ou = department
+ldap.attribute.gn = givenName
+ldap.attribute.sn = sn
+ldap.attribute.mail = mail
+ldap.attribute.title = title
+
+newrelic.enabled = false
+newrelic.license_key = NEWRELIC_LICENSE_KEY
+
+#ORACLE
+oracle.enabled = true
+
+#Workflow
+workflow.url = http://localhost:9090
+
+#Mail
+smtp.address=localhost
+smtp.port=587
+smtp.user_name=USER_NAME
+smtp.password=PASSWORD
+smtp.authentication=login
+smtp.enable_starttls_auto=false
+#smtp.ssl=false
+#smtp.tls=false
+#smtp.openssl_verify_mode=none
+
+mail.enabled = false
+mail.from = FROM NAME <noreply@chorus.com>
+mail.reply_to = REPLY NAME <noreply@chorus.com>
+
+#Demo
+demo_mode.enabled=false
+
+# Jdbc schema blacklists
+#
+# Each jdbc_schema_blacklist.<database_type> specifies a list of schemas
+# that will be excluded from display, index, and search. (Effectively excluded
+# from Chorus).
+#
+# For any jdbc data source type, specify a list of case-sensitive
+# schema names. <database_type> should be the first match  in /\Ajdbc:([^:]+)/.
+#
+# For example, <database_type> for the jdbc url jdbc:postgresql://myhost:5432/postgres
+# is postgresql.
+
+jdbc_schema_blacklist.postgresql = [information_schema, pg_catalog]
+jdbc_schema_blacklist.sqlserver = [db_accessadmin, db_backupoperator, db_datareader, db_datawriter, db_ddladmin, db_denydatareader, db_denydatawriter, db_owner, db_securityadmin, dbo, INFORMATION_SCHEMA, sys]
+jdbc_schema_blacklist.teradata = [All, Crashdumps, DBC, dbcmngr, Default, EXTUSER, LockLogShredder, PUBLIC, SQLJ, SysAdmin, SYSBAR, SYSLIB, SYSSPATIAL, SystemFe, SYSUDTLIB, Sys_Calendar, TDPUSER, TDQCD, TDStats, tdwm, TD_SYSFNLIB, TD_SYSXML]

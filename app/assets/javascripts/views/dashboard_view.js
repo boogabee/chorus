@@ -1,33 +1,51 @@
+// oct 2014
+// NO LONGER IN USE
+// applies to an older version of chorus
+
 chorus.views.Dashboard = chorus.views.Base.extend({
     constructorName: "DashboardView",
     templateName:"dashboard/main",
     subviews: {
         '.dashboard_main': "dashboardMain",
-        '.instance_list': "instanceList",
-        '.workspace_list': "workspaceList"
+        '.data_source_list': "dataSourceList",
+        '.workspace_list': "workspaceList",
+        '.project_list': "projectList",
+        '.modular_dashboard': "modularDashboard"
     },
 
     setup: function() {
+        this.memberWorkspaces = new chorus.collections.WorkspaceSet();
+        this.memberWorkspaces.attributes = _.extend({}, this.collection.attributes);
+        this.memberWorkspaces.attributes.userId = chorus.session.user().id;
+
+        this.projectWorkspaces = new chorus.collections.WorkspaceSet();
+        this.projectWorkspaces.attributes = _.extend({}, this.collection.attributes);
+
         this.workspaceList = new chorus.views.MainContentView({
-            collection: this.collection,
-            contentHeader:chorus.views.StaticTemplate("default_content_header", {title:t("header.my_workspaces")}),
+            collection: this.memberWorkspaces,
+            contentHeader: new chorus.views.StaticTemplate("default_content_header", {title:t("header.workspaces")}),
             contentDetails:new chorus.views.StaticTemplate("dashboard/workspace_list_content_details"),
-            content:new chorus.views.DashboardWorkspaceList({ collection: this.collection })
+            content:new chorus.views.DashboardWorkspaceList({ collection: this.memberWorkspaces })
         });
 
-        this.instanceList = new chorus.views.MainContentView({
-            collection: this.options.gpdbInstanceSet,
-            contentHeader: chorus.views.StaticTemplate("default_content_header", {title:t("header.browse_data")}),
-            contentDetails: new chorus.views.StaticTemplate("dashboard/instance_list_content_details"),
-            content: new chorus.views.DashboardInstanceList({ collection: this.options.gpdbInstanceSet })
+        this.projectList = new chorus.views.MainContentView({
+            collection: this.projectWorkspaces,
+            contentHeader: new chorus.views.ProjectListHeader({collection: this.projectWorkspaces}),
+            content: new chorus.views.DashboardProjectList({ collection: this.projectWorkspaces })
         });
 
-        var activities = chorus.collections.ActivitySet.forDashboard();
-        activities.attributes.pageSize = 50;
+        this.dataSourceList = new chorus.views.MainContentView({
+            collection: this.options.dataSourceSet,
+            contentHeader: new chorus.views.StaticTemplate("default_content_header", {title:t("header.browse_data")}),
+            contentDetails: new chorus.views.StaticTemplate("dashboard/data_source_list_content_details"),
+            content: new chorus.views.DashboardDataSourceList({ collection: this.options.dataSourceSet })
+        });
+
+        this.modularDashboard = new chorus.views.ModularDashboard();
+
+        var activities = new chorus.collections.ActivitySet([]);
 
         activities.fetch();
-        chorus.PageEvents.subscribe("comment:added", function() {activities.fetch()});
-        chorus.PageEvents.subscribe("comment:deleted", function() {activities.fetch()});
         this.activityList = new chorus.views.ActivityList({ collection: activities, additionalClass: "dashboard" });
         this.dashboardMain = new chorus.views.MainContentView({
             content: this.activityList,
@@ -37,6 +55,20 @@ chorus.views.Dashboard = chorus.views.Base.extend({
                 insightsTitle: t("dashboard.title.insights")
             })
         });
+
+        if (this.collection.loaded) {
+            this.collectionUpdated();
+        }
+        this.listenTo(this.collection, 'loaded', this.collectionUpdated);
+    },
+
+    collectionUpdated: function () {
+        this.memberWorkspaces.loaded = true;
+        this.projectWorkspaces.loaded = true;
+        this.memberWorkspaces.reset(this.collection.where({isMember: true}));
+        this.memberWorkspaces.trigger('loaded');
+        this.projectWorkspaces.reset(this.collection.where({isProject: true}));
+        this.projectWorkspaces.trigger('loaded');
     }
 });
 

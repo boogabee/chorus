@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta http-equiv="X-UA-Compatible" content="chrome=IE8">
+
+  <title><%= License.instance.branding_title %></title>
+  <%= stylesheet_link_tag "import_console/import_console" %>
+</head>
+<body>
+
+  <%= form_tag("/imports", :method => :put, :class => :imports) do %>
+  <table>
+    <thead>
+    <tr>
+      <th>Select</th>
+      <th>Started?</th>
+      <th>Duration</th>
+      <th>Started At</th>
+      <th>Enqueued At</th>
+      <th>Named Pipe</th>
+      <th>Source DB Process Busy</th>
+      <th>Destination DB Process Busy</th>
+
+      <th>Source Data Source</th>
+      <th>Source Table Name</th>
+
+      <th>Destination Data Source</th>
+      <th>Destination Table Name</th>
+    </tr>
+  </thead>
+    <tbody>
+  <% @imports.each do |import| %>
+    <tr>
+      <td><input type="checkbox" name="id[]" value="<%= import.id %>" /></td>
+      <td><%= import.started? %></td>
+      <td><%= distance_of_time_in_words_to_now(import.started_at) if import.started_at %></td>
+      <td><%= import.started_at %></td>
+      <td><%= import.created_at %></td>
+      <td><%= import.named_pipe || "Not found" %></td>
+      <td><%= show_process { import.busy?(:writer) } %></td>
+      <td><%= show_process { import.busy?(:reader) } %></td>
+
+      <td><%= data_source_description_for_schema(import.source_dataset.schema) if import.has_source_dataset? %></td>
+      <td><%= link_to_source(import) if import.has_source_dataset? %></td>
+
+      <td><%= data_source_description_for_schema(import.schema) %></td>
+      <td><%= link_to_destination(import) %></td>
+    </tr>
+  <% end %>
+</tbody>
+</table>
+    <button type="submit" name="success" value="true">Pass</button>
+    <button type="submit" name="success" value="false">Fail</button>
+    <label>Failure message:</label>
+    <input type="text" name="message">
+<% end %>
+
+</body>
+</html>

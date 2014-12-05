@@ -8,25 +8,33 @@ describe NotesController do
       log_in user
     end
 
-    let(:entity_type) { "gpdb_instance"}
-    let(:entity_id) { "entity-id"}
+    let(:model) { workspaces(:public) }
+    let(:entity_type) { model.class.name }
+    let(:entity_id) { model.id.to_s }
     let(:attributes) { { :entity_type => entity_type, :entity_id => entity_id, :body => "I'm a note" } }
 
     it "creates a note on the model specified by the 'entity_type' and 'entity_id'" do
-      mock(Events::Note).create_from_params(attributes.stringify_keys, user)
-      post :create, attributes
+      mock.proxy(Events::Note).build_for(model, attributes.stringify_keys)
+      expect {
+        post :create, attributes
+      }.to change(Events::Note, :count).by(1)
       response.code.should == "201"
     end
 
     it "sanitizes the body of note" do
-      mock(Events::Note).create_from_params(attributes.merge(:body => "<b>not evil</b>").stringify_keys, user)
+      mock.proxy(Events::Note).build_for(model, attributes.merge(:body => "<b>not evil</b>").stringify_keys)
       post :create, attributes.merge!(:body => "<b>not evil</b><script>alert('Evil!')</script>")
       response.code.should == "201"
     end
 
     it "uses authorization" do
-      mock(controller).authorize!(:create, Events::Note, entity_type, entity_id)
+      mock(controller).authorize!(:create_note_on, model)
       post :create, attributes
+    end
+
+    it "raises an exception if there is no model with the given entity id" do
+      post :create, attributes.merge(:entity_id => "bogus")
+      response.code.should == "404"
     end
 
     context "when adding a note to a workspace" do
@@ -45,7 +53,17 @@ describe NotesController do
         associated_workfile_ids = associated_workfiles.map(&:id)
         post :create, attributes.merge(:workfile_ids => associated_workfile_ids)
         response.code.should == "201"
-        Events::NoteOnWorkspace.last.workfiles.should =~ associated_workfiles
+        Events::NoteOnWorkspace.last.workfiles.map(&:id).should =~ associated_workfiles.map(&:id)
+      end
+
+      context "when creator is not a workspace member" do
+        let(:user) { users(:no_collaborators) }
+        let(:workspace) { workspaces(:private) }
+
+        it "returns a forbidden status" do
+          post :create, attributes
+          response.code.should == "403"
+        end
       end
 
       context "when the workspace is archived" do
@@ -69,6 +87,27 @@ describe NotesController do
         end
       end
     end
+
+    context "when adding a note with a work flow result attachment" do
+      let(:model) { workfiles(:alpine_flow) }
+      let(:attributes) do
+        {
+            :entity_type => entity_type,
+            :entity_id => entity_id,
+            :body => "I'm a note",
+            :result_id => "123"
+        }
+      end
+
+      it "should create a notes_work_flow_result record" do
+        expect do
+          post :create, attributes
+        end.to change(NotesWorkFlowResult, :count).by(1)
+
+        NotesWorkFlowResult.last.result_id.should == "123"
+        response.should be_success
+      end
+    end
   end
 
   describe "#update" do
@@ -82,7 +121,7 @@ describe NotesController do
     context "as the note owner" do
       let(:user) { note.actor }
 
-      it "update the note on a gpdb instance" do
+      it "update the note on a gpdb data source" do
         post :update, attributes
         response.code.should == "200"
 
@@ -100,7 +139,7 @@ describe NotesController do
     context "not as the note owner" do
       let(:user) { users(:the_collaborator) }
 
-      it "update the note on a gpdb instance" do
+      it "update the note on a gpdb data source" do
         post :update, attributes
         response.code.should == "403"
 
@@ -110,16 +149,22 @@ describe NotesController do
   end
 
   describe "#destroy" do
-    let(:note) { events(:note_on_greenplum) }
+    let(:note) {
+      Events::NoteOnDataSource.by(user).add(:gpdb_data_source => data_sources(:default), :body => 'i am a comment with greenplumsearch in me', :created_at => '2010-01-01 02:00')
+    }
 
     before do
       log_in note.actor
     end
 
+    after do
+      note.destroy
+    end
+
     it "destroys the note with the given id" do
       delete :destroy, :id => note.id
       note.reload.should be_deleted
-      Events::NoteOnGreenplumInstance.find_by_id(note.id).should be_nil
+      Events::NoteOnDataSource.find_by_id(note.id).should be_nil
     end
 
     it "returns an empty JSON body" do

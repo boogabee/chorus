@@ -1,0 +1,66 @@
+/*
+ * @provides    typography
+ * @desc        sets defaults for typography, headings
+ */
+
+body {
+    color: $default-font-color;
+    font-size: $default-font-size;
+    font-family: $font-family;
+}
+
+
+h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
+    font-weight: $semibold;
+    margin:0;
+    padding:0;
+}
+
+h1, .h1 {
+    font-size: 24px;
+}
+
+h2, .h2 {
+    font-size: 20px;
+}
+
+h3, .h3 {
+    font-size: 18px;
+}
+
+h4, .h4 {
+    font-size: 16px;
+}
+
+h5, .h5 {
+
+}
+
+h6, .h6 {
+
+}
+
+.low_light {
+    color: $low-light-type;
+}
+
+.mid_light {
+    color: $mid-light-type;
+}
+
+.deemphasized {
+    font-size: 13px;
+}
+
+strong {
+    font-weight: $semibold;
+}
+
+.docs_heading{
+    font-size: 32px;
+}
+
+em {
+    font-style: normal;
+}
+

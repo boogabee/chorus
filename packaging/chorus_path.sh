@@ -6,4 +6,4 @@ if [ "$bin" == "" ]; then
 fi
 bin=`dirname "$bin"`
 export CHORUS_HOME=`cd $bin; pwd`
-export PATH=$PATH:$CHORUS_HOME
+export PATH=$CHORUS_HOME:$PATH

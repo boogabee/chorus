@@ -1,0 +1,73 @@
+<div class="sub_header">
+    <div class="line">
+    {{#if sharedAccount}}
+        <div class="col col-ext">
+            <a href="#" class="remove_shared_account">{{t "data_sources.permissions_dialog.switch_to_individual"}}</a>
+        </div>
+        <div class="col col-last">
+            <span class="details_text">{{t "data_sources.shared_account"}}</span>
+        </div>
+    {{else}}
+        <div class="col col-ext">
+            <a href="#" class="add_shared_account">{{t "data_sources.permissions_dialog.switch_to_shared"}}</a>
+        </div>
+        <div class="col col-last">
+            <ul class="list_horizontal">
+            <li><span class="individual_accounts_count">{{t "data_sources.sidebar.x_individual_accounts" count=accountCount}}</span></li>
+            <li><button class='add_account button_action'>{{t "data_sources.permissions_dialog.add_account"}}</button></li>
+            </ul>
+        </div>
+    {{/if}}
+    </div>
+</div>
+<div class="collection_list">
+    <ul>
+        {{#each models}}
+            <li data-id={{id}}>
+                <div class="links">
+                    {{#if isOwner}}
+                        <span class="owner action">{{t "data_sources.permissions.owner"}}</span>
+                    {{/if}}
+                    <a href="#" class="edit action">{{t "data_sources.permissions.edit"}}</a>
+                    {{#if isOwner}}
+                        {{#if ../../sharedAccount}}
+                            <a href="#" class="change_owner action">{{t "data_sources.permissions.change_owner"}}</a>
+                        {{/if}}
+                        <a href="#" class="save_owner hidden action">{{t "data_sources.permissions.save_owner"}}</a>
+                        <a href="#" class="cancel_change_owner hidden action">{{t "actions.cancel"}}</a>
+                    {{else}}
+                        {{#unless ../../sharedAccount}}
+                            <a href="#" class="make_owner action">{{t "data_sources.permissions.make_owner"}}</a>
+                            <a href="#" class="remove_credentials action">{{t "data_sources.permissions.remove_credentials"}}</a>
+                        {{/unless}}
+                    {{/if}}
+                </div>
+                <div class="image">
+                    <img class="profile" src="{{imageUrl}}"/>
+                </div>
+                <div class="select_container hidden">
+                    <select class="name"></select>
+                </div>
+                <div class="name" title="{{ownerFullName}}">{{fullName}}</div>
+                <div class="credentials">
+                    <form action="#">
+                        <div class="field_wrapper">
+                            <label>{{t "data_sources.permissions.username"}}</label>
+                            <input type="text" name="dbUsername" maxlength="256" value="{{dbUsername}}"/>
+                        </div>
+                        <div class="field_wrapper">
+                            <label>{{t "data_sources.permissions.password"}}</label>
+                            <input type="password" maxlength="256" name="dbPassword" autocomplete="off"/>
+                        </div>
+                        <div class="actions">
+                            <a href="#" class="save">{{t "actions.save_changes"}}</a><a href="#" class="cancel">{{t "actions.cancel"}}</a>
+                            <input type="submit"></input>
+                        </div>
+                    </form>
+                </div>
+            </li>
+        {{/each}}
+    </ul>
+</div>
+{{> closeWindowFormControls }}
+

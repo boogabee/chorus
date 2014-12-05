@@ -4,14 +4,21 @@ chorus.dialogs.InsightsNew = chorus.dialogs.MemoNew.extend({
     submitButton: t("insight.button.create"),
 
     events: {
-        "click button.submit": "save",
+        "click button.submit": "save"
+    },
+
+    setup: function (options) {
+        _.extend(options, {allowWorkspaceAttachments: true});
+        this._super("setup", arguments);
     },
 
     makeModel:function () {
+        this.pageModel = this.options.pageModel;
+
         this.model = new chorus.models.Insight({
-            entityType: this.options.entityType,
-            entityId: this.options.entityId,
-            workspaceId: this.options.workspaceId
+            entityType: this.pageModel.entityType,
+            entityId: this.pageModel.id,
+            workspaceId: this.pageModel.id
         });
         this._super("makeModel", arguments);
     }

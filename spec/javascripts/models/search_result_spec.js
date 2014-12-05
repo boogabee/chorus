@@ -1,9 +1,29 @@
 describe("chorus.models.SearchResult", function() {
     beforeEach(function() {
-        this.model = new chorus.models.SearchResult({ query: "jackson5" })
+        this.model = new chorus.models.SearchResult({ query: "jackson5" });
     });
 
     describe("#url and #showUrl", function() {
+        function expectUrl(url, paramsToIgnore) {
+            it("has the right url", function() {
+                if (!paramsToIgnore) paramsToIgnore = [ "per_page", "page", "per_type" ];
+                expect(this.model.url()).toMatchUrl(url, { paramsToIgnore: paramsToIgnore });
+            });
+        }
+
+        function expectPaginatedUrl(url) {
+            it("respects page numbers", function() {
+                this.model.set({ page: 3 });
+                expect(this.model.url()).toMatchUrl(url + "&per_page=50&page=3");
+            });
+        }
+
+        function expectShowUrl(url) {
+            it("has the right show url", function() {
+                expect(this.model.showUrl()).toMatchUrl(url);
+            });
+        }
+
         context("when only searching for items in a single workspace", function() {
             beforeEach(function() {
                 this.model.set({ workspaceId: "5", searchIn: "this_workspace" });
@@ -63,6 +83,36 @@ describe("chorus.models.SearchResult", function() {
 
                     expectUrl("/search/?query=jackson5&workspace_id=5");
                     expectShowUrl("#/workspaces/5/search/jackson5");
+                });
+            });
+
+            describe("searching for tags", function() {
+                beforeEach(function() {
+                    this.model.set({ isTag: true });
+                });
+
+                context("when searching all of chorus", function() {
+                    beforeEach(function() {
+                        this.model.set({ searchIn: "all" });
+                    });
+
+                    context("when searching for a particular entity type", function() {
+                        beforeEach(function() {
+                            this.model.set({ entityType: "workfile" });
+                        });
+
+                        expectPaginatedUrl("/search/?tag=true&query=jackson5&entity_type=workfile&workspace_id=5");
+                        expectShowUrl("#/workspaces/5/tags/all/workfile/jackson5");
+                    });
+
+                    context("when searching for any entity type", function() {
+                        beforeEach(function() {
+                            this.model.set({ entityType: "all" });
+                        });
+
+                        expectUrl("/search/?tag=true&query=jackson5&workspace_id=5");
+                        expectShowUrl("#/workspaces/5/tags/jackson5");
+                    });
                 });
             });
         });
@@ -141,32 +191,12 @@ describe("chorus.models.SearchResult", function() {
                 expect(this.model.url()).toContain("per_type=3");
             });
         });
-
-        function expectUrl(url, paramsToIgnore) {
-            it("has the right url", function() {
-                if (!paramsToIgnore) paramsToIgnore = [ "per_page", "page", "per_type" ];
-                expect(this.model.url()).toMatchUrl(url, { paramsToIgnore: paramsToIgnore });
-            });
-        }
-
-        function expectPaginatedUrl(url) {
-            it("respects page numbers", function() {
-                this.model.set({ page: 3 });
-                expect(this.model.url()).toMatchUrl(url + "&per_page=50&page=3");
-            });
-        }
-
-        function expectShowUrl(url) {
-            it("has the right show url", function() {
-                expect(this.model.showUrl()).toMatchUrl(url);
-            });
-        }
     });
 
     describe("#shortName", function() {
         it("returns a short name", function() {
             this.model.set({ query: "the longest query in the world" });
-            expect(this.model.displayShortName()).toBe("the longest query in...")
+            expect(this.model.displayShortName()).toBe("the longest query in...");
         });
     });
 
@@ -197,7 +227,7 @@ describe("chorus.models.SearchResult", function() {
     describe("#getResults", function() {
         context("when the search result is scoped to a single workspace", function() {
             it("returns the collection of items in that workspace", function() {
-                this.model = rspecFixtures.searchResultInWorkspace();
+                this.model = backboneFixtures.searchResultInWorkspace();
                 this.model.set({ workspaceId: "101", searchIn: "this_workspace" });
                 expect(this.model.getResults()).toBeDefined();
                 expect(this.model.getResults()).toBe(this.model.workspaceItems());
@@ -206,7 +236,7 @@ describe("chorus.models.SearchResult", function() {
 
         context("when the search results is filtered to a single entity type", function() {
             it("returns the results collection for that entity type", function() {
-                this.model = rspecFixtures.searchResultWithEntityTypeUser();
+                this.model = backboneFixtures.searchResultWithEntityTypeUser();
                 this.model.set({ entityType: "user" });
                 expect(this.model.getResults()).toBeDefined();
                 expect(this.model.getResults()).toBe(this.model.users());
@@ -215,7 +245,7 @@ describe("chorus.models.SearchResult", function() {
 
         context("when the search result is filtered by workspace AND by entity type", function() {
             it("returns the collection for its entity type", function() {
-                this.model = rspecFixtures.searchResultInWorkspaceWithEntityTypeWorkfile();
+                this.model = backboneFixtures.searchResultInWorkspaceWithEntityTypeWorkfile();
                 this.model.set({ entityType: "workfile", searchIn: "this_workspace", workspaceId: "101" });
                 this.model.unset("thisWorkspace");
                 expect(this.model.getResults()).toBeDefined();
@@ -223,9 +253,21 @@ describe("chorus.models.SearchResult", function() {
             });
         });
 
+        context("when the search result is filtered by attachment", function() {
+            beforeEach(function() {
+                this.model = backboneFixtures.emptySearchResult();
+                this.model.set({ entityType: "attachment" });
+            });
+
+            it("defines a collection", function() {
+                expect(this.model.getResults()).toBeDefined();
+                expect(this.model.getResults()).toBeA(chorus.collections.Search.AttachmentSet);
+            });
+        });
+
         context("when the search result has no entity type and is not scoped to a single workspace", function() {
             it("returns undefined", function() {
-                this.model = rspecFixtures.searchResult();
+                this.model = backboneFixtures.searchResult();
                 expect(this.model.getResults()).toBeUndefined();
             });
         });
@@ -233,18 +275,18 @@ describe("chorus.models.SearchResult", function() {
 
     describe("child collection methods", function() {
         beforeEach(function() {
-            this.model = fixtures.searchResult({
-                workspaceId: "123",
+            this.model = backboneFixtures.searchResultInWorkspace({
                 thisWorkspace: {
                     numFound: 171,
-                    results: [
-                        fixtures.searchResultWorkfileJson(),
-                        fixtures.searchResultDatasetJson(),
-                        fixtures.searchResultChorusViewJson(),
-                        fixtures.searchResultWorkspaceJson()
-                    ]
+                    results: []
                 }
             });
+            this.model.workspaceItems().reset([
+                backboneFixtures.workfile.sql(),
+                backboneFixtures.dataset(),
+                backboneFixtures.workspaceDataset.chorusView(),
+                backboneFixtures.workspace()
+            ]);
         });
 
         describe("#workspaceItems", function() {
@@ -276,46 +318,46 @@ describe("chorus.models.SearchResult", function() {
 
         describe("#workfiles", function() {
             it("returns a Search WorkfileSet", function() {
-                this.model = rspecFixtures.searchResult();
+                this.model = backboneFixtures.searchResult();
                 this.workfiles = this.model.workfiles();
-                expect(this.workfiles).toBeA(chorus.collections.Search.WorkfileSet)
+                expect(this.workfiles).toBeA(chorus.collections.Search.WorkfileSet);
             });
         });
 
         describe("#dataset", function() {
             it("returns a collection of tabular data", function() {
-                this.model = rspecFixtures.searchResult();
-                expect(this.model.datasets()).toBeA(chorus.collections.Search.DynamicDatasetSet);
+                this.model = backboneFixtures.searchResult();
+                expect(this.model.datasets()).toBeA(chorus.collections.Search.DatasetSet);
             });
         });
 
         describe("#users", function() {
             it("returns a Search UserSet", function() {
-                expect(this.model.users()).toBeA(chorus.collections.UserSet)
+                expect(this.model.users()).toBeA(chorus.collections.UserSet);
             });
         });
 
         describe("#workspaces", function() {
             it("returns a Search WorkspaceSet", function() {
-                expect(this.model.workspaces()).toBeA(chorus.collections.Search.WorkspaceSet)
+                expect(this.model.workspaces()).toBeA(chorus.collections.Search.WorkspaceSet);
             });
         });
 
-        describe("#hdfs", function() {
+        describe("#hdfs_entries", function() {
             it("returns a Search HdfsEntrySet", function() {
-                expect(this.model.hdfs()).toBeA(chorus.collections.Search.HdfsEntrySet)
+                expect(this.model.hdfs_entries()).toBeA(chorus.collections.Search.HdfsEntrySet);
             });
         });
 
-        describe("#instances", function() {
-            it("returns a Search InstanceSet", function() {
-                expect(this.model.instances()).toBeA(chorus.collections.Search.InstanceSet)
+        describe("#dataSources", function() {
+            it("returns a Search DataSourceSet", function() {
+                expect(this.model.dataSources()).toBeA(chorus.collections.Search.DataSourceSet);
             });
         });
 
         describe("#attachments", function() {
-            it("returns a Search ArtifactSet", function() {
-                expect(this.model.attachments()).toBeA(chorus.collections.Search.AttachmentSet)
+            it("returns a Search AttachmentSet", function() {
+                expect(this.model.attachments()).toBeA(chorus.collections.Search.AttachmentSet);
             });
         });
 
@@ -324,12 +366,12 @@ describe("chorus.models.SearchResult", function() {
                 var emptyModel = new chorus.models.SearchResult();
 
                 var methodCollectionPairs = {
-                    hdfs: "HdfsEntrySet",
-                    datasets: "DynamicDatasetSet",
+                    hdfs_entries: "HdfsEntrySet",
+                    datasets: "DatasetSet",
                     workfiles: "WorkfileSet",
                     workspaces: "WorkspaceSet",
                     workspaceItems: "WorkspaceItemSet",
-                    instances: "InstanceSet",
+                    dataSources: "DataSourceSet",
                     users: "UserSet",
                     attachments: "AttachmentSet"
                 };
@@ -370,7 +412,7 @@ describe("chorus.models.SearchResult", function() {
 
             it("is preserved through fetches", function() {
                 this.model.fetch();
-                this.server.completeFetchFor(this.model, rspecFixtures.searchResult());
+                this.server.completeFetchFor(this.model, backboneFixtures.searchResult());
                 expect(this.model.entityType()).toBe("foo");
             });
         });
@@ -392,7 +434,7 @@ describe("chorus.models.SearchResult", function() {
 
             it("is preserved through fetches", function() {
                 this.model.fetch();
-                this.server.completeFetchFor(this.model, rspecFixtures.searchResult());
+                this.server.completeFetchFor(this.model, backboneFixtures.searchResult());
                 expect(this.model.currentPageNumber()).toBe(5);
             });
         });
@@ -401,7 +443,7 @@ describe("chorus.models.SearchResult", function() {
     describe("#total", function() {
         context("when there are results", function() {
             beforeEach(function() {
-                this.model = fixtures.emptySearchResult();
+                this.model = backboneFixtures.emptySearchResult();
                 this.model.set({
                     thisWorkspace: {
                         numFound: 3
@@ -413,31 +455,31 @@ describe("chorus.models.SearchResult", function() {
             });
 
             it("returns the sum of numFound", function() {
-                expect(this.model.total()).toBe(7)
+                expect(this.model.total()).toBe(7);
             });
         });
 
         context("when there are no results", function() {
             beforeEach(function() {
-                this.model = rspecFixtures.emptySearchResult();
-            })
+                this.model = backboneFixtures.emptySearchResult();
+            });
 
             it("returns 0", function() {
-                expect(this.model.total()).toBe(0)
+                expect(this.model.total()).toBe(0);
             });
         });
     });
 
     describe("#isConstrained", function() {
         beforeEach(function() {
-            this.model = rspecFixtures.searchResult();
+            this.model = backboneFixtures.searchResult();
         });
 
         context("when isScoped returns true", function() {
             beforeEach(function() {
                 spyOn(this.model, "isScoped").andReturn(true);
                 spyOn(this.model, "hasSpecificEntityType").andReturn(false);
-            })
+            });
 
             it("return true", function() {
                 expect(this.model.isConstrained()).toBeTruthy();
@@ -448,7 +490,7 @@ describe("chorus.models.SearchResult", function() {
             beforeEach(function() {
                 spyOn(this.model, "isScoped").andReturn(false);
                 spyOn(this.model, "hasSpecificEntityType").andReturn(true);
-            })
+            });
 
             it("return true", function() {
                 expect(this.model.isConstrained()).toBeTruthy();
@@ -459,7 +501,7 @@ describe("chorus.models.SearchResult", function() {
             beforeEach(function() {
                 spyOn(this.model, "isScoped").andReturn(false);
                 spyOn(this.model, "hasSpecificEntityType").andReturn(false);
-            })
+            });
 
             it("return false", function() {
                 expect(this.model.isConstrained()).toBeFalsy();
@@ -469,7 +511,7 @@ describe("chorus.models.SearchResult", function() {
 
     describe("triggering invalidated", function() {
         beforeEach(function() {
-            var search = rspecFixtures.searchResult()
+            var search = backboneFixtures.searchResult();
             this.model = search;
             this.model.selectedItem = search.users().at(0);
             spyOnEvent(this.model.selectedItem, 'invalidated');
@@ -484,15 +526,7 @@ describe("chorus.models.SearchResult", function() {
     describe("#download", function() {
         var searchResult;
         beforeEach(function() {
-            searchResult = fixtures.searchResult({
-                workspaceId: "123",
-                thisWorkspace: {
-                    numFound: 171,
-                    results: [
-                        fixtures.searchResultDatasetJson()
-                    ]
-                }
-            });
+            searchResult = backboneFixtures.searchResult();
 
             this.model.selectedItem = searchResult.datasets().at(0);
             spyOn(this.model.selectedItem, "download");
@@ -507,14 +541,14 @@ describe("chorus.models.SearchResult", function() {
     describe("#name", function() {
         var searchResult;
         beforeEach(function() {
-            searchResult = rspecFixtures.searchResult();
+            searchResult = backboneFixtures.searchResult();
 
             this.model.selectedItem = searchResult.datasets().at(0);
-            this.model.selectedItem.set({"objectName": "the_name"})
+            this.model.selectedItem.set({"objectName": "the_name"});
         });
 
         it("delegates to selectedItem's #name", function() {
-            expect(this.model.name()).toEqual("the_name")
+            expect(this.model.name()).toEqual("the_name");
         });
     });
 });

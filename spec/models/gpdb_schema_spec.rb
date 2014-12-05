@@ -1,230 +1,177 @@
 require 'spec_helper'
 
 describe GpdbSchema do
+  it_behaves_like 'a subclass of schema' do
+    let(:schema) { schemas(:default) }
+    let(:table_factory) { :gpdb_table }
+    let(:view_factory) { :gpdb_view }
+  end
+
+  it_behaves_like 'a sandbox schema' do
+    let(:schema) { schemas(:default) }
+  end
 
   describe "associations" do
-    it { should belong_to(:database) }
+    it { should belong_to(:scoped_parent) }
     it { should have_many(:datasets) }
-    it { should have_many(:workspaces) }
+    it { should have_many(:imports) }
+
+    describe "#database" do
+      let(:schema) {
+         GpdbSchema.create!(:name => 'test_schema', :database => databases(:default))
+      }
+
+      it "returns the schemas parent" do
+        schema.reload.database.should == databases(:default)
+      end
+    end
+
+    describe 'validations' do
+      it 'has a valid factory' do
+        FactoryGirl.build(:gpdb_schema).should be_valid
+      end
+
+      it { should validate_presence_of(:name) }
+
+      it 'does not allow slashes, ampersands and question marks' do
+        ['/', '&', '?'].each do |char|
+          new_schema = FactoryGirl.build(:gpdb_schema, :name => "schema#{char}name")
+          new_schema.should have_error_on(:name)
+        end
+      end
+
+      describe 'name uniqueness' do
+        let(:existing) { schemas(:default) }
+
+        context 'in the same db' do
+          it 'does not allow two databases with the same name' do
+            new_schema = FactoryGirl.build(:gpdb_schema,
+                                           :name => existing.name,
+                                           :database => existing.database)
+            new_schema.should have_error_on(:name).with_message(:taken)
+          end
+        end
+
+        context 'in a different db' do
+          it 'allows same names' do
+            new_schema = FactoryGirl.build(:gpdb_schema,
+                                           :name => existing.name)
+            new_schema.should be_valid
+          end
+        end
+      end
+    end
+
+    describe "cascading deletes" do
+      before do
+        any_instance_of(GreenplumConnection) do |data_source|
+          stub(data_source).running? { false }
+        end
+      end
+    end
   end
 
   describe '#accessible_to' do
-    let(:gpdb_instance) { gpdb_instances(:owners) }
-    let(:account) { gpdb_instance.owner_account }
-    let(:schema) { gpdb_schemas(:default) }
+    let(:gpdb_data_source) { data_sources(:owners) }
+    let(:account) { gpdb_data_source.owner_account }
+    let(:schema) { schemas(:default) }
 
-    it 'returns true if the user can access the gpdb instance' do
+    it 'returns true if the user can access the gpdb data source' do
       owner = account.owner
-      any_instance_of(GpdbInstance) do |instance|
-        mock(instance).accessible_to(owner) { true }
+      any_instance_of(GpdbDataSource) do |data_source|
+        mock(data_source).accessible_to(owner) { true }
       end
 
       schema.accessible_to(owner).should be_true
     end
   end
 
-  context ".refresh" do
-    let(:gpdb_instance) { gpdb_instances(:owners) }
-    let(:account) { gpdb_instance.owner_account }
-    let(:database) { schema.database }
-    let(:schema) { gpdb_schemas(:default) }
-    before(:each) do
-      stub_gpdb(account, GpdbSchema::SCHEMAS_SQL => [
-          {"schema_name" => "new_schema"},
-          {"schema_name" => schema.name},
-      ])
-      stub(Dataset).refresh
-    end
-
-    it "creates new copies of the schemas in our db" do
-      schemas = GpdbSchema.refresh(account, database)
-
-      database.schemas.where(:name => "new_schema").should exist
-    end
-
-    it "passes the options Dataset.refresh" do
-      options = {:dostuff => true, :refresh_all => true}
-      mock(Dataset).refresh(account, anything, options)
-      GpdbSchema.refresh(account, database, options)
-    end
-
-    it "does not re-create schemas that already exist in our database" do
-      GpdbSchema.refresh(account, database)
-      expect {
-        GpdbSchema.refresh(account, database)
-      }.not_to change(GpdbSchema, :count)
-    end
-
-    it "does not refresh existing Datasets" do
-      GpdbSchema.refresh(account, database)
-      dont_allow(Dataset).refresh.with_any_args
-      GpdbSchema.refresh(account, database)
-    end
-
-    it "refreshes all Datasets when :refresh_all is true" do
-      mock(Dataset).refresh.with_any_args.twice
-      GpdbSchema.refresh(account, database, :refresh_all => true)
-    end
-
-    it "marks schema as stale if it does not exist" do
-      missing_schema = database.schemas.where("id <> #{schema.id}").first
-      GpdbSchema.refresh(account, database, :mark_stale => true)
-      missing_schema.reload.should be_stale
-      missing_schema.stale_at.should be_within(5.seconds).of(Time.now)
-    end
-
-    it "does not mark schema as stale if flag is not set" do
-      missing_schema = database.schemas.where("id <> #{schema.id}").first
-      GpdbSchema.refresh(account, database)
-      missing_schema.reload.should_not be_stale
-    end
-
-    it "does not update the stale_at time" do
-      missing_schema = database.schemas.where("id <> #{schema.id}").first
-      missing_schema.update_attributes({:stale_at => 1.year.ago}, :without_protection => true)
-      GpdbSchema.refresh(account, database, :mark_stale => true)
-      missing_schema.reload.stale_at.should be_within(5.seconds).of(1.year.ago)
-    end
-
-    it "clears stale flag on schema if it is found again" do
-      schema.update_attributes({:stale_at => Time.now}, :without_protection => true)
-      GpdbSchema.refresh(account, database)
-      schema.reload.should_not be_stale
-    end
-
-    context "when the database is not available" do
-      before do
-        stub(Gpdb::ConnectionBuilder).connect! { raise ActiveRecord::JDBCError.new("Broken!") }
-      end
-
-      it "marks all the associated schemas as stale if the flag is set" do
-        GpdbSchema.refresh(account, database, :mark_stale => true)
-        schema.reload.should be_stale
-      end
-
-      it "does not mark the associated schemas as stale if the flag is not set" do
-        GpdbSchema.refresh(account, database)
-        schema.reload.should_not be_stale
-      end
-    end
-  end
-
-  context "refresh returns the list of schemas", :database_integration => true do
-    let(:account) { GpdbIntegration.real_gpdb_account }
-    let(:database) { GpdbDatabase.find_by_name(GpdbIntegration.database_name) }
+  context "refresh returns the list of schemas", :greenplum_integration do
+    let(:account) { GreenplumIntegration.real_account }
+    let(:database) { GpdbDatabase.find_by_name(GreenplumIntegration.database_name) }
 
     it "returns the sorted list of schemas" do
       schemas = GpdbSchema.refresh(account, database)
-      schemas.should be_a(Array)
-      schemas.map(&:name).should == schemas.map(&:name).sort
+      schemas.map(&:name).sort.should == schemas.map(&:name).sort
     end
   end
 
-  describe ".find_and_verify_in_source", :database_integration => true do
-    let(:schema) { GpdbSchema.find_by_name('test_schema') }
-    let(:rails_only_schema) { GpdbSchema.find_by_name('rails_only_schema') }
-    let(:database) { GpdbDatabase.find_by_name(GpdbIntegration.database_name) }
-    let(:user) { GpdbIntegration.real_gpdb_account.owner }
-    let(:restricted_user) { users(:restricted_user) }
-
-    context "when it exists in the source database" do
-      context "when the user has access" do
-        it "should return the schema" do
-          described_class.find_and_verify_in_source(schema.id, user).should == schema
-        end
-      end
-
-      context "when the user does not have access to the schema" do
-        it "should raise ActiveRecord::RecordNotFound exception" do
-          expect { described_class.find_and_verify_in_source(schema.id, restricted_user) }.to raise_error(ActiveRecord::RecordNotFound)
-        end
-      end
-    end
-
-    context "when it does not exist in the source database" do
-      before do
-        GpdbSchema.create!({:name => 'rails_only_schema', :database => database}, :without_protection => true)
-      end
-
-      it "should raise ActiveRecord::RecordNotFound exception" do
-        expect { described_class.find_and_verify_in_source(rails_only_schema.id, user) }.to raise_error(ActiveRecord::RecordNotFound)
-      end
-    end
-  end
-
-  describe "#stored_functions" do
-    let(:schema) { gpdb_schemas(:public) }
-    let(:database) { schema.database }
-    let(:account) { database.gpdb_instance.owner_account }
+  describe "#connect_with" do
+    let(:schema) { schemas(:public) }
+    let(:account) { data_source_accounts(:unauthorized) }
+    let(:mockConnection) { {} }
 
     before do
-      stub_gpdb(account,
-                GpdbSchema::SCHEMA_FUNCTION_QUERY % schema.name => [
-                    {"oid" => "1091843", "name" => "add", "lang" => "sql", "return_type" => "int4", "arg_names" => "{num1, num2}", "arg_types" => "{int4,int4}", "prosrc" => "SELECT 'HI!'", "description" => "awesome!"},
-                    {"oid" => "1091844", "name" => "add", "lang" => "sql", "return_type" => "int4", "arg_names" => nil, "arg_types" => "{text}", "prosrc" => "SELECT admin_password", "description" => "HAHA"},
-                ]
-      )
+      mock(GreenplumConnection).new(schema.data_source, account, {
+          :schema => schema.name,
+          :database => schema.database.name,
+          :logger => Rails.logger
+      }) {
+        mockConnection
+      }
     end
 
-    it "returns the GpdbSchemaFunctions" do
-      functions = schema.stored_functions(account)
-
-      functions.count.should == 2
-
-      first_function = functions.first
-      first_function.should be_a GpdbSchemaFunction
-      first_function.schema_name.should == schema.name
-      first_function.function_name.should == "add"
-      first_function.language.should == "sql"
-      first_function.return_type.should == "int4"
-      first_function.arg_names.should == ["num1", "num2"]
-      first_function.arg_types.should == ["int4", "int4"]
-      first_function.definition.should == "SELECT 'HI!'"
-      first_function.description.should == "awesome!"
-    end
-  end
-
-  describe "#disk_space_used", :database_integration => true do
-    let(:schema) { GpdbIntegration.real_database.schemas.find_by_name('test_schema3') }
-    let(:account) { GpdbIntegration.real_gpdb_instance.owner_account }
-
-    it "returns the disk space used by all relations in the schema" do
-      schema.disk_space_used(account).should > 0
+    it "should create a Greenplum SchemaConnection" do
+      schema.connect_with(account)
     end
 
-    it "caches the value" do
-      mock.proxy(account).gpdb_instance
-      schema.disk_space_used(account).should > 0
-      schema.disk_space_used(account).should > 0
-    end
-
-    context "when we can't calculate the size" do
-      let(:schema) { GpdbIntegration.real_database.schemas.find_by_name('test_schema') }
-
-      it "should return nil" do
-        schema.disk_space_used(account).should be_nil
-      end
-
-      it "should cache the value correctly" do
-        mock.proxy(account).gpdb_instance
-        schema.disk_space_used(account).should be_nil
-        schema.disk_space_used(account).should be_nil
-      end
-    end
-  end
-
-  describe "callbacks" do
-    let(:schema) { gpdb_schemas(:default) }
-
-    describe "before_save" do
-      describe "#mark_datasets_as_stale" do
-        it "if the schema has become stale, datasets will also be marked as stale" do
-          schema.update_attributes!({:stale_at => Time.now}, :without_protection => true)
-          dataset = schema.datasets.views_tables.first
-          dataset.should be_stale
-          dataset.stale_at.should be_within(5.seconds).of(Time.now)
+    it "passes a connected connection a block" do
+      stub(mockConnection).with_connection.yields(mockConnection)
+      expect {
+        schema.connect_with(account) do |connection|
+          connection.should == mockConnection
+          throw :ran_block
         end
+      }.to throw_symbol :ran_block
+    end
+  end
+
+  describe '#active_tables_and_views' do
+    let(:schema) { schemas(:default) }
+
+    it 'does not include chorus views' do
+      cv = nil
+      expect {
+        cv = FactoryGirl.create(:chorus_view, :schema => schema)
+      }.not_to change { schema.reload.active_tables_and_views.size }
+      schema.active_tables_and_views.should_not include(cv)
+    end
+  end
+
+  describe "#destroy" do
+    let(:schema) { schemas(:default) }
+
+    before do
+      any_instance_of(GreenplumConnection) do |connection|
+        stub(connection).running? { false }
       end
+    end
+
+    it "cancels any running schema imports" do
+      unfinished_imports = schema.imports.unfinished
+      stub(schema.imports).unfinished { unfinished_imports }
+      unfinished_imports.should_not be_empty
+      unfinished_imports.each do |import|
+        mock(import).cancel(false, "Source/Destination of this import was deleted")
+      end
+      schema.destroy
+    end
+
+    it "cancels any running workspace imports" do
+      import = imports(:csv)
+      schema = import.workspace.sandbox
+
+      import.success.should be_nil
+      schema.destroy
+      import.reload.success.should == false
+    end
+  end
+
+  describe "#class_for_type" do
+    let(:schema) { schemas(:default) }
+    it "should return GpdbTable and GpdbView correctly" do
+      schema.class_for_type('r').should == GpdbTable
+      schema.class_for_type('v').should == GpdbView
     end
   end
 end

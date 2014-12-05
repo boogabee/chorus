@@ -24,7 +24,7 @@ describe("chorus.models.Task", function() {
                 task.save();
                 var request = this.server.lastCreate();
                 expect(request.url).toBe("/base");
-                expect(request.params()["task[check_id]"]).toBe("123_4");
+                expect(request.json()["task"]["check_id"]).toBe("123_4");
             });
         });
     });
@@ -36,6 +36,19 @@ describe("chorus.models.Task", function() {
     });
 
     describe("cancel", function() {
+        function itCreatesCancelRequestAndIgnoreSubsequent() {
+            it("creates a cancel request", function() {
+                var cancelRequest = this.server.lastDestroy();
+                expect(cancelRequest.url).toMatchUrl(task.url({ method: "delete" }));
+                expect(task.has('action')).toBeFalsy();
+            });
+
+            it("ignores subsequent calls to cancel", function() {
+                task.cancel();
+                expect(this.server.destroys().length).toBe(1);
+            });
+        }
+
         beforeEach(function() {
             task = new TaskSubclass();
             task.save();
@@ -63,21 +76,8 @@ describe("chorus.models.Task", function() {
                 });
 
                 itCreatesCancelRequestAndIgnoreSubsequent();
-            })
+            });
         });
-
-        function itCreatesCancelRequestAndIgnoreSubsequent() {
-            it("creates a cancel request", function() {
-                var cancelRequest = this.server.lastDestroy();
-                expect(cancelRequest.url).toMatchUrl(task.url({ method: "delete" }));
-                expect(task.has('action')).toBeFalsy();
-            });
-
-            it("ignores subsequent calls to cancel", function() {
-                task.cancel();
-                expect(this.server.destroys().length).toBe(1);
-            });
-        }
 
         it("respects sends destroyParams when set", function() {
             task = new TaskSubclass();
@@ -86,7 +86,7 @@ describe("chorus.models.Task", function() {
             };
             task.cancel();
 
-            params = this.server.lastDestroy().params();
+            var params = this.server.lastDestroy().params();
             expect(params.foo_something).toBe("bar");
         });
     });

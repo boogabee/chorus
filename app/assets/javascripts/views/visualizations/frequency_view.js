@@ -47,8 +47,8 @@ chorus.views.visualizations.Frequency = chorus.views.Base.extend({
             .attr("width", function(row) {
                 return scales.x(row.count) - scales.x(0);
             });
-        svg.select(".xaxis").remove()
-        svg.select(".yaxis").remove()
+        svg.select(".xaxis").remove();
+        svg.select(".yaxis").remove();
         this.axes.render();
 
         this.postRender();

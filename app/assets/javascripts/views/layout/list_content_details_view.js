@@ -1,23 +1,35 @@
-chorus.views.ListContentDetails = chorus.views.Base.extend({
+chorus.views.ListContentDetails = chorus.views.Base.include(
+        chorus.Mixins.BoundForMultiSelect
+    ).extend({
     constructorName: "ListContentDetailsView",
     templateName: "list_content_details",
+    additionalClass: "action_bar_primary",
 
     events: {
         "click a.next": "fetchNextPage",
-        "click a.previous": "fetchPreviousPage",
-        "click a.close_provisioning": "closeProvisioningBar",
-        "click a.select_all": "selectAll",
-        "click a.select_none": "selectNone"
+        "click a.previous": "fetchPreviousPage"
+    },
+
+    subviews: {
+        "div.button_holder" : "buttonView"
+    },
+
+    setup: function(){
+        this.buttonView = this.options.buttonView || new chorus.views.ListContentDetailsButtonView(this.options);
+        this.listenTo(this.collection, "remove", this.render);
+        if (this.options.multiSelect) {
+            this.unselectOnFetch();
+        }
     },
 
     fetchNextPage: function() {
-        var page = parseInt(this.collection.pagination.page);
+        var page = parseInt(this.collection.pagination.page, 10);
         this.collection.fetchPage(page + 1);
         this.scrollToTopOfPage();
     },
 
     fetchPreviousPage: function() {
-        var page = parseInt(this.collection.pagination.page);
+        var page = parseInt(this.collection.pagination.page, 10);
         this.collection.fetchPage(page - 1);
         this.scrollToTopOfPage();
     },
@@ -26,40 +38,19 @@ chorus.views.ListContentDetails = chorus.views.Base.extend({
         window.scroll(0, 0);
     },
 
-    selectAll: function(e) {
-        e.preventDefault();
-        chorus.PageEvents.broadcast("selectAll");
-    },
-
-    selectNone: function(e) {
-        e.preventDefault();
-        chorus.PageEvents.broadcast("selectNone");
-    },
-
     postRender: function(el) {
         this.updatePagination();
         if (this.$(".pagination").hasClass("hidden") && this.options.hideIfNoPagination) {
             el.addClass("hidden");
         } else {
-            el.removeClass("hidden")
+            el.removeClass("hidden");
         }
 
         if (this.options.search) {
             this.setupSearch();
         }
 
-        if (this.provisioningState == "provisioning") {
-            this.$(".provisioning_bar").removeClass("hidden");
-        } else if (this.provisioningState == "fault") {
-            this.$(".provisioning_fault_bar").removeClass("hidden");
-        }
-    },
-
-    closeProvisioningBar: function(e) {
-        e && e.preventDefault();
-
-        this.$(".provisioning_bar").addClass("hidden");
-        this.$(".provisioning_fault_bar").addClass("hidden");
+        this.renderCheckedState();
     },
 
     setupSearch: function() {
@@ -82,7 +73,7 @@ chorus.views.ListContentDetails = chorus.views.Base.extend({
     },
 
     updatePagination: function() {
-        var count = this.collection.pagination ? parseInt(this.collection.pagination.records) : this.collection.length;
+        var count = this.collection.totalRecordCount();
         this.$(".count").text(t("entity.name." + this.options.modelClass, {count: count}));
 
         if (this.collection.loaded && this.collection.pagination) {
@@ -91,10 +82,10 @@ chorus.views.ListContentDetails = chorus.views.Base.extend({
                 this.$(".total").text(this.collection.pagination.total);
             }
 
-            var page = parseInt(this.collection.pagination.page);
-            var total = parseInt(this.collection.pagination.total);
+            var page = this.collection.pagination.page;
+            var total = this.collection.pagination.total;
 
-            this.$(".pagination").toggleClass("hidden", !(total > 1));
+            this.$(".pagination").toggleClass("hidden", total <= 1);
 
             var hasPreviousLink = page > 1;
             this.$("a.previous").toggleClass("hidden", !hasPreviousLink);
@@ -113,13 +104,14 @@ chorus.views.ListContentDetails = chorus.views.Base.extend({
             hideCounts: this.options.hideCounts,
             buttons: this.options.buttons,
             search: this.options.search,
+            searchTerm: this.collection && this.collection.attributes && this.collection.attributes[this.collection.searchAttr],
             workspaceId: this.collection && this.collection.attributes && this.collection.attributes.workspaceId,
             multiSelect: this.options.multiSelect
         };
 
         if (this.collection.loaded && this.collection.pagination) {
-            var page = parseInt(this.collection.pagination.page);
-            var total = parseInt(this.collection.pagination.total);
+            var page = parseInt(this.collection.pagination.page, 10);
+            var total = parseInt(this.collection.pagination.total, 10);
 
             hash.nextPage = page < total;
         }

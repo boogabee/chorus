@@ -4,9 +4,9 @@ chorus.views.KaggleHeader = chorus.views.Base.extend({
 
     additionalContext: function() {
         return {
-            summary:  new Handlebars.SafeString(t("kaggle.summary", {kaggleLink: chorus.helpers.linkTo('https://www.kaggle.com', 'Kaggle')})),
-            listed_below: new Handlebars.SafeString(t("kaggle.listed_below", {termsOfUseLink: chorus.helpers.linkTo('https://www.kaggle.com/connect/terms', 'terms of use'),
-                agreementsLink: chorus.helpers.linkTo('https://www.kaggle.com/connect/agreements', 'here')}))
-        }
+            summary:  new Handlebars.SafeString(t("kaggle.summary", {kaggleLink: Handlebars.helpers.linkTo('https://www.kaggle.com', 'Kaggle')})),
+            listed_below: new Handlebars.SafeString(t("kaggle.listed_below", {termsOfUseLink: Handlebars.helpers.linkTo('https://www.kaggle.com/connect/terms', 'terms of use'),
+                agreementsLink: Handlebars.helpers.linkTo('https://www.kaggle.com/connect/agreements', 'here')}))
+        };
     }
 });

@@ -1,6 +1,6 @@
 describe("chorus.alerts.WorkfileVersionDelete", function() {
     beforeEach(function() {
-        this.workfile = rspecFixtures.workfile.sql();
+        this.workfile = backboneFixtures.workfile.sql();
         this.alert = new chorus.alerts.WorkfileVersionDelete({ versionId: 12, versionNumber: 10, pageModel: this.workfile });
         stubModals();
         this.alert.launchModal();

@@ -1,0 +1,25 @@
+<form>
+    <div class="girdle">
+        <div class="target_location">
+            {{t "tableau.dialog.target_description" }}
+        </div>
+
+        <label class="name required" name="name">{{t "tableau.dialog.name"}}</label>
+        <input id="create_database_view_name" value="{{name}}" type="text" name="name" tabindex="1" maxlength="64"/>
+
+        <div>
+            <label class="username required" name="tableau_username">{{t "tableau.dialog.username"}}</label>
+            <label class="password required" name="tableau_password">{{t "tableau.dialog.password"}}</label>
+            <input class="username" type="text" name="tableau_username" value="" maxlength="255" tabindex="1"/>
+            <input class="password" type="password" name="tableau_password" value="" maxlength="255" tabindex="1"
+                   autocomplete="off"/>
+        </div>
+
+        <div>
+            <input class="workfile" id="create_work_file" type="checkbox" checked="checked"
+                   name="create_work_file"/><label
+                for="create_work_file">{{t "actions.create_tableau_workfile"}}</label>
+        </div>
+    </div>
+    {{formControls "actions.publish_to_tableau"}}
+</form>

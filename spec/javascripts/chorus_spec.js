@@ -1,8 +1,8 @@
 describe("chorus global", function() {
     beforeEach(function() {
-        this.chorus = new Chorus();
-        this.backboneSpy = spyOn(Backbone.history, "start")
-    })
+        this.chorus = new window.Chorus();
+        this.backboneSpy = spyOn(Backbone.history, "start");
+    });
 
     context("classExtend", function() {
         context("when in chorus dev mode", function() {
@@ -46,12 +46,12 @@ describe("chorus global", function() {
             this.backboneSpy.andCallFake(function() {
                 expect(self.chorus.session).toBeDefined();
             });
-            this.chorus.initialize()
+            this.chorus.initialize();
             expect(Backbone.history.start).toHaveBeenCalled();
         });
 
         it("should create a session", function() {
-            this.chorus.initialize()
+            this.chorus.initialize();
             expect(this.chorus.session).toBeDefined();
         });
 
@@ -83,7 +83,7 @@ describe("chorus global", function() {
             this.chorus.afterNavigate(this.spy1);
             this.chorus.afterNavigate(this.spy2);
 
-            spyOn(this.chorus.PageEvents, "reset");
+            spyOn(this.chorus.PageEvents, "off");
         });
 
         it("calls the supplied functions after the router triggers leaving", function() {
@@ -104,9 +104,9 @@ describe("chorus global", function() {
             expect(this.spy2).not.toHaveBeenCalled();
         });
 
-        it("calls chorus.PageEvents.reset after the router triggers leaving", function() {
+        it("resets chorus.PageEvents after the router triggers leaving", function() {
             this.chorus.router.trigger("leaving");
-            expect(this.chorus.PageEvents.reset).toHaveBeenCalled();
+            expect(this.chorus.PageEvents.off).toHaveBeenCalled();
         });
     });
 
@@ -131,45 +131,64 @@ describe("chorus global", function() {
     });
 
     describe("unregisterView", function() {
-       beforeEach(function() {
-           this.chorus.initialize();
-           this.view1 = new chorus.views.Base();
-           this.view2 = new chorus.views.Base();
-           this.view3 = new chorus.views.Base();
-           this.chorus.viewsToTearDown.push(this.view1);
-           this.chorus.viewsToTearDown.push(this.view2);
-           expect(this.chorus.viewsToTearDown).toEqual([this.view1, this.view2]);
-       });
+        beforeEach(function() {
+            this.chorus.initialize();
+            this.view1 = new chorus.views.Base();
+            this.view2 = new chorus.views.Base();
+            this.view3 = new chorus.views.Base();
+            this.chorus.viewsToTearDown.push(this.view1);
+            this.chorus.viewsToTearDown.push(this.view2);
+            expect(this.chorus.viewsToTearDown).toEqual([this.view1, this.view2]);
+        });
 
-       it("removes the view from viewsToTearDown if applicable", function() {
-           this.chorus.unregisterView(this.view1);
-           expect(this.chorus.viewsToTearDown).toEqual([this.view2]);
-       });
+        it("removes the view from viewsToTearDown if applicable", function() {
+            this.chorus.unregisterView(this.view1);
+            expect(this.chorus.viewsToTearDown).toEqual([this.view2]);
+        });
 
-       it("does nothing if the view is not in viewsToTearDown", function() {
-           this.chorus.unregisterView(this.view3);
-           expect(this.chorus.viewsToTearDown).toEqual([this.view1, this.view2]);
-       });
+        it("does nothing if the view is not in viewsToTearDown", function() {
+            this.chorus.unregisterView(this.view3);
+            expect(this.chorus.viewsToTearDown).toEqual([this.view1, this.view2]);
+        });
     });
 
     describe("#toast", function() {
-        beforeEach(function() {
-            spyOn($, 'jGrowl');
-        });
-
         it("accepts a translation string", function() {
             chorus.toast("test.mouse");
-            expect($.jGrowl).toHaveBeenCalledWith(t("test.mouse"), {life: 5000, sticky: false});
+            expect(Messenger().post).toHaveBeenCalledWith({message: t("test.mouse")});
         });
 
         it("accepts a translation string with arguments", function() {
             chorus.toast("test.with_param", {param: "Dennis"});
-            expect($.jGrowl).toHaveBeenCalledWith("Dennis says hi", {life: 5000, sticky: false});
+            expect(Messenger().post).toHaveBeenCalledWith({message: "Dennis says hi"});
         });
 
         it("accepts toastOpts in the options hash", function() {
-            chorus.toast("test.with_param", { param: "Nobody", toastOpts: {sticky: true, foo: "bar"}});
-            expect($.jGrowl).toHaveBeenCalledWith("Nobody says hi", {life: 5000, sticky: true, foo: "bar"});
+            chorus.toast("test.with_param", { param: "Nobody", toastOpts: {hideAfter: 0, foo: "bar"}});
+            expect(Messenger().post).toHaveBeenCalledWith({message: "Nobody says hi", hideAfter: 0, foo: "bar"});
+        });
+
+        it("accepts a message and does not translate it with flag skipTranslation", function() {
+            chorus.toast("No translation for me", { skipTranslation: true });
+            expect(Messenger().post).toHaveBeenCalledWith({message: "No translation for me"});
+        });
+    });
+
+    describe("fileDownload", function() {
+        beforeEach(function() {
+            spyOn($, 'fileDownload');
+            spyOn($.fn, 'attr').andReturn('csrf-token');
+        });
+
+        it("delegate to $.fileDownload with the csrf token", function() {
+            chorus.fileDownload('/route', {data: {key: 'value'}, some: 'property'});
+            expect($.fileDownload).toHaveBeenCalledWith('/route', {
+                data: {
+                    authenticity_token: 'csrf-token',
+                    key: 'value'
+                },
+                some: 'property'
+            });
         });
     });
 
@@ -235,115 +254,8 @@ describe("chorus global", function() {
         });
     });
 
-    describe("#menu", function() {
-        context("when the menu is in a modal", function() {
-            beforeEach(function() {
-                chorus._navigated();
-                this.qtipElement = stubQtip();
-                this.element = $("<div class='dialog'></div>");
-                this.eventSpy = jasmine.createSpy();
-                chorus.menu(this.element, {
-                    content: "menu content<a class='test_link'></a>",
-                    contentEvents: {
-                        '.test_link': this.eventSpy
-                    }
-                });
-                this.qtipArgs = $.fn.qtip.mostRecentCall.args[0];
-            })
-
-            it("should have the tooltip-modal class", function() {
-                expect(this.qtipArgs.style).toEqual({
-                    classes: "tooltip-white tooltip-modal",
-                    tip: {
-                        mimic: "top center",
-                        width: 20,
-                        height: 15
-                    }
-                });
-            });
-        });
-
-        context("when the menu is not in a modal", function() {
-            beforeEach(function() {
-                chorus._navigated();
-                this.qtipElement = stubQtip();
-                this.element = $("<div></div>");
-                this.eventSpy = jasmine.createSpy();
-                chorus.menu(this.element, {
-                    content: "menu content<a class='test_link'></a>",
-                    classes: "myClass",
-                    style: {foo: 'bar'},
-                    mimic: "left center",
-                    position: {
-                        my: "left center",
-                        at: "right center"
-                    },
-                    contentEvents: {
-                        '.test_link': this.eventSpy
-                    }
-                });
-                this.qtipArgs = $.fn.qtip.mostRecentCall.args[0];
-            })
-
-            it("calls qtip on the given element", function() {
-                expect($.fn.qtip.mostRecentCall.object.get(0)).toEqual(this.element.get(0));
-            })
-
-            it("passes down the given content", function() {
-                expect(this.qtipArgs.content).toEqual("menu content<a class='test_link'></a>");
-            })
-
-            it("sets up the events on the contents", function() {
-                this.element.click();
-                this.qtipElement.find('.test_link').click()
-                expect(this.eventSpy).toHaveBeenCalledWith(jasmine.any(jQuery.Event), this.element.data('qtip'));
-            })
-
-            context("event handling", function() {
-                beforeEach(function() {
-                    this.element.click();
-                })
-
-                it("closes the qtip", function() {
-                    expect(this.qtipElement).toHaveVisibleQtip();
-                    this.qtipElement.find('.test_link').click()
-                    expect(this.qtipElement).not.toHaveVisibleQtip();
-                });
-            })
-
-            it("sets up our menu styling", function() {
-                expect(this.qtipArgs.show.event).toEqual('click');
-                expect(this.qtipArgs.hide).toEqual('unfocus');
-                expect(this.qtipArgs.position.my).toEqual("left center")
-                expect(this.qtipArgs.position.at).toEqual("right center")
-                expect(this.qtipArgs.style).toEqual({
-                    classes: "myClass tooltip-white",
-                    foo: "bar",
-                    tip: {
-                        mimic: "left center",
-                        width: 20,
-                        height: 15
-                    }
-                });
-            });
-
-            context("after navigating away", function() {
-                beforeEach(function() {
-                    spyOn($.fn, 'remove');
-
-                    chorus._navigated();
-                });
-
-                it("calls $.fn.remove on the menu element", function() {
-                    expect($.fn.remove.mostRecentCall.object.get(0)).toEqual(this.element.get(0));
-                })
-            })
-        });
-    });
-
     describe("#datePicker(element)", function() {
         beforeEach(function() {
-            stubDefer();
             spyOn(datePickerController, 'createDatePicker');
             this.input1 = $("<input></input");
             this.input2 = $("<input></input");
@@ -354,9 +266,9 @@ describe("chorus global", function() {
                 "%Y": this.input3
             });
 
-            this.id1 = this.input1.attr("id"),
-                this.id2 = this.input2.attr("id"),
-                this.id3 = this.input3.attr("id");
+            this.id1 = this.input1.attr("id");
+            this.id2 = this.input2.attr("id");
+            this.id3 = this.input3.attr("id");
         });
 
         it("gives the elements unique ids", function() {
@@ -368,7 +280,7 @@ describe("chorus global", function() {
         it("calls datePickerController with the right unique ids and format strings", function() {
             expect(datePickerController.createDatePicker).toHaveBeenCalled();
 
-            var datePickerParams = datePickerController.createDatePicker.mostRecentCall.args[0];
+            var datePickerParams = datePickerController.createDatePicker.lastCall().args[0];
             expect(datePickerParams.formElements[this.id1]).toBe("%d");
             expect(datePickerParams.formElements[this.id2]).toBe("%m");
             expect(datePickerParams.formElements[this.id3]).toBe("%Y");
@@ -402,21 +314,21 @@ describe("chorus global", function() {
 
             this.chorus.page = new chorus.pages.Base();
 
-            spyOnEvent(this.page1, "resized")
-            spyOnEvent(this.page2, "resized")
-            spyOnEvent(this.chorus.page, "resized")
+            spyOnEvent(this.page1, "resized");
+            spyOnEvent(this.page2, "resized");
+            spyOnEvent(this.chorus.page, "resized");
             $(window).resize();
         });
 
         it("should not trigger resized on the anonymous pages, because those pages aren't the active page", function() {
             expect("resized").not.toHaveBeenTriggeredOn(this.page1);
             expect("resized").not.toHaveBeenTriggeredOn(this.page2);
-        })
+        });
 
         it("should trigger resized on chorus.page", function() {
             expect("resized").toHaveBeenTriggeredOn(this.chorus.page);
-        })
-    })
+        });
+    });
 
     describe("#search", function() {
         beforeEach(function() {
@@ -442,25 +354,25 @@ describe("chorus global", function() {
             beforeEach(function() {
                 this.onTextChange = jasmine.createSpy("onTextChange");
                 chorus.search({ input: this.input1, onTextChange: this.onTextChange});
-            })
+            });
 
             it("should call the onTextChange function when the text changes", function() {
                 expect(this.onTextChange).not.toHaveBeenCalled();
                 this.input1.val("otherText").trigger("keyup");
                 expect(this.onTextChange).toHaveBeenCalled();
-            })
+            });
         });
 
         context("with the default onTextChange and a supplied eventName", function() {
             beforeEach(function() {
-                spyOn(chorus.PageEvents, "broadcast");
+                spyOn(chorus.PageEvents, "trigger");
                 chorus.search({ input: this.input1, list: this.list, eventName: "database:search"});
-            })
+            });
 
-            it("should broadcast the event", function() {
+            it("should trigger the event", function() {
                 this.input1.val("otherText").trigger("keyup");
-                expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("database:search")
-            })
+                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("database:search");
+            });
         });
 
         context("when called multiple times on the same element", function() {
@@ -478,7 +390,7 @@ describe("chorus global", function() {
         context("with a selector", function() {
             beforeEach(function() {
                 chorus.search({ input: this.input1, list: this.list, selector: ".name" });
-            })
+            });
 
             describe("when text is entered in the search input", function() {
                 it("hides elements in the list that do not contain the search string", function() {
@@ -502,7 +414,7 @@ describe("chorus global", function() {
         context("without a selector", function() {
             beforeEach(function() {
                 chorus.search({ input: this.input1, list: this.list});
-            })
+            });
 
             describe("when text is entered in the search input", function() {
                 it("hides elements in the list that do not contain the search string", function() {
@@ -556,11 +468,11 @@ describe("chorus global", function() {
 
             beforeEach(function() {
                 onFilterSpy = jasmine.createSpy("onFilter").andCallFake(function() {
-                    expect(afterFilterSpy.callCount).toBe(0);
+                    expect(afterFilterSpy.calls.count()).toBe(0);
                 });
 
                 afterFilterSpy = jasmine.createSpy("afterFilter").andCallFake(function() {
-                    expect(onFilterSpy.callCount).toBe(2);
+                    expect(onFilterSpy.calls.count()).toBe(2);
                 });
 
                 chorus.search({
@@ -577,13 +489,13 @@ describe("chorus global", function() {
                 });
 
                 it("calls the 'onFilter' callback on each item that was filtered out", function() {
-                    expect(onFilterSpy.callCount).toBe(2);
-                    expect(onFilterSpy.calls[0].args[0]).toBe(this.list.find("li").eq(0));
-                    expect(onFilterSpy.calls[1].args[0]).toBe(this.list.find("li").eq(1));
+                    expect(onFilterSpy.calls.count()).toBe(2);
+                    expect(onFilterSpy.nthCall(0).args[0]).toBe(this.list.find("li").eq(0));
+                    expect(onFilterSpy.nthCall(1).args[0]).toBe(this.list.find("li").eq(1));
                 });
 
                 it("calls the 'afterFilter' callback once, after filtering the items", function() {
-                    expect(afterFilterSpy.callCount).toBe(1);
+                    expect(afterFilterSpy.calls.count()).toBe(1);
                 });
             });
         });
@@ -594,7 +506,7 @@ describe("chorus global", function() {
     describe("#addClearButton", function() {
         beforeEach(function() {
             this.input1 = $("<input></input>");
-            this.container = $("<div></div>").append(this.input1)
+            this.container = $("<div></div>").append(this.input1);
 
             chorus.addClearButton(this.input1);
             this.clearLink = this.container.find("a.chorus_search_clear");
@@ -603,7 +515,7 @@ describe("chorus global", function() {
         it("adds a little 'x' to the right of the search input", function() {
             this.input1.val("nit").trigger("textchange");
             expect(this.clearLink).toExist();
-            expect(this.clearLink.find("img").attr("src")).toBe("/images/icon_clear_search.png");
+            expect(this.clearLink.find("i").attr("data-glyph")).toBe("x");
         });
 
         it("hides the 'x' when the input is blank", function() {
@@ -620,7 +532,7 @@ describe("chorus global", function() {
             beforeEach(function() {
                 this.input1.val("nit").trigger("textchange");
                 spyOnEvent(this.input1, 'textchange');
-                spyOn($.fn, "blur")
+                spyOn($.fn, "blur");
                 this.clearLink.click();
             });
 
@@ -638,54 +550,22 @@ describe("chorus global", function() {
 
             it("blurs the element so the placeholder text reappears", function() {
                 expect($.fn.blur).toHaveBeenCalled();
-            })
+            });
         });
     });
 
-    describe("#help", function() {
-        beforeEach(function() {
-            spyOn(window, "FMCOpenHelp")
-        });
-
-        context("when the current page has a helpId", function() {
-            beforeEach(function() {
-                chorus.page = {
-                    helpId: "foo"
-                }
-
-                chorus.help();
-            });
-
-            it("calls into the help system with the helpId", function() {
-                expect(window.FMCOpenHelp).toHaveBeenCalledWith("foo", null, null, null, "/help");
-            })
-        })
-
-        context("when the current page does not have a helpId", function() {
-            beforeEach(function() {
-                chorus.page = {
-                }
-
-                chorus.help();
-            });
-
-            it("calls into the help system with 'home'", function() {
-                expect(window.FMCOpenHelp).toHaveBeenCalledWith("home", null, null, null, "/help");
-            })
-        })
-    })
-
     describe("#requireLogin", function() {
         beforeEach(function() {
+
             this.chorus.initialize();
             Backbone.history.fragment = "/foo";
             setLoggedInUser({id: "1", username: "iAmNumberOne"}, this.chorus);
-        })
+        });
 
         it("deletes the user from the session", function () {
-            expect(this.chorus.session._user).toBeTruthy();
+            var user = this.chorus.session.user();
             this.chorus.requireLogin();
-            expect(this.chorus.session._user).toBeUndefined();
+            expect(this.chorus.session.user().cid).not.toEqual(user.cid);
         });
 
         it("tells the session to save the path of the page the user was trying to get to", function() {
@@ -699,6 +579,15 @@ describe("chorus global", function() {
             this.chorus.requireLogin();
             expect(this.chorus.router.navigate).toHaveBeenCalledWith("/login");
         });
-    })
-})
-;
+    });
+
+    describe("#pageParams", function () {
+        context("when there are none", function () {
+            it("returns an empty object", function () {
+                window.location.hash='workspaces/14/quickstart';
+                expect(chorus.pageParams()).toEqual({});
+            });
+        });
+
+    });
+});

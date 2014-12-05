@@ -1,0 +1,90 @@
+@import "_common";
+
+.configure_job_dialog {
+
+  .row {
+    vertical-align: middle;
+    line-height: 34px;
+  }
+
+  .options {
+    margin: 5px 20px 0 20px;
+  }
+
+  fieldset {
+    display: inline-block;
+    border: none;
+    padding: 0 15px 0px;
+
+    &.disabled {
+      padding-bottom: 0;
+    }
+    .interval_value {
+      width: 40px;
+      display: inline;
+      margin-left: 5px;
+    }
+
+    select, .ui-selectmenu-button .ui-button {
+      vertical-align: middle;
+      width: 100px;
+      margin-bottom: 5px;
+    }
+
+    .next_run {
+      padding-top: 10px;
+
+      .start_date_widget, .end_date_widget {
+        display: inline-block;
+      }
+
+      .time {
+        display: inline-block;
+        padding-left: 10px;
+
+        select, .ui-selectmenu-button .ui-button {
+          width: 50px;
+        }
+      }
+
+      .end_date_container {
+        padding-top: 20px;
+      }
+    }
+
+    .time_zone {
+        select, .ui-selectmenu-button .ui-button {
+            width: 370px;
+        }
+    }
+  }
+
+  legend.subtitle {
+    padding: 10px 10px 10px 0px;
+    width: 100%;
+    @include font-normal-alpha;
+
+    .text {
+      float: left;
+      padding-right: 10px;
+    }
+  }
+
+  .notify {
+      margin-bottom: 15px;
+
+      input {
+          margin-right: 3px;
+      }
+
+      label {
+          margin-right: 10px;
+      }
+
+      .title {
+          margin-bottom: 5px;
+          @include font-normal-alpha;
+      }
+  }
+
+}

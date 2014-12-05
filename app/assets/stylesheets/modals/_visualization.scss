@@ -8,6 +8,7 @@
 }
 
 .visualization {
+
     .dialog_content {
         padding: 0;
     }
@@ -27,7 +28,7 @@
 
     .headerbar {
         background: $body-background-color;
-        border-bottom: 1px solid $list-border-color;
+        border-bottom: $border-canon;
         font-size: 0;
 
         .text {
@@ -54,13 +55,13 @@
             vertical-align: middle;
         }
 
-        .chart_icon {
+        .action_bar_icon {
             height: 35px;
             width: 45px;
             display: inline-block;
             background-repeat: no-repeat;
             background-position: 50% 50%;
-            border-left: 1px dotted $list-border-color;
+            border-left: $border-canon;
 
             &.selected {
                 background-color: $chart-fill-color;
@@ -79,11 +80,8 @@
         line-height: 32px;
     }
 
-    .modal_controls {
-        width: 100%;
-        height: 55px;
-        background: $body-background-color;
-        border-top: 1px solid $list-border-color;
+    .form_controls {
+        margin-top: 0;
 
         .vertical {
             a {
@@ -92,15 +90,6 @@
                 padding-left: 10px;
                 display: inline-block;
                 padding: 20px 0 0 10px;
-            }
-
-            .right {
-                margin-right: 10px;
-
-                button {
-                    margin-top: 12px;
-                    margin-left: 5px;
-                }
             }
         }
     }

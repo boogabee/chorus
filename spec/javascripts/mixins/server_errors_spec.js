@@ -12,18 +12,39 @@ describe("chorus.Mixins.ServerErrors", function() {
             });
 
             it("returns a default error message", function() {
-                this.host.serverErrors = {fields: {a: {BLANK: {}}}}
+                this.host.serverErrors = {fields: {a: {BLANK: {}}}};
                 expect(_.first(this.host.serverErrorMessages())).toBe("A can't be blank");
             });
 
             it("returns a custom error message", function() {
-                this.host.serverErrors = {fields: {workspaces: {EMPTY: {}}}}
-                expect(_.first(this.host.serverErrorMessages())).toBe("You must have access to a workspace with a sandbox to create an hdfs external table for this file");
+                this.host.serverErrors = {fields: {workspaces: {EMPTY: {}}}};
+                expect(_.first(this.host.serverErrorMessages())).toMatchTranslation('field_error.workspaces.EMPTY');
             });
 
             it("interpolates extra arguments", function() {
-                this.host.serverErrors = {fields: {a: {EQUAL_TO: {count: 5}}}}
+                this.host.serverErrors = {fields: {a: {EQUAL_TO: {count: 5}}}};
                 expect(_.first(this.host.serverErrorMessages())).toBe("A must be equal to 5");
+            });
+
+            it("catches errors that are not directly on model fields", function() {
+                this.host.serverErrors = {"record": "NOT_FOUND"};
+                expect(_.first(this.host.serverErrorMessages())).toMatchTranslation('record_error.NOT_FOUND');
+            });
+
+            it("includes fields on server errors", function() {
+                this.host.serverErrors = {"record": "DATA_SOURCE_DRIVER_NOT_CONFIGURED", data_source: "Oracle"};
+                expect(_.first(this.host.serverErrorMessages())).toBe("Unable to connect to the Oracle data source. Please make sure the Oracle driver is configured correctly.");
+            });
+
+            it("catches errors for external services", function() {
+                this.host.serverErrors = {"service": "SOLR_UNREACHABLE"};
+                expect(_.first(this.host.serverErrorMessages())).toMatchTranslation("service_error.SOLR_UNREACHABLE");
+            });
+
+            it("returns error messages without translation", function() {
+                var errorMessage = "THIS IS AN ERROR";
+                this.host.serverErrors = {"message": errorMessage};
+                expect(_.first(this.host.serverErrorMessages())).toBe(errorMessage);
             });
         });
 

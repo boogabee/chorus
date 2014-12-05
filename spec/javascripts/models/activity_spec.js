@@ -1,6 +1,6 @@
 describe("chorus.models.Activity", function() {
     beforeEach(function() {
-        this.model = rspecFixtures.activity.greenplumInstanceCreated();
+        this.model = backboneFixtures.activity.dataSourceCreated();
     });
 
     describe("model associations", function() {
@@ -8,9 +8,9 @@ describe("chorus.models.Activity", function() {
 
         describe("#newOwner", function() {
             it("returns a user with the newOwner data", function() {
-                activity = rspecFixtures.activity.greenplumInstanceChangedOwner({
+                activity = backboneFixtures.activity.dataSourceChangedOwner({
                     actor: { id: 5 },
-                    gpdbInstance: { id: 6 },
+                    dataSource: { id: 6 },
                     newOwner: { id: 7 }
                 });
 
@@ -22,9 +22,9 @@ describe("chorus.models.Activity", function() {
 
         describe("#actor", function() {
             it("returns a user with the right data", function() {
-                activity = rspecFixtures.activity.greenplumInstanceChangedOwner({
+                activity = backboneFixtures.activity.dataSourceChangedOwner({
                     actor: { id: 5 },
-                    gpdbInstance: { id: 6 },
+                    dataSource: { id: 6 },
                     newOwner: { id: 7 }
                 });
 
@@ -36,9 +36,9 @@ describe("chorus.models.Activity", function() {
 
         describe("#promoter", function() {
             it("returns a user with the right data", function() {
-                activity = rspecFixtures.activity.insightOnGreenplumInstance({
+                activity = backboneFixtures.activity.insightOnGreenplumDataSource({
                     promotedBy: { id: 5 },
-                    gpdbInstance: { id: 6 }
+                    dataSource: { id: 6 }
                 });
 
                 var promoter = activity.promoter();
@@ -46,7 +46,7 @@ describe("chorus.models.Activity", function() {
                 expect(promoter.id).toBe(5);
             });
             it("returns null if the note is not an insight", function() {
-                activity = rspecFixtures.activity.greenplumInstanceChangedOwner();
+                activity = backboneFixtures.activity.dataSourceChangedOwner();
                 var promoter = activity.promoter();
                 expect(promoter).toBeNull();
             });
@@ -54,7 +54,7 @@ describe("chorus.models.Activity", function() {
 
         describe("#member", function() {
             it("returns a user with the right data", function() {
-                activity = rspecFixtures.activity.membersAdded({
+                activity = backboneFixtures.activity.membersAdded({
                     actor: { id: 5 },
                     member: { id: 6 }
                 });
@@ -65,48 +65,49 @@ describe("chorus.models.Activity", function() {
             });
         });
 
-        describe("#hadoopInstance", function() {
-            it("returns a hadoop instance with the right data", function() {
-                activity = rspecFixtures.activity.hadoopInstanceCreated({
-                    hadoopInstance: { id: 8 }
+        describe("#hdfsDataSource", function() {
+            it("returns a hadoop data source with the right data", function() {
+                activity = backboneFixtures.activity.hdfsDataSourceCreated({
+                    hdfsDataSource: { id: 8 }
                 });
 
-                var hadoopInstance = activity.hadoopInstance();
-                expect(hadoopInstance).toBeA(chorus.models.HadoopInstance);
-                expect(hadoopInstance.id).toBe(8);
+                var hdfsDataSource = activity.hdfsDataSource();
+                expect(hdfsDataSource).toBeA(chorus.models.HdfsDataSource);
+                expect(hdfsDataSource.id).toBe(8);
             });
         });
 
-        describe("#gnipInstance", function() {
-            it("returns a gnip instance with the right data", function() {
-                activity = rspecFixtures.activity.gnipInstanceCreated({
-                    gnipInstance: { id: 8 }
+        describe("#gnipDataSource", function() {
+            it("returns a gnip data source with the right data", function() {
+                activity = backboneFixtures.activity.gnipDataSourceCreated({
+                    gnipDataSource: { id: 8 }
                 });
 
-                var gnipInstance = activity.gnipInstance();
-                expect(gnipInstance).toBeA(chorus.models.GnipInstance);
-                expect(gnipInstance.id).toBe(8);
+                var gnipDataSource = activity.gnipDataSource();
+                expect(gnipDataSource).toBeA(chorus.models.GnipDataSource);
+                expect(gnipDataSource.id).toBe(8);
             });
         });
 
-        describe("#gpdbInstance", function() {
-            it("returns a gpdb instance with the right data", function() {
-                activity = rspecFixtures.activity.greenplumInstanceChangedOwner({
+        describe("#gpdbDataSource", function() {
+            it("returns a gpdb data source with the right data", function() {
+                activity = backboneFixtures.activity.dataSourceChangedOwner({
                     actor: { id: 5 },
-                    gpdbInstance: { id: 6 },
+                    dataSource: { id: 6 },
                     newOwner: { id: 7 }
                 });
 
-                var gpdbInstance = activity.gpdbInstance();
-                expect(gpdbInstance).toBeA(chorus.models.GpdbInstance);
-                expect(gpdbInstance.id).toBe(6);
+                var dataSource = activity.dataSource();
+                expect(dataSource).toBeA(chorus.models.DataSource);
+                expect(dataSource.id).toBe(6);
             });
         });
 
-         describe("#workspace", function() {
+        describe("#workspace", function() {
             it("returns a Workspace with the right data", function() {
-                activity = rspecFixtures.activity.sourceTableCreated({
-                    dataset: { id: 9 }, workspace: {id: 10}
+                activity = backboneFixtures.activity.sourceTableCreated({
+                    dataset: { id: 9 },
+                    workspace: {id: 10}
                 });
 
                 var workspace = activity.workspace();
@@ -115,9 +116,20 @@ describe("chorus.models.Activity", function() {
             });
         });
 
+        describe("#schema", function() {
+            it("returns a Schema with the right data", function() {
+                activity = backboneFixtures.activity.schemaImportCreated({
+                });
+
+                var schema = activity.schema();
+                expect(schema).toBeA(chorus.models.Schema);
+                expect(schema.id).toBe(activity.get('schema').id);
+            });
+        });
+
         describe("#workfile", function() {
             it("returns a workfile with the right data", function() {
-                activity = rspecFixtures.activity.workfileCreated({
+                activity = backboneFixtures.activity.workfileCreated({
                     workfile: {id: 11}
                 });
 
@@ -131,8 +143,9 @@ describe("chorus.models.Activity", function() {
             var dataset;
 
             beforeEach(function() {
-                activity = rspecFixtures.activity.sourceTableCreated({
-                    dataset: { id: 9 }, workspace: {id: 10}
+                activity = backboneFixtures.activity.sourceTableCreated({
+                    dataset: { id: 9 },
+                    workspace: {id: 10}
                 });
 
                 dataset = activity.dataset();
@@ -146,13 +159,29 @@ describe("chorus.models.Activity", function() {
             it("adds the workspace data to the dataset", function() {
                 expect(dataset.get("workspace").id).toBe(10);
             });
+
+            context("when the dataset is an HDFS Dataset", function () {
+                beforeEach(function () {
+                    activity = backboneFixtures.activity.sourceTableCreated({
+                        dataset: { id: 9, entitySubtype: "HDFS" },
+                        workspace: {id: 10}
+                    });
+
+                    dataset = activity.dataset();
+                });
+
+                it("returns an HDFS Dataset with the right data", function() {
+                    expect(dataset).toBeA(chorus.models.HdfsDataset);
+                    expect(dataset.id).toBe(9);
+                });
+            });
         });
 
         describe("#sourceDataset", function() {
             var dataset;
 
             beforeEach(function() {
-                activity = rspecFixtures.activity.datasetImportSuccess({
+                activity = backboneFixtures.activity.workspaceImportSuccess({
                     sourceDataset: { id: 9, associatedWorkspaces: [{id: 10}]}
                 });
 
@@ -171,7 +200,7 @@ describe("chorus.models.Activity", function() {
 
         describe("#newUser", function() {
             it("returns a new user with the right data", function() {
-                activity = rspecFixtures.activity.userCreated({
+                activity = backboneFixtures.activity.userCreated({
                     newUser: {id: 12}
                 });
 
@@ -182,196 +211,210 @@ describe("chorus.models.Activity", function() {
         });
 
         describe("#noteObject", function() {
-            context("for a NoteOnGreenplumInstance", function() {
-                it("returns a gpdbInstance with the right data", function() {
-                    activity = rspecFixtures.activity.noteOnGreenplumInstanceCreated({
-                        gpdbInstance: { id: 13 }
+            context("for a NoteOnDataSource", function() {
+                it("returns a gpdbDataSource with the right data", function() {
+                    activity = backboneFixtures.activity.noteOnGreenplumDataSource({
+                        dataSource: { id: 13 }
                     });
 
-                    var instance = activity.gpdbInstance();
-                    expect(instance).toBeA(chorus.models.GpdbInstance);
-                    expect(instance.id).toBe(13);
+                    var dataSource = activity.dataSource();
+                    expect(dataSource).toBeA(chorus.models.GpdbDataSource);
+                    expect(dataSource.id).toBe(13);
                 });
             });
 
-            context("for a NoteOnGnipInstance", function() {
-                it("returns a gnipInstance with the right data", function() {
-                    activity = rspecFixtures.activity.noteOnGnipInstanceCreated({
-                        gnipInstance: { id: 13 }
+            context("for a NoteOnGnipDataSource", function() {
+                it("returns a gnip data source with the right data", function() {
+                    activity = backboneFixtures.activity.noteOnGnipDataSourceCreated({
+                        gnipDataSource: { id: 13 }
                     });
 
-                    var instance = activity.gnipInstance();
-                    expect(instance).toBeA(chorus.models.GnipInstance);
-                    expect(instance.id).toBe(13);
+                    var gnipDataSource = activity.gnipDataSource();
+                    expect(gnipDataSource).toBeA(chorus.models.GnipDataSource);
+                    expect(gnipDataSource.id).toBe(13);
                 });
             });
 
             context("for a NoteOnHdfsFile", function() {
                 it("returns a hdfsFile with the right data", function() {
-                    activity = rspecFixtures.activity.noteOnHdfsFileCreated({
-                        hdfsFile: { id: 2345, name: "path.txt", hadoopInstance: {id: 331} }
+                    activity = backboneFixtures.activity.noteOnHdfsFileCreated({
+                        hdfsFile: { id: 2345, name: "path.txt", hdfsDataSource: {id: 331} }
                     });
                     var hdfsFile = activity.noteObject();
                     expect(hdfsFile).toBeA(chorus.models.HdfsEntry);
                     expect(hdfsFile.get("name")).toBe("path.txt");
-                    expect(hdfsFile.get("hadoopInstance").id).toBe(331)
+                    expect(hdfsFile.get("hdfsDataSource").id).toBe(331);
                 });
             });
 
             context("for a NoteOnWorkspace", function() {
                 it("returns a workspace with the right data", function() {
-                    activity = rspecFixtures.activity.noteOnWorkspaceCreated({
+                    activity = backboneFixtures.activity.noteOnWorkspaceCreated({
                         workspace: { id: 123 }
                     });
                     var workspace = activity.noteObject();
                     expect(workspace).toBeA(chorus.models.Workspace);
-                    expect(workspace.get("id")).toBe(123)
+                    expect(workspace.get("id")).toBe(123);
                 });
             });
 
             context("for a NoteOnDataset", function() {
                 it("returns a dataset with the right data", function() {
-                    activity = rspecFixtures.activity.noteOnDatasetCreated({
+                    activity = backboneFixtures.activity.noteOnDatasetCreated({
                         dataset: { id: 123 }
                     });
                     var dataset = activity.noteObject();
                     expect(dataset).toBeA(chorus.models.Dataset);
-                    expect(dataset.get("id")).toBe(123)
+                    expect(dataset.get("id")).toBe(123);
                 });
             });
 
             context("for a NoteOnWorkspaceDataset", function() {
                 it("returns a workspace dataset with the right data", function() {
-                    activity = rspecFixtures.activity.noteOnWorkspaceDatasetCreated({
+                    activity = backboneFixtures.activity.noteOnWorkspaceDatasetCreated({
                         dataset: { id: 123 }
                     });
                     var ws_dataset = activity.noteObject();
                     expect(ws_dataset).toBeA(chorus.models.WorkspaceDataset);
-                    expect(ws_dataset.get("id")).toBe(123)
+                    expect(ws_dataset.get("id")).toBe(123);
                 });
             });
 
             context("for a NoteOnWorkfile", function() {
                 it("returns a workfile with the right data", function() {
-                    activity = rspecFixtures.activity.noteOnWorkfileCreated({
+                    activity = backboneFixtures.activity.noteOnWorkfileCreated({
                         workfile: { id: 123 }
                     });
                     var workfile = activity.noteObject();
                     expect(workfile).toBeA(chorus.models.Workfile);
-                    expect(workfile.get("id")).toBe(123)
+                    expect(workfile.get("id")).toBe(123);
                 });
             });
         });
 
         describe("#hdfsEntry", function() {
             it("returns hdfs entry with the right data", function() {
-                activity = rspecFixtures.activity.hdfsExternalTableCreated({
-                    hdfsFile: {
+                activity = backboneFixtures.activity.hdfsFileExtTableCreated({
+                    hdfsEntry: {
                         id: 1234,
-                        hadoopInstance: {id: 1},
-                        path : "/data/test/test.csv"
+                        hdfsDataSource: {id: 1},
+                        name: "file.csv"
                     }
                 });
 
                 var hdfsEntry = activity.hdfsEntry();
                 expect(hdfsEntry).toBeA(chorus.models.HdfsEntry);
-                expect(hdfsEntry.get("path")).toBe("/data/test")
-                expect(hdfsEntry.name()).toBe("test.csv")
-                expect(hdfsEntry.get("hadoopInstance").id).toBe(1)
-                expect(hdfsEntry.get("id")).toBe(1234)
+                expect(hdfsEntry.name()).toBe("file.csv");
+                expect(hdfsEntry.get("hdfsDataSource").id).toBe(1);
+                expect(hdfsEntry.get("id")).toBe(1234);
             });
+        });
 
+        describe("#hdfsDataset", function () {
+            it("returns hdfs dataset with the right data", function() {
+                activity = backboneFixtures.activity.hdfsDatasetExtTableCreated();
+
+                var hdfsDataset = activity.hdfsDataset();
+                expect(hdfsDataset).toBeA(chorus.models.HdfsDataset);
+            });
         });
     });
 
     describe("#isUserGenerated", function() {
         it("returns true for notes", function() {
-            expect(rspecFixtures.activity.noteOnGreenplumInstanceCreated().isUserGenerated()).toBeTruthy();
+            expect(backboneFixtures.activity.noteOnGreenplumDataSource().isUserGenerated()).toBeTruthy();
         });
 
         it("returns true for 'INSIGHT_CREATED' activities", function() {
-            expect(fixtures.activities.INSIGHT_CREATED().isUserGenerated()).toBeTruthy();
+            expect(backboneFixtures.activity.insightOnGreenplumDataSource().isUserGenerated()).toBeTruthy();
         });
 
         it("returns false for other activities", function() {
-            expect(rspecFixtures.activity.membersAdded().isUserGenerated()).toBeFalsy();
+            expect(backboneFixtures.activity.membersAdded().isUserGenerated()).toBeFalsy();
         });
 
         it("returns true for sub-comments", function() {
-            expect(rspecFixtures.comment().isUserGenerated()).toBeTruthy();
+            expect(backboneFixtures.comment().isUserGenerated()).toBeTruthy();
         });
     });
 
     describe("#hasCommitMessage", function() {
         it("returns true for activity where action is Workfile_upgrade_version and commit message is not empty", function() {
-            expect(rspecFixtures.activity.workfileUpgradedVersion().hasCommitMessage()).toBeTruthy();
+            expect(backboneFixtures.activity.workfileUpgradedVersion().hasCommitMessage()).toBeTruthy();
+        });
+
+        it("returns true for activity where action is work flow upgraded version and commit message is not empty", function() {
+            expect(backboneFixtures.activity.workFlowUpgradedVersion().hasCommitMessage()).toBeTruthy();
         });
 
         it("returns true for activity where action is WorkfileCreated with commit message", function() {
-            expect(rspecFixtures.activity.workfileCreated().hasCommitMessage()).toBeTruthy();
+            expect(backboneFixtures.activity.workfileCreated().hasCommitMessage()).toBeTruthy();
         });
 
         it("returns false for other activities", function() {
-            expect(rspecFixtures.activity.membersAdded().hasCommitMessage()).toBeFalsy();
+            expect(backboneFixtures.activity.membersAdded().hasCommitMessage()).toBeFalsy();
         });
 
         it("returns false for activity where action is Workfile_upgrade_version and commit message is empty", function() {
-            expect(rspecFixtures.activity.workfileUpgradedVersion({commitMessage: ""}).hasCommitMessage()).toBeFalsy();
+            expect(backboneFixtures.activity.workfileUpgradedVersion({commitMessage: ""}).hasCommitMessage()).toBeFalsy();
         });
     });
 
     describe("#isFailure", function() {
         it("returns true for IMPORT_FAILED", function() {
-            expect(rspecFixtures.activity.fileImportFailed().isFailure()).toBeTruthy();
-            expect(rspecFixtures.activity.datasetImportFailed().isFailure()).toBeTruthy();
+            expect(backboneFixtures.activity.fileImportFailed().isFailure()).toBeTruthy();
+            expect(backboneFixtures.activity.workspaceImportFailed().isFailure()).toBeTruthy();
+            expect(backboneFixtures.activity.schemaImportFailed().isFailure()).toBeTruthy();
+            expect(backboneFixtures.activity.gnipStreamImportFailed().isFailure()).toBeTruthy();
         });
 
         it("returns false for other activities", function() {
-            expect(rspecFixtures.activity.userCreated().isFailure()).toBeFalsy();
+            expect(backboneFixtures.activity.userCreated().isFailure()).toBeFalsy();
         });
     });
 
     describe("#isSuccessfulImport", function() {
         it("returns true for IMPORT SUCCESS", function() {
-            expect(rspecFixtures.activity.fileImportSuccess().isSuccessfulImport()).toBeTruthy();
-            expect(rspecFixtures.activity.datasetImportSuccess().isSuccessfulImport()).toBeTruthy();
+            expect(backboneFixtures.activity.fileImportSuccess().isSuccessfulImport()).toBeTruthy();
+            expect(backboneFixtures.activity.workspaceImportSuccess().isSuccessfulImport()).toBeTruthy();
+            expect(backboneFixtures.activity.schemaImportSuccess().isSuccessfulImport()).toBeTruthy();
+            expect(backboneFixtures.activity.gnipStreamImportSuccess().isSuccessfulImport()).toBeTruthy();
         });
 
         it("returns false for other activities", function() {
-            expect(rspecFixtures.activity.fileImportFailed().isSuccessfulImport()).toBeFalsy();
-            expect(rspecFixtures.activity.datasetImportFailed().isSuccessfulImport()).toBeFalsy();
+            expect(backboneFixtures.activity.fileImportFailed().isSuccessfulImport()).toBeFalsy();
+            expect(backboneFixtures.activity.workspaceImportFailed().isSuccessfulImport()).toBeFalsy();
         });
-
     });
 
     describe("#isOwner", function() {
 
         it("returns true for notes is current user is the owner of note", function() {
-            activity2 = rspecFixtures.activity.noteOnGreenplumInstanceCreated({
-                gpdbInstance: { id: 13 },
+            this.activity2 = backboneFixtures.activity.noteOnGreenplumDataSource({
+                dataSource: { id: 13 },
                 actor: {id: chorus.session.user().id}
 
             });
-            expect(activity2.isOwner()).toBeTruthy();
+            expect(this.activity2.isOwner()).toBeTruthy();
         });
         it("returns false for notes is current user is not the owner of note", function() {
-            activity2 = rspecFixtures.activity.noteOnGreenplumInstanceCreated({
-                gpdbInstance: { id: 13 },
+            this.activity2 = backboneFixtures.activity.noteOnGreenplumDataSource({
+                dataSource: { id: 13 },
                 actor: {id: 1}
 
             });
-            expect(activity2.isOwner()).toBeFalsy();
+            expect(this.activity2.isOwner()).toBeFalsy();
         });
 
     });
 
     describe("#toNote", function() {
         beforeEach(function() {
-            this.model = rspecFixtures.activity.noteOnGreenplumInstanceCreated({
+            this.model = backboneFixtures.activity.noteOnGreenplumDataSource({
                 id: 101
             });
 
-            this.model.collection = chorus.collections.ActivitySet.forDashboard();
+            this.model.collection = new chorus.collections.ActivitySet([]);
         });
 
         it("returns a note with the right attributes", function() {
@@ -380,32 +423,18 @@ describe("chorus.models.Activity", function() {
             expect(note.get("id")).toBe(101);
             expect(note.get("body")).toBe(this.model.get("body"));
         });
-
-        describe("when the note is saved", function() {
-            it("re-fetches the activity's collection", function() {
-                this.model.toNote().trigger("saved");
-                expect(this.model.collection).toHaveBeenFetched();
-            });
-        });
-
-        describe("when the note is destroyed", function() {
-            it("re-fetches the activity's collection", function() {
-                spyOn(chorus, "toast")
-                this.model.toNote().trigger("destroy");
-                expect(this.model.collection).toHaveBeenFetched();
-            });
-        });
     });
 
     describe("#promoteToInsight", function() {
         beforeEach(function() {
             this.success = jasmine.createSpy("success");
-            this.model.collection = chorus.collections.ActivitySet.forDashboard();
+            this.model.collection = new chorus.collections.ActivitySet([]);
             this.model.promoteToInsight({ success: this.success });
         });
 
         it("posts to the comment insight url with the correct parameters", function() {
-            expect(this.server.lastCreate().url).toBe("/insights/promote");
+            expect(this.server.lastCreate().url).toBe("/insights");
+            expect(this.server.lastCreate().json()['note']['note_id']).toBe(this.model.id);
         });
 
         it("calls the success function", function() {
@@ -414,6 +443,61 @@ describe("chorus.models.Activity", function() {
         });
     });
 
+    describe("#demoteFromInsight", function() {
+        beforeEach(function() {
+            this.model = backboneFixtures.activity.insightOnGreenplumDataSource();
+            this.model.collection = new chorus.collections.ActivitySet([]);
+            spyOn(this.model.collection, 'fetch');
+            this.model.demoteFromInsight();
+        });
+
+        it("posts to the comment insight url with the correct parameters", function() {
+            expect(this.server.lastDestroy().url).toBe("/insights/" + this.model.id);
+        });
+
+        it("unsets 'isinsight' on the activity", function() {
+            this.server.lastDestroy().succeed();
+            expect(this.model.get('isInsight')).toBeFalsy();
+        });
+    });
+
+    describe("#canBeDemotedBy", function () {
+        context("for a workspace insight", function () {
+            beforeEach(function () {
+                this.model = backboneFixtures.activity.insightOnWorkspace();
+            });
+
+            it("returns true for the promoter, workspace owner, or admin", function () {
+                expect(this.model.canBeDemotedBy(this.model.promoter())).toBeTruthy();
+                expect(this.model.canBeDemotedBy(this.model.workspace().owner())).toBeTruthy();
+                expect(this.model.canBeDemotedBy(backboneFixtures.user({admin: true}))).toBeTruthy();
+                expect(this.model.canBeDemotedBy(backboneFixtures.user())).toBeFalsy();
+            });
+        });
+
+        context("for an insight without a workspace", function () {
+            beforeEach(function () {
+                this.model = backboneFixtures.activity.insightOnGreenplumDataSource();
+            });
+
+            it("returns true for the promoter or admin", function () {
+                expect(this.model.canBeDemotedBy(this.model.promoter())).toBeTruthy();
+                expect(this.model.canBeDemotedBy(backboneFixtures.user({admin: true}))).toBeTruthy();
+                expect(this.model.canBeDemotedBy(backboneFixtures.user())).toBeFalsy();
+            });
+        });
+
+        context("for a non-insight", function () {
+            beforeEach(function () {
+                this.model = backboneFixtures.activity.noteOnGreenplumDataSource();
+            });
+
+            it("returns false", function () {
+                expect(this.model.canBeDemotedBy(backboneFixtures.user({admin: true}))).toBeFalsy();
+                expect(this.model.canBeDemotedBy(backboneFixtures.user())).toBeFalsy();
+            });
+        });
+    });
     describe("#publish", function() {
         it("posts to the comment insight url with the publish action", function() {
             this.model.publish();
@@ -518,26 +602,26 @@ describe("chorus.models.Activity", function() {
     describe("#author", function() {
         context("when author information is present", function() {
             beforeEach(function() {
-               this.model = rspecFixtures.comment();
+                this.model = backboneFixtures.comment();
             });
             it("creates a user", function() {
                 expect(this.model.author()).toBeA(chorus.models.User);
             });
 
-            it("returns the same instance when called multiple times", function() {
+            it("returns the same data source when called multiple times", function() {
                 expect(this.model.author()).toBe(this.model.author());
             });
         });
 
         context("when actor information is present", function () {
             beforeEach(function() {
-                this.model = rspecFixtures.activity.noteOnWorkspaceCreated()
+                this.model = backboneFixtures.activity.noteOnWorkspaceCreated();
             });
             it("creates a user", function() {
                 expect(this.model.author()).toBeA(chorus.models.User);
             });
 
-            it("returns the same instance when called multiple times", function() {
+            it("returns the same data source when called multiple times", function() {
                 expect(this.model.author()).toBe(this.model.author());
             });
         });
@@ -559,7 +643,7 @@ describe("chorus.models.Activity", function() {
             this.model.set({
                 comments: [
                     {
-                        text: "I'm cold.'",
+                        body: "I'm cold.'",
                         author: {
                             image: { original: "/foo", icon: "/bar" },
                             id: "1234",
@@ -584,26 +668,21 @@ describe("chorus.models.Activity", function() {
 
         it("contains the activity item's comments", function() {
             var commentsJson = this.model.get("comments");
-            expect(this.comments.models[0].get("text")).toBe(commentsJson[0].text);
+            expect(this.comments.models[0].get("body")).toBe(commentsJson[0].body);
             expect(this.comments.models[0].get("timestamp")).toBe(commentsJson[0].timestamp);
             expect(this.comments.models[0].author().get("firstName")).toBe(commentsJson[0].author.firstName);
-        });
-
-        xit("sets the entityType and entityId as attributes of the CommentSet", function() {
-            expect(this.comments.attributes.entityType).toBe("workspace");
-            expect(this.comments.attributes.entityId).toBe(10000);
         });
     });
 
     describe("#reindexError", function() {
         it("sets the errorModelId to be the id of the activity", function() {
-            this.model = rspecFixtures.activity.gnipStreamImportFailed();
+            this.model = backboneFixtures.activity.gnipStreamImportFailed();
             this.model.reindexError();
             expect(this.model.get('errorModelId')).toBe(this.model.get('id'));
         });
 
         it("does not set the error model id if the activity is not a failure", function() {
-            this.model = rspecFixtures.activity.gnipStreamImportSuccess();
+            this.model = backboneFixtures.activity.gnipStreamImportSuccess();
             this.model.reindexError();
             expect(this.model.get('errorModelId')).toBeUndefined();
         });
@@ -616,17 +695,19 @@ describe("chorus.models.Activity", function() {
                     { entityType: "workfile", id: 1 },
                     { entityType: "attachment", id: 2 },
                     { entityType: "dataset", id: 3 },
-                    { entityType: "chorusView", id: 4 }
+                    { entityType: "workfile", entitySubtype: "alpine", id: 4 },
+                    { entityType: "work_flow_result", id: "0.12345"}
                 ]
             });
             this.attachments = this.model.attachments();
         });
 
         it("returns an array of file models (Workfiles, Attachments Datasets)", function() {
-            expect(this.attachments[0]).toBeA(chorus.models.Workfile)
-            expect(this.attachments[1]).toBeA(chorus.models.Attachment)
-            expect(this.attachments[2]).toBeA(chorus.models.WorkspaceDataset)
-            expect(this.attachments[3]).toBeA(chorus.models.WorkspaceDataset)
+            expect(this.attachments[0]).toBeA(chorus.models.Workfile);
+            expect(this.attachments[1]).toBeA(chorus.models.Attachment);
+            expect(this.attachments[2]).toBeA(chorus.models.WorkspaceDataset);
+            expect(this.attachments[3]).toBeA(chorus.models.AlpineWorkfile);
+            expect(this.attachments[4]).toBeA(chorus.models.WorkFlowResult);
         });
 
         it("memoizes", function() {

@@ -2,7 +2,7 @@ xdescribe("chorus.alerts.FunctionInfo", function() {
     var model, alert;
 
     beforeEach(function() {
-        model = rspecFixtures.schemaFunctionSet([{
+        model = backboneFixtures.schemaFunctionSet([{
             name: "infinite_loop",
             argTypes: [ "text", "int4", "float64" ],
             argNames: [ "name", "age", "height" ],
@@ -37,7 +37,7 @@ xdescribe("chorus.alerts.FunctionInfo", function() {
         });
     });
 
-    it("has the 'info' class (so that it displays the right icon)", function() {
+    it("shows an info icon", function() {
         expect($(alert.el)).toHaveClass("info");
     });
 

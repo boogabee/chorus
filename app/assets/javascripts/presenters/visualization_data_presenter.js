@@ -1,4 +1,4 @@
-;(function(ns) {
+(function(ns) {
     ns.presenters.visualizations = {};
 
     ns.presenters.visualizations.Timeseries = function(task, options) {
@@ -10,19 +10,19 @@
         present: function() {
             var rows = _.map(this.task.get("rows"), function(row) {
                 var value = row.value;
-                var time = row.time
+                var time = row.time;
                 if(!Date.parse(time)) {
                     time = "2001-01-01 "+time.slice(11);
                 }
                 return {time: time, value: value};
             });
 
-            rows.minY = _.min(_.pluck(rows, "value"))
-            rows.maxY = _.max(_.pluck(rows, "value"))
+            rows.minY = _.min(_.pluck(rows, "value"));
+            rows.maxY = _.max(_.pluck(rows, "value"));
             rows.minX = _.first(_.pluck(rows, "time"));
             rows.maxX = _.last(_.pluck(rows, "time"));
 
-            return rows
+            return rows;
         }
     });
 
@@ -51,7 +51,7 @@
 
             orderedBoxes.minY = _.min(_.pluck(orderedBoxes, "min"));
             orderedBoxes.maxY = _.max(_.pluck(orderedBoxes, "max"));
-            if(orderedBoxes.minY == orderedBoxes.maxY) {
+            if(orderedBoxes.minY === orderedBoxes.maxY) {
                 orderedBoxes.minY -= 1;
                 orderedBoxes.maxY += 1;
             }
@@ -63,7 +63,7 @@
     chorus.presenters.visualizations.Histogram = function(task, options) {
         this.task = task;
         this.options = options;
-    }
+    };
 
     _.extend(chorus.presenters.visualizations.Histogram.prototype, {
         present: function() {
@@ -76,7 +76,7 @@
     chorus.presenters.visualizations.Heatmap = function(task, options) {
         this.task = task;
         this.options = options;
-    }
+    };
 
     _.extend(chorus.presenters.visualizations.Heatmap.prototype, {
         present: function() {
@@ -91,11 +91,11 @@
             rows.maxX = _.max(_.flatten(xs));
             rows.maxY = _.max(_.flatten(ys));
 
-            rows.minValue = _.min(values)
-            rows.maxValue = _.max(values)
+            rows.minValue = _.min(values);
+            rows.maxValue = _.max(values);
 
             return rows;
         }
-    })
+    });
 
 })(chorus);

@@ -1,0 +1,1 @@
+class OracleTablePresenter < TablePresenter; end

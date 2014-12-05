@@ -1,7 +1,13 @@
 #!/bin/bash
 
 export RAILS_ENV=integration
-export GPDB_HOST=chorus-gpdb42
+
+if [ "$HOSTNAME" = chorus-ci ]; then
+  export GPDB_HOST=chorus-gpdb-ci
+  export ORACLE_HOST=chorus-oracle
+  export HAWQ_HOST=chorus-gphd20-2
+  export HADOOP_HOST=chorus-gphd11
+fi
 
 . script/ci/setup.sh
 
@@ -19,7 +25,7 @@ sleep 20
 set +e
 
 echo "Running integration tests"
-b/rake -f `bundle show ci_reporter`/stub.rake ci:setup:rspec spec:integration 2>&1
+b/rake -f `bundle show ci_reporter`/stub.rake ci:setup:rspecdoc spec:chorus_integration --trace 2>&1
 INTEGRATION_TESTS_RESULT=$?
 
 echo "Cleaning up solr process $solr_pid"

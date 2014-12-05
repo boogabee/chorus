@@ -1,5 +1,6 @@
 describe("chorus.views.ResultsConsoleView", function() {
     beforeEach(function() {
+        this.modalSpy = stubModals();
         this.task = new chorus.models.DataPreviewTask({
             checkId: "foo"
         });
@@ -80,6 +81,49 @@ describe("chorus.views.ResultsConsoleView", function() {
                 expect(this.view.$(".expander_button")).not.toExist();
             });
         });
+
+        describe("the default bounding container", function(){
+            beforeEach(function () {
+                this.windowHeight = 455;
+                spyOn($.fn, 'height').andReturn(this.windowHeight);
+                spyOn($.fn, 'offset').andReturn({top: 0});
+            });
+
+            it("incorporates the footerSize passed to the view as a function", function() {
+                spyOn(this.view.boundingContainer, "footerSize").andReturn(5);
+
+                var availableHeight = this.view.boundingContainer.getAvailableHeight();
+                expect(availableHeight).toBe(this.windowHeight - 5);
+            });
+
+            it("incorporates the top offset", function() {
+                $.fn.offset.andReturn({top: 7});
+
+                var availableHeight = this.view.boundingContainer.getAvailableHeight();
+                expect(availableHeight).toBe(this.windowHeight - 7);
+            });
+
+            it("incorporates the window.scrollTop", function() {
+                spyOn($.fn, 'scrollTop').andReturn(11);
+
+                var availableHeight = this.view.boundingContainer.getAvailableHeight();
+                expect(availableHeight).toBe(this.windowHeight + 11);
+            });
+
+            it("takes into account the vertical padding passed into the view", function() {
+                this.view.options.verticalDialogPadding = 2;
+
+                var availableHeight = this.view.boundingContainer.getAvailableHeight();
+                expect(availableHeight).toBe(this.windowHeight - 2);
+            });
+
+            it("takes into account the bottom gutter", function() {
+                spyOn(this.view.boundingContainer, "bottomGutterHeight").andReturn(3);
+
+                var availableHeight = this.view.boundingContainer.getAvailableHeight();
+                expect(availableHeight).toBe(this.windowHeight - 3);
+            });
+        });
     });
 
     describe("event handling", function() {
@@ -95,12 +139,12 @@ describe("chorus.views.ResultsConsoleView", function() {
                 this.view.render();
                 this.view.$(".controls").removeClass("hidden");
 
-                spyOn(chorus.PageEvents, "broadcast");
+                spyOn(chorus.PageEvents, "trigger");
                 this.view.$("a.close").click();
             });
 
-            it("broadcasts action:closePreview", function() {
-                expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("action:closePreview");
+            it("triggers action:closePreview", function() {
+                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("action:closePreview");
             });
 
             it("hides the control section", function() {
@@ -109,227 +153,6 @@ describe("chorus.views.ResultsConsoleView", function() {
         });
 
         describe("file:executionStarted", function() {
-            beforeEach(function() {
-                this.clock = this.useFakeTimers();
-                spyOn(window, "clearInterval");
-                spyOn(this.view, "closeError").andCallThrough();
-
-                this.task.save();
-                chorus.PageEvents.broadcast("file:executionStarted");
-            });
-
-            it("sets the executing class", function() {
-                expect(this.view.$(".right")).toHaveClass("executing");
-            });
-
-            it("hides the control section", function() {
-                expect(this.view.$(".controls")).toHaveClass("hidden");
-            });
-
-            it("sets a delay to start a spinner", function() {
-                expect(this.view.$(".spinner")).toHaveClass("hidden");
-                this.clock.tick(300);
-                expect(this.view.$(".spinner")).not.toHaveClass("hidden");
-            });
-
-            it("updates the time", function() {
-                this.clock.tick(1000);
-                expect(this.view.$(".elapsed_time").text().trim()).toMatchTranslation("results_console_view.elapsed", { sec: 1 });
-                this.clock.tick(10000);
-                expect(this.view.$(".elapsed_time").text().trim()).toMatchTranslation("results_console_view.elapsed", { sec: 11 });
-            });
-
-            it("shows the execution bar", function() {
-                expect(this.view.$(".execution")).not.toHaveClass("hidden");
-            });
-
-            it("closes the errors", function() {
-                expect(this.view.closeError).toHaveBeenCalled();
-            });
-
-            describe("cancelling the execution", function() {
-                context("when the spinner has not yet been started", function() {
-                    beforeEach(function() {
-                        this.view.$(".cancel").click();
-                        chorus.PageEvents.broadcast("file:executionFailed");
-                    });
-
-                    it("cancels the execution", function() {
-                        var destroy = this.server.lastDestroy();
-                        expect(destroy).toBeDefined();
-                    });
-
-                    itRemovesExecutionUI(true);
-                });
-
-                context("when the spinner has been started", function() {
-                    beforeEach(function() {
-                        delete this.view.elapsedTimer;
-                        this.view.$(".cancel").click();
-                        chorus.PageEvents.broadcast("file:executionFailed");
-                    });
-
-                    it("cancels the execution", function() {
-                        var destroy = this.server.lastDestroy();
-                        expect(destroy).toBeDefined();
-                    });
-
-                    itRemovesExecutionUI(false);
-                });
-            });
-
-            describe("when the execution is completed", function() {
-                context("and there are results", function() {
-                    beforeEach(function() {
-                        this.server.completeSaveFor(this.task, rspecFixtures.workfileExecutionResults());
-                        chorus.PageEvents.broadcast("file:executionSucceeded", this.task);
-                    });
-
-                    it("has a link to display the execution message", function() {
-                        expect(this.view.$(".execution .view_details").text()).toMatchTranslation("actions.view_details");
-                    });
-
-                    describe("clicking the execution view details link", function() {
-                        it("launches an execution message alert", function() {
-                            var fakeModal = stubModals();
-                            this.view.$(".execution a.view_details").click();
-
-                            var alert = fakeModal.lastModal();
-                            expect(alert).toBeA(chorus.alerts.ExecutionMessage);
-                            expect($(alert.el)).toContainTranslation('sql_execution.success');
-                        });
-                    });
-
-                    describe("starting another execution", function() {
-                        beforeEach(function() {
-                            chorus.PageEvents.broadcast("file:executionStarted", this.task);
-                        });
-
-                        it("hides the control section", function() {
-                            expect(this.view.$(".controls")).toHaveClass("hidden");
-                        });
-                    });
-                });
-
-                context("and the task does not have results", function() {
-                    beforeEach(function() {
-                        this.server.completeSaveFor(this.task, rspecFixtures.workfileExecutionResultsEmpty());
-                        chorus.PageEvents.broadcast("file:executionSucceeded", this.task);
-                    });
-
-                    it("collapses the result table", function() {
-                        expect(this.view.$(".controls")).toHaveClass("collapsed");
-                        expect(this.view.$('.result_table')).toHaveClass("collapsed");
-                        expect(this.view.$('.result_table')).not.toHaveClass("minimized");
-                        expect(this.view.$('.result_table')).not.toHaveClass("maximized");
-                        expect(this.view.$('.data_table').css("height")).toBe("0px");
-                    });
-
-                    it("does not have a download link", function() {
-                        expect(this.view.$('.download_csv')).not.toExist();
-                    });
-                });
-
-                context("when the spinner has not yet been started", function() {
-                    beforeEach(function() {
-                        this.server.completeSaveFor(this.task, rspecFixtures.workfileExecutionResults());
-                        chorus.PageEvents.broadcast("file:executionSucceeded", this.task);
-                    });
-
-                    itRemovesExecutionUI(true);
-                    itShowsExecutionResults();
-                });
-
-                context("when the spinner has been started", function() {
-                    beforeEach(function() {
-                        delete this.view.elapsedTimer;
-                        this.server.completeSaveFor(this.task, rspecFixtures.workfileExecutionResults());
-                        chorus.PageEvents.broadcast("file:executionSucceeded", this.task);
-                    });
-
-                    itRemovesExecutionUI(false);
-                    itShowsExecutionResults();
-                });
-
-                context("and there was an execution error", function() {
-                    beforeEach(function() {
-                        this.server.lastCreateFor(this.task).failUnprocessableEntity(rspecFixtures.workfileExecutionErrorJson()['errors']);
-                        chorus.PageEvents.broadcast("file:executionFailed", this.task);
-                    });
-
-                    it("should show the error header", function() {
-                        expect(this.view.$('.sql_errors')).not.toHaveClass('hidden');
-                    });
-
-                    it("should show 'View Details' and 'Close' links", function() {
-                        expect(this.view.$('.sql_errors .view_details')).toExist();
-                        expect(this.view.$('.sql_errors .close_errors')).toExist();
-                    });
-
-                    it("should hide the execution content area", function() {
-                        expect(this.view.$(".result_table")).toHaveClass("hidden");
-                        expect(this.view.$(".bottom_gutter")).toHaveClass("hidden");
-                        expect(this.view.$(".execution")).toHaveClass("hidden");
-                    });
-
-                    describe("clicking on the close button", function() {
-                        beforeEach(function() {
-                            spyOn(chorus.PageEvents, "broadcast");
-                            this.view.$(".close_errors").click();
-                        });
-
-                        it("broadcasts action:closePreview", function() {
-                            expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("action:closePreview");
-                        });
-
-                        it("hides the control section", function() {
-                            expect(this.view.$(".controls")).toHaveClass("hidden");
-                        });
-
-                        it("should hide the sql_errors content", function() {
-                            expect(this.view.$(".sql_errors")).toHaveClass("hidden");
-                        });
-                    });
-
-                    context("when the sql is executed again without errors", function() {
-                        beforeEach(function() {
-                            this.server.completeSaveFor(this.task, rspecFixtures.workfileExecutionResults());
-                            chorus.PageEvents.broadcast("file:executionSucceeded", this.task);
-                        });
-
-                        it("should show the data table", function() {
-                            expect(this.view.$(".result_table")).not.toHaveClass("hidden");
-                            expect(this.view.$(".bottom_gutter")).not.toHaveClass("hidden");
-                        });
-                    });
-
-                    describe("clicking on view details", function() {
-                        it("should open an execution message alert", function() {
-                            this.modalSpy = stubModals();
-                            this.view.$(".view_details").click();
-                            expect(this.modalSpy).toHaveModal(chorus.alerts.ExecutionError);
-                        });
-                    });
-                });
-
-                describe("starting another execution", function() {
-                    beforeEach(function() {
-                        this.task = new chorus.models.DataPreviewTask({});
-                        this.view.execute(this.task);
-                        chorus.PageEvents.broadcast("file:executionSucceeded", this.task);
-                        chorus.PageEvents.broadcast("file:executionStarted");
-                    });
-
-                    it("hides the gutter", function() {
-                        expect(this.view.$(".bottom_gutter")).toHaveClass("hidden");
-                    });
-
-                    it("clears out any data that is already in the table", function() {
-                        expect(this.view.$(".result_table")).toHaveHtml("");
-                    });
-                });
-            });
-
             function itRemovesExecutionUI(shouldCancelTimers) {
                 it("removes the executing class", function() {
                     expect(this.view.$(".right")).not.toHaveClass("executing");
@@ -351,180 +174,6 @@ describe("chorus.views.ResultsConsoleView", function() {
                 });
             }
 
-            function itShowsExecutionResults() {
-
-                it("renders a task data table with the given task", function() {
-                    expect(this.view.dataTable).toBeA(chorus.views.TaskDataTable);
-                    expect(this.view.dataTable.model).toBe(this.task);
-                    expect($(this.view.el)).toContain(this.view.dataTable.el);
-                });
-
-                it("displays the result table", function() {
-                    expect(this.view.$('.result_table')).not.toHaveClass("hidden");
-                });
-
-                it("renders only one data table", function() {
-                    expect(this.view.$(".result_table .data_table").length).toBe(1);
-                });
-
-                it("shows the control section", function() {
-                    expect(this.view.$(".controls")).not.toHaveClass("hidden");
-                });
-
-                context("when another execution completed event occurs", function() {
-                    beforeEach(function() {
-                        chorus.PageEvents.broadcast("file:executionSucceeded", rspecFixtures.workfileExecutionResults());
-                    });
-
-                    it("still renders only one data table", function() {
-                        expect(this.view.$(".result_table .data_table").length).toBe(1);
-                    });
-                });
-
-                it("changes the state of the result table to 'minimized'", function() {
-                    expect(this.view.$('.result_table')).not.toHaveClass("collapsed");
-                    expect(this.view.$('.result_table')).toHaveClass("minimized");
-                    expect(this.view.$('.result_table')).not.toHaveClass("maximized");
-                });
-
-                it("renders the maximize link", function() {
-                    expect(this.view.$("a.maximize")).not.toHaveClass("hidden");
-                    expect(this.view.$("a.minimize")).toHaveClass("hidden");
-                });
-
-                it("shows the bottom gutter (with the expander button)", function() {
-                    expect(this.view.$(".bottom_gutter")).not.toHaveClass("hidden");
-                });
-
-                specify("the expander button arrow points up", function() {
-                    expect(this.view.$(".arrow")).toHaveClass("up");
-                    expect(this.view.$(".arrow")).not.toHaveClass("down");
-                });
-
-                describe("clicking the maximize link", function() {
-                    beforeEach(function() {
-                        spyOn(this.view, "getDesiredDataTableHeight").andReturn(777);
-                        spyOn(this.view, "recalculateScrolling");
-                        this.view.$("a.maximize").click();
-                    });
-
-                    it("hides the maximize link and shows the minimize link", function() {
-                        expect(this.view.$("a.maximize")).toHaveClass("hidden");
-                        expect(this.view.$("a.minimize")).not.toHaveClass("hidden");
-                    });
-
-                    it("changes the state of the result table to 'minimized'", function() {
-                        expect(this.view.$('.result_table')).not.toHaveClass("collapsed");
-                        expect(this.view.$('.result_table')).not.toHaveClass("minimized");
-                        expect(this.view.$('.result_table')).toHaveClass("maximized");
-                    });
-
-                    it("recalculates scrolling", function() {
-                        expect(this.view.recalculateScrolling).toHaveBeenCalled();
-                    });
-
-                    specify("the expander button arrow points up", function() {
-                        expect(this.view.$(".arrow")).toHaveClass("up");
-                        expect(this.view.$(".arrow")).not.toHaveClass("down");
-                    });
-
-                    it("sets .data_table height to use the full viewport", function() {
-                        expect(this.view.$(".data_table").css("height")).toBe("777px");
-                    });
-
-                    itCanExpandAndCollapseTheResults("maximized", "minimized");
-
-                    describe("clicking the minimize link", function() {
-                        beforeEach(function() {
-                            this.view.recalculateScrolling.reset();
-                            this.view.$("a.minimize").click();
-                        });
-
-                        it("hides the minimize link and shows the maximize link", function() {
-                            expect(this.view.$("a.minimize")).toHaveClass("hidden");
-                            expect(this.view.$("a.maximize")).not.toHaveClass("hidden");
-                        });
-
-                        it("changes the state of the result table to 'minimized'", function() {
-                            expect(this.view.$('.result_table')).not.toHaveClass("collapsed");
-                            expect(this.view.$('.result_table')).toHaveClass("minimized");
-                            expect(this.view.$('.result_table')).not.toHaveClass("maximized");
-                        });
-
-                        it("recalculates scrolling", function() {
-                            expect(this.view.recalculateScrolling).toHaveBeenCalled();
-                        });
-
-
-                        specify("the expander button arrow points up", function() {
-                            expect(this.view.$(".arrow")).toHaveClass("up");
-                            expect(this.view.$(".arrow")).not.toHaveClass("down");
-                        });
-
-                        it("does not keep the maxmized height", function() {
-                            expect(this.view.$(".data_table").css("height")).not.toBe("777px");
-                        });
-
-                    });
-                });
-
-                describe("getDesiredDataTableHeight", function() {
-                    it("incorporates the footerSize passed to the view as a function", function() {
-                        var originalSize = this.view.getDesiredDataTableHeight();
-                        this.view.options.footerSize = function() {
-                            return 10;
-                        }
-                        expect(this.view.getDesiredDataTableHeight()).toBe(originalSize - 10);
-                    });
-                });
-
-                describe("clicking the download link", function() {
-                    context("with the show download dialog option", function() {
-                        beforeEach(function() {
-                            this.modalSpy = stubModals();
-                            spyOn($, "fileDownload");
-                            this.view.showDownloadDialog = true;
-                            this.view.dataset = rspecFixtures.dataset();
-                            this.view.$("a.download_csv").click();
-                        });
-
-                        it("should launch the dialog", function() {
-                            expect(this.modalSpy).toHaveModal(chorus.dialogs.DatasetDownload);
-                        });
-
-                        it("should not have called $.fileDownload", function() {
-                            expect($.fileDownload).not.toHaveBeenCalled();
-                        });
-
-                        it("should have a page model for the dataset download dialog", function() {
-                            expect(this.modalSpy.lastModal().pageModel).toBeA(chorus.models.Dataset);
-                        });
-                    });
-
-                    context("without the show download dialog option", function() {
-                        beforeEach(function() {
-                            spyOn($, "fileDownload");
-                            this.view.showDownloadDialog = false;
-                            this.view.$("a.download_csv").click();
-                        });
-
-                        it("starts the file download", function() {
-                            var content = new chorus.utilities.CsvWriter(
-                                _.pluck(this.view.resource.getColumns(), "name"), this.view.resource.getRows()).toCsv();
-                            expect($.fileDownload).toHaveBeenCalledWith("/download_data",
-                            {
-                                data: {
-                                    content: content,
-                                    filename: this.view.resource.name()+'.csv',
-                                    mime_type: "text/csv"
-                                },
-                                httpMethod: "post"
-                            });
-                        });
-                    });
-                });
-            }
-
             function itCanExpandAndCollapseTheResults(tableShouldHaveClass, tableShouldNotHaveClass) {
                 describe("clicking the expander arrow when it points up", function() {
                     beforeEach(function() {
@@ -536,7 +185,7 @@ describe("chorus.views.ResultsConsoleView", function() {
                         expect(this.view.$('.result_table')).toHaveClass("collapsed");
                         expect(this.view.$('.result_table')).not.toHaveClass("minimized");
                         expect(this.view.$('.result_table')).not.toHaveClass("maximized");
-                        expect(this.view.$('.data_table').css("height")).toBe("0px");
+                        expect(this.view.$('.data_grid').css("height")).toBe("0px");
                     });
 
                     it("makes the arrow point down", function() {
@@ -576,6 +225,398 @@ describe("chorus.views.ResultsConsoleView", function() {
                     });
                 });
             }
+
+            beforeEach(function() {
+                unstubDelay();
+                this.clock = this.useFakeTimers();
+                spyOn(window, "clearInterval");
+                spyOn(this.view, "closeError").andCallThrough();
+
+                this.task.save();
+                chorus.PageEvents.trigger("file:executionStarted");
+            });
+
+            it("sets the executing class", function() {
+                expect(this.view.$(".right")).toHaveClass("executing");
+            });
+
+            it("hides the control section", function() {
+                expect(this.view.$(".controls")).toHaveClass("hidden");
+            });
+
+            it("sets a delay to start a spinner", function() {
+                expect(this.view.$(".spinner")).toHaveClass("hidden");
+                this.clock.tick(300);
+                expect(this.view.$(".spinner")).not.toHaveClass("hidden");
+            });
+
+            it("updates the time", function() {
+                this.clock.tick(1000);
+                expect(this.view.$(".elapsed_time").text().trim()).toMatchTranslation("results_console_view.elapsed", { sec: 1 });
+                this.clock.tick(10000);
+                expect(this.view.$(".elapsed_time").text().trim()).toMatchTranslation("results_console_view.elapsed", { sec: 11 });
+            });
+
+            it("shows the execution bar", function() {
+                expect(this.view.$(".execution")).not.toHaveClass("hidden");
+            });
+
+            it("closes the errors", function() {
+                expect(this.view.closeError).toHaveBeenCalled();
+            });
+
+            describe("cancelling the execution", function() {
+                context("when the spinner has not yet been started", function() {
+                    beforeEach(function() {
+                        this.view.$(".cancel").click();
+                        chorus.PageEvents.trigger("file:executionFailed");
+                    });
+
+                    it("cancels the execution", function() {
+                        var destroy = this.server.lastDestroy();
+                        expect(destroy).toBeDefined();
+                    });
+
+                    itRemovesExecutionUI(true);
+                });
+
+                context("when the spinner has been started", function() {
+                    beforeEach(function() {
+                        delete this.view.elapsedTimer;
+                        this.view.$(".cancel").click();
+                        chorus.PageEvents.trigger("file:executionFailed");
+                    });
+
+                    it("cancels the execution", function() {
+                        var destroy = this.server.lastDestroy();
+                        expect(destroy).toBeDefined();
+                    });
+
+                    itRemovesExecutionUI(false);
+                });
+            });
+
+            describe("when the execution is completed", function() {
+                context("and there are results", function() {
+                    beforeEach(function() {
+                        this.server.completeCreateFor(this.task, backboneFixtures.workfileExecutionResults());
+                        chorus.PageEvents.trigger("file:executionSucceeded", this.task);
+                    });
+
+                    it("renders a data grid with the given task", function() {
+                        expect(this.view.dataGrid).toBeA(chorus.views.DataGrid);
+                        expect(this.view.dataGrid.model).toBe(this.task);
+                        expect($(this.view.el)).toContain(this.view.dataGrid.el);
+                    });
+
+                    it("displays the result table with one data table", function() {
+                        expect(this.view.$('.result_table')).not.toHaveClass("hidden");
+                        expect(this.view.$(".result_table .data_grid").length).toBe(1);
+                    });
+
+                    it("shows the control section", function() {
+                        expect(this.view.$(".controls")).not.toHaveClass("hidden");
+                    });
+
+                    context("when another execution completed event occurs", function() {
+                        beforeEach(function() {
+                            chorus.PageEvents.trigger("file:executionSucceeded", backboneFixtures.workfileExecutionResults());
+                        });
+
+                        it("still renders only one data table", function() {
+                            expect(this.view.$(".result_table .data_grid").length).toBe(1);
+                        });
+                    });
+
+                    it("changes the state of the result table to 'minimized'", function() {
+                        expect(this.view.$('.result_table')).not.toHaveClass("collapsed");
+                        expect(this.view.$('.result_table')).toHaveClass("minimized");
+                        expect(this.view.$('.result_table')).not.toHaveClass("maximized");
+                    });
+
+                    it("renders the maximize link", function() {
+                        expect(this.view.$("a.maximize")).not.toHaveClass("hidden");
+                        expect(this.view.$("a.minimize")).toHaveClass("hidden");
+                    });
+
+                    it("shows the bottom gutter (with the expander button)", function() {
+                        expect(this.view.$(".bottom_gutter")).not.toHaveClass("hidden");
+                    });
+
+                    specify("the expander button arrow points up", function() {
+                        expect(this.view.$(".arrow")).toHaveClass("up");
+                        expect(this.view.$(".arrow")).not.toHaveClass("down");
+                    });
+
+                    describe("clicking the maximize link", function() {
+                        beforeEach(function() {
+                            spyOn(this.view.dataGrid, 'resizeGridToResultsConsole');
+                            spyOn(this.view, "getDesiredDataGridHeight").andReturn(777);
+                            spyOn(this.view, "recalculateScrolling");
+                            this.view.$("a.maximize").click();
+                        });
+
+                        it("hides the maximize link and shows the minimize link", function() {
+                            expect(this.view.$("a.maximize")).toHaveClass("hidden");
+                            expect(this.view.$("a.minimize")).not.toHaveClass("hidden");
+                        });
+
+                        it("changes the state of the result table to 'minimized'", function() {
+                            expect(this.view.$('.result_table')).not.toHaveClass("collapsed");
+                            expect(this.view.$('.result_table')).not.toHaveClass("minimized");
+                            expect(this.view.$('.result_table')).toHaveClass("maximized");
+                        });
+
+                        it("recalculates scrolling", function() {
+                            expect(this.view.recalculateScrolling).toHaveBeenCalled();
+                        });
+
+                        it("the expander button arrow points up", function() {
+                            expect(this.view.$(".arrow")).toHaveClass("up");
+                            expect(this.view.$(".arrow")).not.toHaveClass("down");
+                        });
+
+                        it("sets .data_grid height to use the full viewport", function() {
+                            expect(this.view.$(".data_grid").css("height")).toBe("777px");
+                        });
+
+                        it("resizes the data grid", function() {
+                            expect(this.view.dataGrid.resizeGridToResultsConsole).toHaveBeenCalled();
+                        });
+
+                        itCanExpandAndCollapseTheResults("maximized", "minimized");
+
+                        describe("clicking the minimize link", function() {
+                            beforeEach(function() {
+                                this.view.dataGrid.resizeGridToResultsConsole.reset();
+                                this.view.recalculateScrolling.reset();
+                                this.view.$("a.minimize").click();
+                            });
+
+                            it("hides the minimize link and shows the maximize link", function() {
+                                expect(this.view.$("a.minimize")).toHaveClass("hidden");
+                                expect(this.view.$("a.maximize")).not.toHaveClass("hidden");
+                            });
+
+                            it("changes the state of the result table to 'minimized'", function() {
+                                expect(this.view.$('.result_table')).not.toHaveClass("collapsed");
+                                expect(this.view.$('.result_table')).toHaveClass("minimized");
+                                expect(this.view.$('.result_table')).not.toHaveClass("maximized");
+                            });
+
+                            it("recalculates scrolling", function() {
+                                expect(this.view.recalculateScrolling).toHaveBeenCalled();
+                            });
+
+                            it("the expander button arrow points up", function() {
+                                expect(this.view.$(".arrow")).toHaveClass("up");
+                                expect(this.view.$(".arrow")).not.toHaveClass("down");
+                            });
+
+                            it("does not keep the maxmized height", function() {
+                                expect(this.view.$(".data_grid").css("height")).not.toBe("777px");
+                            });
+
+                            it("resizes the data grid", function() {
+                                expect(this.view.dataGrid.resizeGridToResultsConsole).toHaveBeenCalled();
+                            });
+                        });
+                    });
+
+                    describe("getDesiredDataGridHeight", function() {
+                        beforeEach(function() {
+                            this.arbitrarySpacing = 2; // to eliminate alleged spurious y-scrollbar
+                            this.availableHeight = 300 - this.arbitrarySpacing;
+                            spyOn(this.view.boundingContainer, 'getAvailableHeight').andReturn(this.availableHeight + this.arbitrarySpacing);
+                        });
+
+                        it("doesn't expand past the available height of its bounding container", function () {
+                            expect(this.view.getDesiredDataGridHeight()).toBe(this.availableHeight);
+                        });
+                    });
+
+                    describe("clicking the download link", function() {
+                        context("with the show download dialog option", function() {
+                            beforeEach(function() {
+                                spyOn(chorus, "fileDownload");
+                                this.view.showDownloadDialog = true;
+                                this.view.dataset = backboneFixtures.dataset();
+                                this.view.$("a.download_csv").click();
+                            });
+
+                            itBehavesLike.aDialogLauncher("a.download_csv", chorus.dialogs.DatasetDownload);
+
+                            it("should not have called $.fileDownload", function() {
+                                expect(chorus.fileDownload).not.toHaveBeenCalled();
+                            });
+                        });
+
+                        context("without the show download dialog option", function() {
+                            beforeEach(function() {
+                                spyOn(chorus, "fileDownload");
+                                this.view.showDownloadDialog = false;
+                                this.view.$("a.download_csv").click();
+                            });
+
+                            it("starts the file download", function() {
+                                var content = new chorus.utilities.CsvWriter(
+                                    _.pluck(this.view.resource.getColumns(), "name"),
+                                    _.pluck(this.view.resource.getColumns(), "uniqueName"),
+                                    this.view.resource.getRows()
+                                ).toCsv();
+                                expect(chorus.fileDownload).toHaveBeenCalledWith("/download_data",
+                                    {
+                                        data: {
+                                            content: content,
+                                            filename: this.view.resource.name()+'.csv',
+                                            mime_type: "text/csv"
+                                        },
+                                        httpMethod: "POST"
+                                    });
+                            });
+                        });
+                    });
+
+                    it("has a link to display the execution message", function() {
+                        expect(this.view.$(".execution .view_details").text()).toMatchTranslation("actions.view_details");
+                    });
+
+                    describe("clicking the execution view details link", function() {
+                        it("launches an execution message alert", function() {
+                            this.view.$(".execution a.view_details").click();
+
+                            var alert = this.modalSpy.lastModal();
+                            expect(alert).toBeA(chorus.alerts.ExecutionMessage);
+                            expect($(alert.el)).toContainTranslation('sql_execution.success');
+                        });
+                    });
+
+                    describe("starting another execution", function() {
+                        beforeEach(function() {
+                            chorus.PageEvents.trigger("file:executionStarted", this.task);
+                        });
+
+                        it("hides the control section", function() {
+                            expect(this.view.$(".controls")).toHaveClass("hidden");
+                        });
+                    });
+                });
+
+                context("and the task does not have results", function() {
+                    beforeEach(function() {
+                        this.server.completeCreateFor(this.task, backboneFixtures.workfileExecutionResultsEmpty());
+                        chorus.PageEvents.trigger("file:executionSucceeded", this.task);
+                    });
+
+                    it("collapses the result table", function() {
+                        expect(this.view.$(".controls")).toHaveClass("collapsed");
+                        expect(this.view.$('.result_table')).toHaveClass("collapsed");
+                        expect(this.view.$('.result_table')).not.toHaveClass("minimized");
+                        expect(this.view.$('.result_table')).not.toHaveClass("maximized");
+                        expect(this.view.$('.data_grid').css("height")).toBe("0px");
+                    });
+
+                    it("does not have a download link", function() {
+                        expect(this.view.$('.download_csv')).not.toExist();
+                    });
+                });
+
+                context("when the spinner has not yet been started", function() {
+                    beforeEach(function() {
+                        this.server.completeCreateFor(this.task, backboneFixtures.workfileExecutionResults());
+                        chorus.PageEvents.trigger("file:executionSucceeded", this.task);
+                    });
+
+                    itRemovesExecutionUI(true);
+                });
+
+                context("when the spinner has been started", function() {
+                    beforeEach(function() {
+                        delete this.view.elapsedTimer;
+                        this.server.completeCreateFor(this.task, backboneFixtures.workfileExecutionResults());
+                        chorus.PageEvents.trigger("file:executionSucceeded", this.task);
+                    });
+
+                    itRemovesExecutionUI(false);
+                });
+
+                context("and there was an execution error", function() {
+                    beforeEach(function() {
+                        this.server.lastCreateFor(this.task).failUnprocessableEntity(backboneFixtures.workfileExecutionErrorJson()['errors']);
+                        chorus.PageEvents.trigger("file:executionFailed", this.task);
+                    });
+
+                    it("should show the error header", function() {
+                        expect(this.view.$('.sql_errors')).not.toHaveClass('hidden');
+                    });
+
+                    it("should show 'View Details' and 'Close' links", function() {
+                        expect(this.view.$('.sql_errors .view_details')).toExist();
+                        expect(this.view.$('.sql_errors .close_errors')).toExist();
+                    });
+
+                    it("should hide the execution content area", function() {
+                        expect(this.view.$(".result_table")).toHaveClass("hidden");
+                        expect(this.view.$(".bottom_gutter")).toHaveClass("hidden");
+                        expect(this.view.$(".execution")).toHaveClass("hidden");
+                    });
+
+                    describe("clicking on the close button", function() {
+                        beforeEach(function() {
+                            spyOn(chorus.PageEvents, "trigger");
+                            this.view.$(".close_errors").click();
+                        });
+
+                        it("triggers action:closePreview", function() {
+                            expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("action:closePreview");
+                        });
+
+                        it("hides the control section", function() {
+                            expect(this.view.$(".controls")).toHaveClass("hidden");
+                        });
+
+                        it("should hide the sql_errors content", function() {
+                            expect(this.view.$(".sql_errors")).toHaveClass("hidden");
+                        });
+                    });
+
+                    context("when the sql is executed again without errors", function() {
+                        beforeEach(function() {
+                            this.server.completeCreateFor(this.task, backboneFixtures.workfileExecutionResults());
+                            chorus.PageEvents.trigger("file:executionSucceeded", this.task);
+                        });
+
+                        it("should show the data table", function() {
+                            expect(this.view.$(".result_table")).not.toHaveClass("hidden");
+                            expect(this.view.$(".bottom_gutter")).not.toHaveClass("hidden");
+                        });
+                    });
+
+                    describe("clicking on view details", function() {
+                        it("should open an execution message alert", function() {
+                            this.view.$(".view_details").click();
+                            expect(this.modalSpy).toHaveModal(chorus.alerts.ExecutionError);
+                        });
+                    });
+                });
+
+                describe("starting another execution", function() {
+                    beforeEach(function() {
+                        this.task = new chorus.models.DataPreviewTask({});
+                        this.view.execute(this.task);
+                        chorus.PageEvents.trigger("file:executionSucceeded", this.task);
+                        chorus.PageEvents.trigger("file:executionStarted");
+                    });
+
+                    it("hides the gutter", function() {
+                        expect(this.view.$(".bottom_gutter")).toHaveClass("hidden");
+                    });
+
+                    it("clears out any data that is already in the table", function() {
+                        expect(this.view.$(".result_table")).toHaveHtml("");
+                    });
+                });
+            });
         });
 
         describe("#teardown", function() {
@@ -612,7 +653,7 @@ describe("chorus.views.ResultsConsoleView", function() {
 
         context("when the task was successfully executed previously", function() {
             beforeEach(function() {
-                this.task = rspecFixtures.workfileExecutionResults();
+                this.task = backboneFixtures.workfileExecutionResults();
                 this.task.loaded = true;
                 this.view.execute(this.task);
             });
@@ -641,13 +682,13 @@ describe("chorus.views.ResultsConsoleView", function() {
 
             it("calls executionFailed", function() {
                 expect(this.view.executionFailed).toHaveBeenCalled();
-                expect(this.view.executionFailed.mostRecentCall.args[0]).toBe(this.executionModel);
+                expect(this.view.executionFailed.lastCall().args[0]).toBe(this.executionModel);
             });
         });
 
-        context("when file:executionCancelled event is broadcast", function() {
+        context("when file:executionCancelled event is trigger", function() {
             beforeEach(function() {
-                chorus.PageEvents.broadcast('file:executionCancelled');
+                chorus.PageEvents.trigger('file:executionCancelled');
             });
 
             it("stops the spinner", function() {

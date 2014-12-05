@@ -10,7 +10,7 @@ chorus.alerts.WorkspaceDelete = chorus.alerts.ModelDelete.extend({
     deleteMessageParams:function () {
         return {
             workspaceName:this.workspaceName
-        }
+        };
     },
 
     makeModel:function () {

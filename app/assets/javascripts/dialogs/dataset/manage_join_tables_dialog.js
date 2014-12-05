@@ -43,6 +43,7 @@ chorus.dialogs.ManageJoinTables = chorus.dialogs.Base.extend({
     joinableDatasetsSelected: function() {
         var workspace = this.pageModel.workspace();
         var datasets = workspace.datasetsInDatabase(this.pageModel.schema().database());
+        datasets.attributes.entitySubtype = "NON_CHORUS_VIEW";
         this.fetchDatasets(datasets);
         this.displaySchemaName(t("dataset.manage_join_tables.this_workspace"));
     },
@@ -73,14 +74,16 @@ chorus.dialogs.ManageJoinTables = chorus.dialogs.Base.extend({
             onSelect: _.bind(this.joinableDatasetsSelected, this)
         });
 
-        var menu = new chorus.views.Menu({
+        this.menuView && this.menuView.teardown();
+        this.menuView = new chorus.views.Menu({
             launchElement: this.$("a.schema_qtip"),
             items: menuItems,
             checkable: true,
             additionalClass: "join_schemas"
         });
+        this.registerSubView(this.menuView);
 
-        menu.selectItem(this.pageModel.schema().get("name"));
+        this.menuView.selectItem(this.pageModel.schema().get("name"));
 
         chorus.search({
             input: this.$(".search input:text"),
@@ -91,7 +94,7 @@ chorus.dialogs.ManageJoinTables = chorus.dialogs.Base.extend({
     joinLinkClicked: function(e) {
         e.preventDefault();
         var clickedId = $(e.target).closest("li").data("cid");
-        var dataset = this.collection.getByCid(clickedId);
+        var dataset = this.collection.get(clickedId);
 
         var joinConfigurationDialog = new chorus.dialogs.JoinConfiguration({
             model: this.model,
@@ -104,7 +107,7 @@ chorus.dialogs.ManageJoinTables = chorus.dialogs.Base.extend({
         e.preventDefault();
 
         var clickedId = $(e.target).closest("li").data("cid");
-        var dataset = this.collection.getByCid(clickedId);
+        var dataset = this.collection.get(clickedId);
 
         var previewColumnsDialog = new chorus.dialogs.PreviewColumns({model: dataset});
         this.launchSubModal(previewColumnsDialog);
@@ -113,7 +116,7 @@ chorus.dialogs.ManageJoinTables = chorus.dialogs.Base.extend({
     additionalContext: function() {
         var database = this.pageModel.schema().database();
         return {
-            instanceName: database.instance().name(),
+            dataSourceName: database.dataSource().name(),
             databaseName: database.name()
         };
     }

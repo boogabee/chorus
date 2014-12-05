@@ -1,6 +1,7 @@
 chorus.dialogs.EditNote = chorus.dialogs.Base.include(
     chorus.Mixins.ClEditor
 ).extend({
+    constructorName: "EditNoteDialog",
     templateName: "edit_note",
     persistent: true,
 
@@ -13,8 +14,8 @@ chorus.dialogs.EditNote = chorus.dialogs.Base.include(
         this.title = this.activity.isInsight() ? t("notes.edit_dialog.insight_title") : t("notes.edit_dialog.note_title");
         this.resource = this.model = this.activity.toNote();
 
-        this.bindings.add(this.resource, "validationFailed", this.showErrors);
-        this.bindings.add(this.resource, "saved", this.submitSucceeds);
+        this.listenTo(this.resource, "validationFailed", this.showErrors);
+        this.listenTo(this.resource, "saved", this.submitSucceeds);
     },
 
     showErrors: function(model) {
@@ -30,7 +31,6 @@ chorus.dialogs.EditNote = chorus.dialogs.Base.include(
             this.markInputAsInvalid($input, model.errors.body, true);
 
             this.$("iframe").contents().find("body").css("margin-right", "20px");
-            this.$(".cleditorMain").css("width", "545px");
         }
     },
 
@@ -38,7 +38,7 @@ chorus.dialogs.EditNote = chorus.dialogs.Base.include(
         this.$("textarea").val(this.activity.get("body"));
 
         _.defer(_.bind(function() {
-            this.makeEditor($(this.el), ".toolbar", "body", { width: 566, height: 150 });
+            this.makeEditor($(this.el), ".toolbar", "body", { width: 'auto', height: 150 });
         }, this));
     },
 
@@ -58,7 +58,7 @@ chorus.dialogs.EditNote = chorus.dialogs.Base.include(
     },
 
     submitSucceeds: function() {
-        this.$("button.submit").stopLoading();
         this.closeModal();
+        chorus.PageEvents.trigger('note:saved', this.model);
     }
 });

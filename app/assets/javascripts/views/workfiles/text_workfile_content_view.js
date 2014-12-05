@@ -1,4 +1,6 @@
 chorus.views.TextWorkfileContent = chorus.views.Base.extend({
+    constructorName: "TextWorkfileContent",
+
     templateName: "text_workfile_content",
     saveInterval: 30000,
 
@@ -13,7 +15,7 @@ chorus.views.TextWorkfileContent = chorus.views.Base.extend({
             var hotkeyString = _.str.capitalize(chorus.hotKeyMeta) + "-" + key.toUpperCase();
             acc[hotkeyString] = function() { chorus.triggerHotKey(key); };
             return acc;
-        }, {});
+        }, {"Ctrl-Space": "autocomplete", "Shift-Space": "autocomplete"});
 
         this.editor = new chorus.views.CodeEditorView({
             model: this.model,
@@ -22,33 +24,30 @@ chorus.views.TextWorkfileContent = chorus.views.Base.extend({
             onChange: _.bind(this.startTimer, this),
             extraKeys: extraKeys,
             beforeEdit: function() {
-                if (self.model.canEdit()) {
+                if (!chorus.modal && self.model.canEdit()) {
                     setTimeout(_.bind(self.editText, self), 100);
                 }
             },
             onCursorActivity: function(editor) {
                 if (editor.getSelection().length > 0) {
-                    chorus.PageEvents.broadcast("file:selectionPresent");
+                    chorus.PageEvents.trigger("file:selectionPresent");
                 } else {
-                    chorus.PageEvents.broadcast("file:selectionEmpty");
+                    chorus.PageEvents.trigger("file:selectionEmpty");
                 }
             }
         });
 
-        chorus.PageEvents.subscribe("file:replaceCurrentVersion", this.replaceCurrentVersion, this);
-        chorus.PageEvents.subscribe("file:createNewVersion", this.createNewVersion, this);
-        chorus.PageEvents.subscribe("file:replaceCurrentVersionWithSelection", this.replaceCurrentVersionWithSelection, this);
-        chorus.PageEvents.subscribe("file:createNewVersionFromSelection", this.createNewVersionFromSelection, this);
-        chorus.PageEvents.subscribe("file:editorSelectionStatus", this.editorSelectionStatus, this);
-        this.bindings.add(this.model, "saveFailed", this.versionConflict);
+        this.subscribePageEvent("file:replaceCurrentVersion", this.replaceCurrentVersion);
+        this.subscribePageEvent("file:createNewVersion", this.createNewVersion);
+        this.subscribePageEvent("file:replaceCurrentVersionWithSelection", this.replaceCurrentVersionWithSelection);
+        this.subscribePageEvent("file:createNewVersionFromSelection", this.createNewVersionFromSelection);
+        this.subscribePageEvent("file:editorSelectionStatus", this.editorSelectionStatus);
+        this.subscribePageEvent("file:saveDraft", this.saveDraft);
+        this.listenTo(this.model, "saveFailed", this.versionConflict);
     },
 
     mode: function() {
-        if (this.model.isSql()) {
-            return "text/x-sql";
-        } else {
-            return "text/plain";
-        }
+        return chorus.utilities.mime(this.model.extension());
     },
 
     versionConflict: function() {
@@ -61,15 +60,10 @@ chorus.views.TextWorkfileContent = chorus.views.Base.extend({
     editText: function() {
         if (this.cursor) {
             this.editor.setCursor(this.cursor.line, this.cursor.ch);
-        } else {
-            var lineCount = this.editor.lineCount();
-            var lastLine = this.editor.getLine(lineCount - 1)
-            var charCount = lastLine.length
-            this.editor.setCursor(lineCount - 1, charCount)
         }
 
         this.editor.setOption("readOnly", false);
-        this.$(".CodeMirror").addClass("editable");
+        this.editor.setOption("theme", "default editable");
         this.editor.focus();
     },
 
@@ -88,18 +82,20 @@ chorus.views.TextWorkfileContent = chorus.views.Base.extend({
 
     saveDraft: function() {
         this.stopTimer();
-        this.trigger("autosaved");
+        chorus.PageEvents.trigger("file:autosaved");
         this.model.content(this.editor.getValue(), {silent: true});
         var overrides = {};
         if (this.model.get("hasDraft")) {
-            overrides.method = 'update'
+            overrides.method = 'update';
         }
         this.model.createDraft().save({}, overrides);
     },
 
     teardown: function() {
+        if (this.saveTimer) {
+            this.saveDraft();
+        }
         this._super("teardown");
-        if (this.saveTimer) this.saveDraft();
     },
 
     saveCursorPosition: function() {
@@ -117,26 +113,37 @@ chorus.views.TextWorkfileContent = chorus.views.Base.extend({
     },
 
     replaceCurrentVersionWithSelection: function() {
+        this.saveCursorPosition();
         this.replaceCurrentVersionWithContent(this.editor.getSelection());
     },
 
     createNewVersionFromSelection: function() {
+        this.saveCursorPosition();
         this.createNewVersionWithContent(this.editor.getSelection());
     },
 
     editorSelectionStatus: function() {
         if (this.editor.getSelection() && this.editor.getSelection().length > 0) {
-            chorus.PageEvents.broadcast("file:selectionPresent");
+            chorus.PageEvents.trigger("file:selectionPresent");
         } else {
-            chorus.PageEvents.broadcast("file:selectionEmpty");
+            chorus.PageEvents.trigger("file:selectionEmpty");
         }
     },
 
     replaceCurrentVersionWithContent: function(value) {
         this.stopTimer();
         this.model.content(value, {silent: true});
+        var model = this.model;
 
-        this.model.save({}, {silent: true}); // Need to save silently because content details and content share the same models, and we don't want to render content details
+        this.model.save({}, {
+            updateWorkfileVersion: true,
+            silent: true,
+            notFound: function() {
+                this.alert = new chorus.alerts.WorkfileConflict({ model: model });
+                this.alert.launchModal();
+            }
+        }); // Need to save silently because content details and content share the same models, and we don't want to render content details
+
         this.render();
     },
 
@@ -146,10 +153,7 @@ chorus.views.TextWorkfileContent = chorus.views.Base.extend({
 
         this.dialog = new chorus.dialogs.WorkfileNewVersion({ pageModel: this.model, pageCollection: this.collection });
         this.dialog.launchModal(); // we need to manually create the dialog instead of using data-dialog because qtip is not part of page
-        this.bindings.add(this.dialog.model, "change", this.render);
-        this.bindings.add(this.dialog.model, "autosaved", function() {
-            this.trigger("autosaved", "workfile.content_details.save");
-        });
+        this.listenTo(this.dialog.model, "change", this.render);
     }
 });
 

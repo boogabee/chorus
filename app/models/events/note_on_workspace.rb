@@ -3,12 +3,20 @@ module Events
     has_targets :workspace
     has_activities :actor, :workspace
 
-    validate :no_note_on_archived_workspace, :on => :create
+    include_shared_search_fields(:workspace)
 
-    def no_note_on_archived_workspace
-      errors.add(:workspace, :generic, {:message => "Can not add a note on an archived workspace"}) if workspace.archived?
+    def note_target=(model)
+      self.workspace = model
     end
 
-    include_shared_search_fields(:workspace)
+    def note_target
+      self.workspace
+    end
+
+    private
+
+    def has_workspace?
+      true
+    end
   end
 end

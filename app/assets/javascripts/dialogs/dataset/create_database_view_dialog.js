@@ -12,8 +12,8 @@ chorus.dialogs.CreateDatabaseView = chorus.dialogs.Base.extend({
     makeModel:function (options) {
         this.dataset = this.options.pageModel;
         this.model = new chorus.models.DatabaseViewConverter({workspaceId: this.dataset.get("workspace") && this.dataset.get("workspace").id }, {from: this.dataset});
-        this.bindings.add(this.model, "saved", this.saved);
-        this.bindings.add(this.model, "saveFailed", this.saveFailed);
+        this.listenTo(this.model, "saved", this.saved);
+        this.listenTo(this.model, "saveFailed", this.saveFailed);
     },
 
     additionalContext: function() {
@@ -40,20 +40,16 @@ chorus.dialogs.CreateDatabaseView = chorus.dialogs.Base.extend({
         chorus.toast("create_database_view.toast_success", {
             canonicalName: this.canonicalName(),
             viewName: this.model.get("objectName")
-        })
+        });
 
-        var databaseView = this.model.databaseView()
+        var databaseView = this.model.databaseView();
         if (!databaseView.has("workspace")) {
             databaseView.set({"workspace": this.dataset.get("workspace")});
         }
         chorus.router.navigate(databaseView.showUrl());
     },
 
-    saveFailed: function() {
-        this.$("button.submit").stopLoading();
-    },
-
     canonicalName: function() {
-        return this.dataset.schema().canonicalName()
+        return this.dataset.schema().canonicalName();
     }
 });

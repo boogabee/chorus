@@ -1,0 +1,37 @@
+.project_status {
+    a.edit_project_status {
+        &.on_track          { color: $ok; }
+        &.needs_attention   { color: $needs-attention; }
+        &.at_risk           { color: $alert; }
+        font-weight: $semibold;
+    }
+
+    .label { font-weight: $semibold; }
+
+    .facts > a {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        max-width: 160px;
+        display: inline-block;
+        vertical-align: bottom;
+    }
+
+  i {
+        position: relative;
+        left: 4px;
+        bottom: 1px;
+    }
+
+    .progress_container {
+        display: inline-block;
+        width: 120px;
+        height: 10px;
+        border: 1px solid $color-text1;
+
+        .progress {
+            height: 100%;
+            background-color: $chart-fill-color;
+        }
+    }
+}

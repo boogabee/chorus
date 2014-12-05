@@ -1,3 +1,10 @@
 <% unless Rails.env.production? || (ENV['RAILS_GROUPS'] && ENV['RAILS_GROUPS'].match(/assets/)) %>
   window.CHORUS_DEV_MODE = true;
+  <% if Rails.env.integration? %>
+    window.INTEGRATION_MODE = true;
+  <% end %>
+
+  <% if Rails.env.test? || Rails.env.integration? %>
+    $.fx.off = true;
+  <% end %>
 <% end %>

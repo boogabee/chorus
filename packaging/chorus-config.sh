@@ -7,8 +7,17 @@ fi
 # remove trailing '/' from CHORUS_HOME
 CHORUS_HOME=`echo $CHORUS_HOME | sed 's/\/$//'`
 
+ORIGINAL_CHORUS_HOME=$CHORUS_HOME
 if [ -e $CHORUS_HOME/current ]; then
     CHORUS_HOME=$CHORUS_HOME/current
+fi
+
+if [ "$ALPINE_HOME" = "" ] && [ -e `dirname $CHORUS_HOME`/alpine-current ]; then
+    export ALPINE_HOME=`dirname $CHORUS_HOME`/alpine-current
+    export ALPINE_DATA_REPOSITORY=$ORIGINAL_CHORUS_HOME/shared/ALPINE_DATA_REPOSITORY
+else
+    export ALPINE_HOME=$ALPINE_HOME
+    export ALPINE_DATA_REPOSITORY=$ALPINE_DATA_REPOSITORY
 fi
 
 if [ "$RAILS_ENV" = "" ]; then
@@ -21,14 +30,19 @@ fi
 
 case $RAILS_ENV in
     production )
-        RUBY=bin/ruby
-        RAKE=bin/rake
+        RUBY=$CHORUS_HOME/bin/ruby
+        RAKE=$CHORUS_HOME/bin/rake
         ;;
     * )
         RUBY=jruby
         RAKE=rake
         ;;
 esac
+
+# Test for interactive shell
+if [ -t 0 ]; then
+    SHELL_CONFIG=`stty -g`
+fi
 
 PATH=$PATH:$CHORUS_HOME/packaging/dummy
 
@@ -44,6 +58,8 @@ MIZUNO_PID_FILE=$CHORUS_HOME/tmp/pids/mizuno.pid
 
 POSTGRES_DATA_DIR=$CHORUS_HOME/postgres-db
 POSTGRES_PID_FILE=$POSTGRES_DATA_DIR/postmaster.pid
+
+eval $($RUBY $CHORUS_HOME/packaging/get_chorus_env_params.rb)
 
 ##### Determine which nginx binary to use for this platform #####
 
@@ -106,7 +122,26 @@ function wait_for_stop () {
     while kill -0 `head -1 $pid_file 2>/dev/null` > /dev/null 2>&1
     do
         echo -n "."
-        sleep 5
+        sleep 1
     done
     echo " ( Stopped )"
 }
+
+function exit_control () {
+    # Test for interactive shell
+    test -t 0 && stty $SHELL_CONFIG
+    exit $1
+}
+
+function checkSensitiveFiles() {
+     $RUBY -e "require '$CHORUS_HOME/app/services/sensitive_file_checker.rb'" -e "unless SensitiveFileChecker.check; puts(SensitiveFileChecker.errors); exit(1); end"
+     SENSITIVE_FILE_EXIT_STATUS=$?
+
+     if [ $SENSITIVE_FILE_EXIT_STATUS -eq 1 ]; then
+        exit_control 1
+     fi
+}
+
+if [ "$RAILS_ENV" = "production" ]; then
+    checkSensitiveFiles
+fi

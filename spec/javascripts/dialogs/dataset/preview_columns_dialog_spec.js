@@ -2,7 +2,7 @@ describe("chorus.dialogs.PreviewColumns", function() {
     beforeEach(function() {
         stubModals();
         spyOn(chorus, "search");
-        this.dataset = rspecFixtures.workspaceDataset.datasetTable();
+        this.dataset = backboneFixtures.workspaceDataset.datasetTable();
         this.dialog = new chorus.dialogs.PreviewColumns({model: this.dataset});
         this.dialog.render();
     });
@@ -17,12 +17,12 @@ describe("chorus.dialogs.PreviewColumns", function() {
 
     describe("when the fetch completes successfully", function() {
         beforeEach(function() {
-            this.server.completeFetchAllFor(this.dataset.columns(), [
-                fixtures.databaseColumn({name: "Rhino", recentComment: "awesome", dataType: "text" }),
-                fixtures.databaseColumn({name: "Giraffe", recentComment: "tall", dataType: "float8" }),
-                fixtures.databaseColumn({name: "Sloth", recentComment: "lazy", dataType: "int4" }),
-                fixtures.databaseColumn({name: "Penguin", recentComment: "Morgan Freeman", dataType: "time" })
-            ]);
+            this.server.completeFetchAllFor(this.dataset.columns(), backboneFixtures.databaseColumnSet([
+                {name: "Rhino", dataType: "text"     , description: "awesome"},
+                {name: "Giraffe", dataType: "float8" , description: "tall"},
+                {name: "Sloth", dataType: "int4"     , description: "lazy"},
+                {name: "Penguin", dataType: "time"   , description: "Morgan Freeman"}
+            ]).models);
         });
 
         it("should have a 'Return to List' button", function() {
@@ -34,7 +34,7 @@ describe("chorus.dialogs.PreviewColumns", function() {
             expect(search).toExist();
 
             expect(chorus.search).toHaveBeenCalled();
-            var searchOptions = chorus.search.mostRecentCall.args[0];
+            var searchOptions = chorus.search.lastCall().args[0];
             expect(searchOptions.input).toBe(".search");
             expect(searchOptions.list).toBe("ul.list");
             expect(searchOptions.selector).toBe(".name, .comment");
@@ -83,12 +83,12 @@ describe("chorus.dialogs.PreviewColumns", function() {
             spyOn(this.dialog, "closeModal");
             this.dialog.previousModal = {
                 showErrors: jasmine.createSpy("showErrors")
-            }
+            };
             this.server.lastFetch().failUnprocessableEntity();
         });
 
         it("copies the serverErrors to the dialog model", function() {
-            expect(this.dialog.model.serverErrors).toEqual(this.dataset.columns().serverErrors)
+            expect(this.dialog.model.serverErrors).toEqual(this.dataset.columns().serverErrors);
         });
 
         it("closes itself", function() {

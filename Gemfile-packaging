@@ -1,0 +1,5 @@
+Dir.glob(File.join(File.dirname(__FILE__), 'Gemfile')) do |gemfile|
+    eval(IO.read(gemfile), binding)
+end
+
+gem 'tabcmd_gem', :git => 'gemserver@chorus-gemserver:tableau', :branch => :master

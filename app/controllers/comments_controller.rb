@@ -1,4 +1,7 @@
 class CommentsController < ApplicationController
+  include ActionView::Helpers::SanitizeHelper
+
+  before_filter :sanitize_body, :only => [:create]
 
   def show
     comment = Comment.find(params[:id])
@@ -15,17 +18,18 @@ class CommentsController < ApplicationController
     authorize! :create_comment_on, Comment, Events::Base.find(comment.event_id)
     comment.save!
 
-    event_id = comment.event_id
-    event = Events::Base.find(event_id)
+    event = comment.event
     users_to_notify = event.comments.map(&:author_id)
     users_to_notify << event.actor_id
     users_to_notify = users_to_notify.uniq - [current_user.id]
-    users_to_notify.each do |user_id|
-      Notification.create!(
-          :recipient_id => user_id,
-          :event_id => event_id,
-          :comment_id => comment.id
-      )
+    if event.is_a?(Events::Note)
+      users_to_notify.each do |user_id|
+        Notification.create!(
+            :recipient_id => user_id,
+            :event => event,
+            :comment_id => comment.id
+        )
+      end
     end
 
     present comment, :status => :created
@@ -37,5 +41,11 @@ class CommentsController < ApplicationController
 
     comment.destroy
     render :json => {}
+  end
+
+  private
+
+  def sanitize_body
+    params[:comment][:body] = sanitize(params[:comment][:body]) if params[:comment][:body]
   end
 end

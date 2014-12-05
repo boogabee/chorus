@@ -1,13 +1,13 @@
 describe("chorus.views.ShuttleWidget", function() {
     beforeEach(function() {
-        this.collection = rspecFixtures.userSet([
-            {id: 10000, firstName: "a", lastName: "a", admin: false},
-            {id: 10001, firstName: "b", lastName: "b", admin: true},
-            {id: 10002, firstName: "a", lastName: "c", admin: false}
+        this.collection = backboneFixtures.userSet([
+            {id: 10000, firstName: "a", lastName: "a", admin: false, image: {icon: "foo1.png", original: "bad.png"}},
+            {id: 10001, firstName: "b", lastName: "b", admin: true, image: {icon: "foo2.png"}},
+            {id: 10002, firstName: "a", lastName: "c", admin: false, image: {icon: "foo3.png"}}
         ]);
         this.selectedItems = new Backbone.Collection([this.collection.get("10001")]);
         this.nonRemovableItems = [this.collection.get("10000")];
-        this.nonRemovableText = "RockSteady"
+        this.nonRemovableText = "RockSteady";
         this.view = new chorus.views.ShuttleWidget(
             { collection : this.collection,
               selectionSource : this.selectedItems,
@@ -39,11 +39,11 @@ describe("chorus.views.ShuttleWidget", function() {
 
         it("adds the non_removable class to the appropriate available items", function() {
             expect(this.view.$("ul.available li.non_removable").length).toBe(this.nonRemovableItems.length);
-        })
+        });
 
         it("renders the model image in an li", function() {
-           expect(this.view.$("ul.available li:eq(0) .profile").attr("src")).toBe(this.collection.get("10000").fetchImageUrl());
-           expect(this.view.$("ul.selected li.added:eq(0) .profile").attr("src")).toBe(this.collection.get("10001").fetchImageUrl());
+            expect(this.view.$("ul.available li:eq(0) .profile").attr("src")).toBe(this.collection.get("10000").fetchImageUrl({size: "icon"}));
+            expect(this.view.$("ul.selected li.added:eq(0) .profile").attr("src")).toBe(this.collection.get("10001").fetchImageUrl({size: "icon"}));
         });
 
         it("renders the model displayName in an li", function() {
@@ -132,8 +132,8 @@ describe("chorus.views.ShuttleWidget", function() {
             });
 
             it("does not remove the owner", function() {
-               expect(this.view.$('ul.selected li.non_removable.added').length).toBe(1)
-               expect(this.view.$('ul.available li.non_removable.added').length).toBe(1)
+                expect(this.view.$('ul.selected li.non_removable.added').length).toBe(1);
+                expect(this.view.$('ul.available li.non_removable.added').length).toBe(1);
             });
 
             it("removes all the other members", function() {

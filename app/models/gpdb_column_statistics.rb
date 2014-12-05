@@ -42,6 +42,10 @@ class GpdbColumnStatistics
     bounds.last if bounds
   end
 
+  def entity_type_name
+    'gpdb_column_statistics'
+  end
+
   private
 
   def histogram_enumerable?

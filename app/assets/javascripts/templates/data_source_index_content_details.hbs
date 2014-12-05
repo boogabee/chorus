@@ -1,0 +1,14 @@
+<ul class="list_horizontal">
+    <li>
+        {{> multipleSelectionHeader}}
+    </li>
+    <li>
+        {{#if loaded}}
+            <div class="count">
+                <span class="number">{{count}}</span> {{pluralize count "data_sources.title"}}
+            </div>
+        {{else}}
+            <div class="loading_section">{{t "loading"}}</div>
+        {{/if}}
+    </li>
+</ul>

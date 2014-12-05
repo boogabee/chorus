@@ -1,0 +1,56 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:8981/solr/select?wt=ruby
+    body:
+      encoding: US-ASCII
+      string: fq=type%3A%28User+OR+DataSource+OR+HdfsDataSource+OR+GnipDataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment+OR+Events%5C%3A%5C%3ANote+OR+Comment%29&fq=tag_ids_im%3A1000000&fq=type_name_s%3A%28User+OR+DataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000016+OR+1000017+OR+1000018+OR+1000019+OR+1000024+OR+1000026+OR+1000027+OR+1000028%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000016+OR+1000017+OR+1000018+OR+1000019+OR+1000024+OR+1000026+OR+1000027+OR+1000028%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&sort=sort_name_s+asc&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true&facet=true&f.type_name_s.facet.mincount=1&facet.field=type_name_s&q=%2A%3A%2A
+    headers:
+      content-type:
+      - application/x-www-form-urlencoded; charset=UTF-8
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - text/plain; charset=utf-8
+      connection:
+      - close
+      server:
+      - Jetty(6.1-SNAPSHOT)
+    body:
+      encoding: US-ASCII
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>2,'params'=>{'facet'=>'true','group.ngroups'=>'true','sort'=>'sort_name_s\
+        \ asc','group.limit'=>'3','wt'=>'ruby','rows'=>'50','start'=>'0','q'=>'*:*','group.truncate'=>'true','f.type_name_s.facet.mincount'=>'1','group.field'=>'grouping_id_s','facet.field'=>'type_name_s','group'=>'true','fq'=>['type:(User\
+        \ OR DataSource OR HdfsDataSource OR GnipDataSource OR Workspace OR Workfile\
+        \ OR Dataset OR HdfsEntry OR Attachment OR Events\\\\:\\\\:Note OR Comment)','tag_ids_im:1000000','type_name_s:(User\
+        \ OR DataSource OR Workspace OR Workfile OR Dataset OR HdfsEntry OR Attachment)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:RelationalDataset\
+        \ AND -data_source_account_ids_im:(1000001 OR 1000004 OR 1000002 OR 1000006\
+        \ OR 1000007 OR 1000008 OR 1000010 OR 1000011 OR 1000012 OR 1000013 OR 1000014\
+        \ OR 1000016 OR 1000017 OR 1000018 OR 1000019 OR 1000024 OR 1000026 OR 1000027\
+        \ OR 1000028))','-(security_type_name_sm:ChorusView AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:HdfsDataset AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:RelationalDataset AND -data_source_account_ids_im:(1000001\
+        \ OR 1000004 OR 1000002 OR 1000006 OR 1000007 OR 1000008 OR 1000010 OR 1000011\
+        \ OR 1000012 OR 1000013 OR 1000014 OR 1000016 OR 1000017 OR 1000018 OR 1000019\
+        \ OR 1000024 OR 1000026 OR 1000027 OR 1000028))','-(security_type_name_sm:ChorusView\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:HdfsDataset\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)']}},'grouped'=>{'grouping_id_s'=>{'matches'=>3,'ngroups'=>3,'groups'=>[{'groupValue'=>'Workspace\
+        \ 1000014','doclist'=>{'numFound'=>1,'start'=>0,'docs'=>[{'id'=>'Workspace\
+        \ 1000014','name_texts'=>['tagged'],'name_stemmed_texts'=>['tagged'],'tag_names_stemmed_texts'=>['alpha','beta'],'tag_names_texts'=>['alpha','beta']}]}},{'groupValue'=>'GpdbTable\
+        \ 1000011','doclist'=>{'numFound'=>1,'start'=>0,'docs'=>[{'id'=>'GpdbTable\
+        \ 1000011','table_description_stemmed_texts'=>['bogus'],'name_texts'=>['tagged'],'database_name_texts'=>['default'],'name_stemmed_texts'=>['tagged'],'tag_names_stemmed_texts'=>['alpha'],'table_description_texts'=>['bogus'],'tag_names_texts'=>['alpha'],'column_name_stemmed_texts'=>['bogus','bogus\
+        \ 2'],'schema_name_stemmed_texts'=>['default'],'schema_name_texts'=>['default'],'database_name_stemmed_texts'=>['default'],'column_name_texts'=>['bogus','bogus\
+        \ 2']}]}},{'groupValue'=>'ChorusWorkfile 1000015','doclist'=>{'numFound'=>1,'start'=>0,'docs'=>[{'id'=>'ChorusWorkfile\
+        \ 1000015','file_name_stemmed_texts'=>['tagged'],'tag_names_stemmed_texts'=>['alpha','beta'],'tag_names_texts'=>['alpha','beta'],'file_name_texts'=>['tagged'],'description_texts'=>['A\
+        \ nice description'],'version_comments_stemmed_texts'=>[''],'version_comments_texts'=>[''],'description_stemmed_texts'=>['A\
+        \ nice description']}]}}]}},'facet_counts'=>{'facet_queries'=>{},'facet_fields'=>{'type_name_s'=>['Dataset',1,'Workfile',1,'Workspace',1]},'facet_dates'=>{},'facet_ranges'=>{}}}"
+    http_version: '1.1'
+  recorded_at: Thu, 15 May 2014 00:03:12 GMT
+recorded_with: VCR 2.3.0

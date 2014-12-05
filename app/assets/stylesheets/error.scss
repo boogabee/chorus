@@ -1,4 +1,4 @@
-@import "_common.scss";
+@import "_common";
 
 .error_box {
     font-size: 12px;
@@ -10,9 +10,9 @@
     position: relative;
     top: 140px;
 
-    border: 2px solid $guts-border-color;
+    border: $border-canon;
 
-    height: 175px;
+    min-height: 175px;
     width: 425px;
     margin-left: auto;
     margin-right: auto;
@@ -27,13 +27,18 @@
         .text {
             padding: 10px;
         }
+    }
+
+    .controls {
+        padding: 25px;
 
         button {
             position: absolute;
-            right: 15px;
             bottom: 15px;
+            right: 15px;
             font-size: 12px;
             font-weight: $semibold;
         }
     }
+
 }

@@ -1,6 +1,6 @@
 describe("chorus.alerts.NotificationDeleteAlert", function() {
     beforeEach(function() {
-        this.activity = rspecFixtures.activity.noteOnWorkspaceCreated();
+        this.activity = backboneFixtures.activity.noteOnWorkspaceCreated();
         this.activity.set({id: '1234'});
         this.alert = new chorus.alerts.NotificationDeleteAlert({ activity: this.activity });
     });
@@ -29,7 +29,7 @@ describe("chorus.alerts.NotificationDeleteAlert", function() {
 
         context("clicking the delete button", function() {
             beforeEach(function() {
-                spyOn(chorus.PageEvents, "broadcast");
+                spyOn(chorus.PageEvents, "trigger");
                 spyOn(chorus, "toast");
                 this.alert.$("button.submit").click();
             });
@@ -43,8 +43,8 @@ describe("chorus.alerts.NotificationDeleteAlert", function() {
                     this.server.lastDestroy().succeed();
                 });
 
-                it("should broadcast a notification:deleted event", function() {
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("notification:deleted");
+                it("should trigger a notification:deleted event", function() {
+                    expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("notification:deleted");
                 });
 
                 it("should display a toast", function() {

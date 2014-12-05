@@ -1,0 +1,1 @@
+class PgDatabasePresenter < DatabasePresenter; end

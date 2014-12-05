@@ -1,0 +1,2 @@
+class ImportSourceDataTaskResult < JobTaskResult
+end

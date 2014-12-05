@@ -1,5 +1,5 @@
-.workfiles_sql_new {
-  input[name=fileName] {
+.workfiles_sql_new, .rename_workfile_dialog {
+  input[name=fileName].sql {
     width : 343px;
     display: inline;
   }

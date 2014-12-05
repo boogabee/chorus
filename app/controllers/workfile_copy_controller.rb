@@ -2,15 +2,12 @@ class WorkfileCopyController < ApplicationController
 
   def create
     workfile = Workfile.find(params[:workfile_id])
-    authorize! :can_edit_sub_objects, workfile.workspace
+    authorize! :show, workfile
 
-    workspace = Workspace.find(params[:workspace_id])
+    workspace = params[:workspace_id].nil? ? workfile.workspace : Workspace.find(params[:workspace_id])
     authorize! :can_edit_sub_objects, workspace
-    copied_workfile = workfile.copy(current_user, workspace)
-    WorkfileName.resolve_name_for!(copied_workfile)
 
-    copied_workfile.build_new_version(current_user, workfile.latest_workfile_version.contents, "")
-    copied_workfile.save!
+    copied_workfile = workfile.copy!(current_user, workspace, params[:file_name])
 
     present copied_workfile.reload, :status => :created
   end

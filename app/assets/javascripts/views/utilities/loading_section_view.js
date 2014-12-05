@@ -16,5 +16,5 @@ chorus.views.LoadingSection = chorus.views.Base.extend({
     },
 
     makeLoadingSectionView:null
-})
+});
 

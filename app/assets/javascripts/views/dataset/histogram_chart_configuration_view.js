@@ -18,6 +18,6 @@ chorus.views.HistogramChartConfiguration = chorus.views.ChartConfiguration.exten
             name: this.model.get("objectName"),
             xAxis: this.$(".category select option:selected").text(),
             bins: this.$(".limiter .selected_value").text()
-        }
+        };
     }
 });

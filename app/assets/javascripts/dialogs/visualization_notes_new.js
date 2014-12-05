@@ -29,7 +29,7 @@ chorus.dialogs.VisualizationNotesNew = chorus.dialogs.MemoNew.extend({
 
         var visualization = this.options.attachVisualization;
 
-        var iconSrc = "images/workfiles/medium/img.png"
+        var iconSrc = "images/workfiles/icon/img.png";
         $row.find('img.icon').attr('src', iconSrc);
         $row.find('span.name').text(visualization.fileName).attr('title', visualization.fileName);
         $row.data("visualization", visualization);
@@ -52,7 +52,6 @@ chorus.dialogs.VisualizationNotesNew = chorus.dialogs.MemoNew.extend({
     },
 
     svgSaved: function() {
-        this.pageModel.activities().fetch();
         chorus.toast("dataset.visualization.toast.note_from_chart", {datasetName: this.options.entityName });
     }
 });

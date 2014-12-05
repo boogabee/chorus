@@ -1,14 +1,14 @@
 describe("chorus.dialogs.RunAndDownload", function() {
     beforeEach(function() {
-        chorus.page = { workspace: rspecFixtures.workspace({ id: 999 }) };
-        this.workfile = rspecFixtures.workfile.sql({ fileType: "SQL", workspace: {
+        chorus.page = { workspace: backboneFixtures.workspace({ id: 999 }) };
+        this.workfile = backboneFixtures.workfile.sql({ fileType: "SQL", workspace: {
             id: chorus.page.workspace.get("id")
         }});
         this.dialog = new chorus.dialogs.RunAndDownload({ pageModel: this.workfile, selection: true });
     });
 
     it("does not re-render when the model changes", function() {
-        expect(this.dialog.persistent).toBeTruthy()
+        expect(this.dialog.persistent).toBeTruthy();
     });
 
     describe("#render", function() {
@@ -20,7 +20,7 @@ describe("chorus.dialogs.RunAndDownload", function() {
             radioButtonAll = this.dialog.$("input[type=radio][id=all_rows]");
             submitButton = this.dialog.$("button.submit");
             rowsInput = this.dialog.$("input[name=rowLimit][type=text]");
-            spyOn(chorus.PageEvents, 'broadcast');
+            spyOn(chorus.PageEvents, 'trigger');
             spyOnEvent($(document), "close.facebox");
         });
 
@@ -29,7 +29,7 @@ describe("chorus.dialogs.RunAndDownload", function() {
         });
 
         it("has a Run button", function() {
-            expect(this.dialog.$("button.submit").text().trim()).toMatchTranslation("workfile.run_and_download_dialog.run")
+            expect(this.dialog.$("button.submit").text().trim()).toMatchTranslation("workfile.run_and_download_dialog.run");
         });
 
         context("for all rows", function() {
@@ -43,8 +43,8 @@ describe("chorus.dialogs.RunAndDownload", function() {
                     submitButton.click();
                 });
 
-                it("broadcasts the file:runAndDownload event with the view options", function() {
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("file:runAndDownload", this.dialog.options);
+                it("triggers the file:runAndDownload event with the view options", function() {
+                    expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("file:runAndDownload", this.dialog.options);
                 });
 
                 it("dismisses the dialog", function() {
@@ -63,8 +63,8 @@ describe("chorus.dialogs.RunAndDownload", function() {
                     submitButton.click();
                 });
 
-                it("broadcasts the file:runAndDownload event with limit and view options", function() {
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("file:runAndDownload", _.extend({numOfRows: '867'}, this.dialog.options));
+                it("triggers the file:runAndDownload event with limit and view options", function() {
+                    expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("file:runAndDownload", _.extend({numOfRows: '867'}, this.dialog.options));
                 });
 
                 it("dismisses the dialog", function() {

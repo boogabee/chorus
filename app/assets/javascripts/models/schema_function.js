@@ -2,11 +2,10 @@ chorus.models.SchemaFunction = chorus.models.Base.extend({
     constructorName: "SchemaFunction",
 
     toText: function() {
-        var argNames = this.get('argNames');
         var functionArguments = this.getFunctionArguments();
 
-        var schemaName = this.safePGName(this.get("schemaName"));
-        var functionName = this.safePGName(this.get("name"));
+        var schemaName = this.ensureDoubleQuoted(this.get("schemaName"));
+        var functionName = this.ensureDoubleQuoted(this.get("name"));
 
         var result = schemaName + "." + functionName + '(';
         result = result + functionArguments.join(', ');
@@ -19,7 +18,7 @@ chorus.models.SchemaFunction = chorus.models.Base.extend({
     },
 
     getFunctionArguments: function() {
-        var argNames = this.get('argNames');
+        var argNames = this.get('argNames') || [];
         return _.map(this.get('argTypes'), function(argType, index) {
             var argName = argNames[index] || "arg" + (index + 1);
             return argType + ' ' + argName;

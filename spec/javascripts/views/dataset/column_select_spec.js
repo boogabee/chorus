@@ -1,13 +1,12 @@
 describe("chorus.views.ColumnSelect", function () {
     beforeEach(function () {
-        stubDefer();
         this.selectMenuStub = stubSelectMenu();
-        this.dataset = rspecFixtures.dataset();
+        this.dataset = backboneFixtures.dataset();
         this.columns = this.dataset.columns().reset([
-            fixtures.databaseColumn({ name:"source_column_1" }),
-            fixtures.databaseColumn({ name:"source_column_2" }),
-            fixtures.databaseColumn({ name:"source_column_3" }),
-            fixtures.databaseColumn({ name:"source_column_4", typeCategory:'OTHER' })
+            backboneFixtures.databaseColumn({ name:"source_column_1" }),
+            backboneFixtures.databaseColumn({ name:"source_column_2" }),
+            backboneFixtures.databaseColumn({ name:"source_column_3" }),
+            backboneFixtures.databaseColumn({ name:"source_column_4", typeCategory:'OTHER' })
         ]);
         this.view = new chorus.views.ColumnSelect({collection:this.columns});
     });
@@ -86,13 +85,13 @@ describe("chorus.views.ColumnSelect", function () {
                 describe("getSelectedColumn", function () {
                     it("returns the correct column", function () {
                         expect(this.view.getSelectedColumn()).toBe(this.selectedColumn);
-                    })
-                })
+                    });
+                });
 
                 describe("rerender", function () {
                     beforeEach(function () {
                         this.view.render();
-                    })
+                    });
 
                     it("keeps the same column selected", function () {
                         expect(this.view.$("select option[data-cid=" + this.selectedColumn.cid + "]")).toBeSelected();
@@ -104,11 +103,11 @@ describe("chorus.views.ColumnSelect", function () {
             describe("#selectColumn", function () {
                 beforeEach(function () {
                     spyOn(this.view, 'refresh').andCallThrough();
-                    spyOnEvent(this.view, "refresh")
+                    spyOnEvent(this.view, "refresh");
                 });
 
                 it("should select the given column", function () {
-                    var selected = this.columns.at(2)
+                    var selected = this.columns.at(2);
                     this.view.selectColumn(selected);
                     expect(this.view.$('select option:selected').data('cid')).toBe(selected.cid);
                     expect(this.view.getSelectedColumn()).toBe(this.columns.at(2));
@@ -139,7 +138,7 @@ describe("chorus.views.ColumnSelect", function () {
 
             it("does not have the aliased_name", function () {
                 expect(this.selectMenuStub.find(".aliased_name")).not.toExist();
-            })
+            });
         });
 
         context("when the dataset has a datasetNumber and the showAliasedName option is enabled", function () {
@@ -161,7 +160,7 @@ describe("chorus.views.ColumnSelect", function () {
             it('returns true', function () {
                 expect(this.view.valid()).toBeTruthy();
             });
-        })
+        });
 
         context("when the selectedColumn is in the collection", function () {
             beforeEach(function () {
@@ -187,14 +186,14 @@ describe("chorus.views.ColumnSelect", function () {
 
     describe("collectionModelContext", function () {
         it("returns the quoted name", function () {
-            var model = fixtures.databaseColumn({ name:"source_column_1" });
+            var model = backboneFixtures.databaseColumn({ name:"source_column_1" });
             model.dataset = this.dataset;
             expect(this.view.collectionModelContext(model).quotedName).toBe(model.quotedName());
         });
 
         context("model does not have a quotedName", function () {
             it("just returns the name", function () {
-                var model = new chorus.models.Base({ name:"hello_name" })
+                var model = new chorus.models.Base({ name:"hello_name" });
                 expect(this.view.collectionModelContext(model).quotedName).toBe(model.get("name"));
             });
         });

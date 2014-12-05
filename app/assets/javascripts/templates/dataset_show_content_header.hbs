@@ -1,0 +1,15 @@
+<div class="menus"></div>
+<div class="item_metadata">
+    {{#if showLocation}}
+      <div class="found_in">{{datasetLocation model}}</div>
+    {{/if}}
+    {{usedInWorkspaces workspacesAssociated dataset}}
+    {{usedInTableau tableauWorkbooks dataset}}
+</div>
+{{#if imageUrl}}
+    <img class="icon" {{#if imageTitle}}title="{{imageTitle}}"{{/if}} src="{{imageUrl}}"/>
+{{/if}}
+<div class='item_information'>
+    <h1 title="{{title}}">{{title}}</h1>
+    <div class="tag_box"></div>
+</div>

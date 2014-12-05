@@ -1,5 +1,7 @@
 chorus.views.Menu = chorus.views.Bare.extend({
     tagName: "ul",
+    constructorName: "MenuView",
+
     templateName: "components/menu",
 
     events: {
@@ -56,7 +58,7 @@ chorus.views.Menu = chorus.views.Bare.extend({
         e.preventDefault();
         var itemName = $(e.currentTarget).attr("data-menu-name");
         this.selectItem(itemName);
-        this.qtip.hide()
+        this.qtip.hide();
     },
 
     context: function() {

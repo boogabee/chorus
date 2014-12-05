@@ -10,13 +10,13 @@ chorus.dialogs.Base = chorus.Modal.extend({
 
         var header = $("<div class='dialog_header'/>");
         var content = $("<div class='dialog_content'/>");
-        var errors = $("<div class='errors'/>")
+        var errors = $("<div class='errors hidden'/>");
 
         this.events = this.events || {};
 
-        this.events["click .modal_controls button.cancel"] = "closeModal";
+        this.events["click .form_controls button.cancel"] = "closeModal";
 
-        header.html($("<h1/>").text(this.title));
+        header.html($("<h1/>").text(_.result(this, 'title')));
         content.html(this.template(this.context()));
         content.attr("data-template", this.className);
 
@@ -44,5 +44,13 @@ chorus.dialogs.Base = chorus.Modal.extend({
 
     revealed: function () {
         $("#facebox").removeClass().addClass("dialog_facebox");
+    },
+
+    showDialogError : function(errorText) {
+        var resource = this.resource || this.model;
+        var serverErrors = resource.serverErrors || {};
+        serverErrors.message = errorText;
+        resource.serverErrors = serverErrors;
+        this.displayServerErrors(resource);
     }
 });

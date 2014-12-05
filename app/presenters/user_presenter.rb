@@ -1,31 +1,31 @@
 class UserPresenter < Presenter
 
   def to_hash
-    if rendering_activities?
-      {
-          :id => model.id,
-          :username => h(model.username),
-          :first_name => h(model.first_name),
-          :last_name => h(model.last_name),
-          :image => present(model.image)
-      }
-    else
-      {
-          :id => model.id,
-          :username => h(model.username),
-          :first_name => h(model.first_name),
-          :last_name => h(model.last_name),
-          :email => h(model.email),
-          :title => h(model.title),
-          :dept => h(model.dept),
-          :notes => h(model.notes),
+    results = {
+        :id => model.id,
+        :username => model.username,
+        :first_name => model.first_name,
+        :last_name => model.last_name,
+        :image => present(model.image),
+        :entity_type => model.entity_type_name,
+        :is_deleted => model.deleted?
+    }
+    unless rendering_activities? || succinct?
+      results.merge!(
+          :email => model.email,
+          :title => model.title,
+          :dept => model.dept,
+          :notes => model.notes,
           :admin => model.admin?,
-          :image => present(model.image)
-      }
+          :developer => model.developer?,
+          :subscribed_to_emails => model.subscribed_to_emails?,
+          :tags => present(model.tags)
+      )
     end
+    results
   end
 
   def complete_json?
-    !rendering_activities?
+    !rendering_activities? && !succinct?
   end
 end

@@ -1,4 +1,4 @@
-;(function() {
+(function() {
     chorus.collections.Search = {};
 
     var searchCollectionMixins = {
@@ -9,12 +9,12 @@
 
         refreshFromSearch: function() {
             var entityJson = this.search.get(this.searchKey);
-            this.pagination = {
+            var pagination = {
                 page: this.search.currentPageNumber(),
                 total: this.search.numPages(entityJson.numFound),
                 records: entityJson.numFound
             };
-            this.reset(entityJson.results);
+            this.reset(entityJson.results, {pagination: pagination});
         },
 
         fetchPage: function(pageNumber, options) {
@@ -24,38 +24,37 @@
     };
 
     var constructorMap = {
-        workfile: chorus.models.Workfile,
+        workfile: chorus.models.DynamicWorkfile,
         dataset: chorus.models.DynamicDataset,
         workspace: chorus.models.Workspace,
         attachment: chorus.models.Attachment
     };
 
     chorus.collections.Search.WorkspaceItemSet = chorus.collections.Base.include(
-        searchCollectionMixins
+        searchCollectionMixins, chorus.Mixins.MultiModelSet
     ).extend({
         constructorName: "WorkspaceItemSet",
+        searchKey: "thisWorkspace",
         model: function(modelJson, options) {
             var constructor = constructorMap[modelJson.entityType];
             return new constructor(modelJson, options);
-        },
-
-        searchKey: "thisWorkspace"
+        }
     });
 
     chorus.collections.Search.HdfsEntrySet = chorus.collections.HdfsEntrySet.include(
         searchCollectionMixins
     ).extend({
-        searchKey: "hdfs"
+        searchKey: "hdfsEntries"
     });
 
-    chorus.collections.Search.InstanceSet = chorus.collections.GpdbInstanceSet.include(
-        searchCollectionMixins
+    chorus.collections.Search.DataSourceSet = chorus.collections.PgGpDataSourceSet.include(
+        searchCollectionMixins, chorus.Mixins.MultiModelSet
     ).extend({
-        searchKey: "instances",
-        model: chorus.models.DynamicInstance
+        searchKey: "dataSources",
+        model: chorus.models.DynamicDataSource
     });
 
-    chorus.collections.Search.DynamicDatasetSet = chorus.collections.DynamicDatasetSet.include(
+    chorus.collections.Search.DatasetSet = chorus.collections.SchemaDatasetSet.include(
         searchCollectionMixins
     ).extend({
         searchKey: "datasets"
@@ -82,6 +81,6 @@
     chorus.collections.Search.AttachmentSet = chorus.collections.AttachmentSet.include(
         searchCollectionMixins
     ).extend({
-        searchKey: "attachment"
+        searchKey: "otherFiles"
     });
 })();

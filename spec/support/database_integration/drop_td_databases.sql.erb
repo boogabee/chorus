@@ -1,0 +1,3 @@
+MODIFY USER "<%= schema_name %>" as DROP DEFAULT JOURNAL TABLE;
+DELETE DATABASE "<%= schema_name %>" ALL;
+DROP USER "<%= schema_name %>";

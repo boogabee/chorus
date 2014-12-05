@@ -1,0 +1,16 @@
+<span class="image">
+    <img src="{{iconUrl}}" title="{{humanizedDatasetType this}}"/>
+</span>
+<div class="item_information">
+    <a class="name" href="{{showUrl}}">{{displaySearchMatch "objectName"}}</a>
+
+    <div class="item_metadata">
+        <div class="comments_container"/>
+        <div class="location">
+            {{datasetLocation resource}}
+            {{usedInWorkspaces workspaces dataset}}
+        </div>
+
+        {{> itemTags}}
+    </div>
+</div>

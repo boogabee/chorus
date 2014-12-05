@@ -1,20 +1,12 @@
 require "spec_helper"
 
 describe TableauWorkbookPublication do
-  before do
-    @previous_config = Chorus::Application.config.chorus
-  end
-
-  after do
-    Chorus::Application.config.chorus = @previous_config
-  end
-
   let(:model) { tableau_workbook_publications(:default) }
   let(:tableau_base_url) { 'fake.domain.com' }
 
   context "tableau is configured" do
     before do
-      Chorus::Application.config.chorus = {'tableau.url' => tableau_base_url}
+      stub(ChorusConfig).instance { {'tableau.url' => tableau_base_url} }
     end
 
     describe "#workbook_url" do
@@ -32,7 +24,7 @@ describe TableauWorkbookPublication do
 
   context "tableau is configured with a port" do
     before do
-      Chorus::Application.config.chorus = {'tableau.url' => tableau_base_url, 'tableau.port' => 8000}
+      stub(ChorusConfig).instance { {'tableau.url' => tableau_base_url, 'tableau.port' => 8000} }
     end
 
     describe "#workbook_url" do

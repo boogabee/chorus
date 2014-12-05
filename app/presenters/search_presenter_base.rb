@@ -6,13 +6,11 @@ class SearchPresenterBase < Presenter
 
   def present_models_with_highlights(models, options = {})
     models.collect do |model|
-      m = (model.is_a? Workfile) ? model.latest_workfile_version : model
-      hsh = present(m, options)
+      hsh = present(model_to_present(model), options)
 
       hsh[:highlighted_attributes] = model.highlighted_attributes
       hsh[:comments] = model.search_result_notes
-      hsh[:entity_type] = model.entity_type_name
-      if hsh[:entity_type] == 'dataset'
+      if model.is_a? Dataset
         extend_result_with_nested_highlights(hsh)
       end
       hsh
@@ -24,6 +22,10 @@ class SearchPresenterBase < Presenter
   end
 
   private
+
+  def model_to_present(model)
+    model.is_a?(ChorusWorkfile) ? model.latest_workfile_version : model
+  end
 
   def extend_result_with_nested_highlights(result)
     schema_name = result[:highlighted_attributes].delete(:schema_name)

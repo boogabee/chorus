@@ -1,76 +1,105 @@
 require 'spec_helper'
 
-describe Visualization::Timeseries, :database_integration => true do
-  let(:account) { GpdbIntegration.real_gpdb_account }
-  let(:filters) { [%Q{"#{dataset.name}"."time_value" > '2012-03-03'},
-                   %Q{"#{dataset.name}"."column1" < 5}] }
+describe Visualization::Timeseries do
 
-  let(:visualization) do
-    Visualization::Timeseries.new(dataset, {
-        :time_interval => "month",
-        :aggregation => "sum",
-        :x_axis => "time_value",
-        :y_axis => "column1",
-        :filters => filters
-    })
-  end
+  let(:schema_name) { 'test_schema' }
+  let(:table_name) { 'base_table1' }
 
-  describe "#fetch!" do
-    before do
-      visualization.fetch!(account, 12345)
+  context 'for gpdb', :greenplum_integration  do
+    let(:data_source_account) { GreenplumIntegration.real_account }
+    let(:database) { GreenplumIntegration.real_database }
+
+    context 'for a table' do
+      let(:dataset) { database.find_dataset_in_schema(table_name, schema_name) }
+
+      it_behaves_like 'a timeseries visualization'
     end
 
-    context "with a table" do
-      let(:database) { GpdbIntegration.real_database }
-      let(:dataset) { database.find_dataset_in_schema('base_table1', 'test_schema') }
-
-      context "with no filter" do
-        let(:filters) { nil }
-
-        it "returns the timeseries data" do
-          visualization.rows.should == [
-              {:value => 3, :time => '2012-03'},
-              {:value => 2, :time => '2012-04'},
-              {:value => 1, :time => "2012-05"}
-          ]
-        end
-      end
-
-      context "with filters" do
-        it "returns the timeseries data based on the filtered dataset" do
-          visualization.rows.should == [
-              {:value => 2, :time => "2012-03"},
-              {:value => 2, :time => "2012-04"},
-              {:value => 1, :time => "2012-05"}
-          ]
-        end
-      end
-    end
-
-    context "with a chorus view" do
+    context 'for a chorus view' do
       let(:dataset) { datasets(:executable_chorus_view) }
 
-      context "with no filter" do
-        let(:filters) { nil }
+      it_behaves_like 'a timeseries visualization'
+    end
 
-        it "returns the timeseries data" do
-          visualization.rows.should == [
-              {:value => 3, :time => '2012-03'},
-              {:value => 2, :time => '2012-04'},
-              {:value => 1, :time => "2012-05"}
-          ]
-        end
+    context 'when domain values exceed limit' do
+      let(:visualization) do
+        Visualization::Timeseries.new(dataset, {
+            :time_interval => 'month',
+            :aggregation => 'sum',
+            :x_axis => 'time_value',
+            :y_axis => 'column1',
+            :filters => filters
+        })
+      end
+      let(:filters) { [] }
+      let(:dataset) {
+        d = datasets(:executable_chorus_view)
+        d.update_attribute(:query, "select g as column1, (NOW() + '1 month'::INTERVAL * g) as time_value from (select generate_series(1,2000) as g) a;")
+        d
+      }
+
+      before do
+        set_current_user users(:default)
       end
 
-      context "with filters" do
-        it "returns the timeseries data based on the filtered dataset" do
-          visualization.rows.should == [
-              {:value => 2, :time => "2012-03"},
-              {:value => 2, :time => "2012-04"},
-              {:value => 1, :time => "2012-05"}
-          ]
-        end
+      it 'raises an error' do
+        expect {
+          visualization.fetch!(data_source_account, 12345)
+        }.to raise_error(ApiValidationError)
       end
+    end
+  end
+
+  context 'for postgres', :postgres_integration do
+    let(:data_source_account) { PostgresIntegration.real_account }
+    let(:database) { PostgresIntegration.real_database }
+    let(:dataset) { database.find_dataset_in_schema(table_name, schema_name) }
+
+    it_behaves_like 'a timeseries visualization'
+  end
+
+  context 'for teradata', :jdbc_integration do
+    let(:data_source_account) { JdbcIntegration.real_account }
+    let(:schema) { JdbcIntegration.real_schema }
+    let(:dataset) { schema.find_or_initialize_dataset(table_name) }
+
+    it_behaves_like 'a timeseries visualization' do
+      let(:filters) {
+        [
+            %Q{"#{dataset.name}"."time_value" > '2012-03-03 11:53:50' (Timestamp(0), Format 'yyyy-mm-ddbhh:mi:ss')},
+            %Q{"#{dataset.name}"."column1" < 5}
+        ]
+      }
+    end
+  end
+
+  #context 'for mariadb', :mariadb_integration do
+  #  let(:data_source_account) { MariadbIntegration.real_account }
+  #  let(:schema) { MariadbIntegration.real_schema }
+  #  let(:dataset) { schema.find_or_initialize_dataset(table_name) }
+  #
+  #  it_behaves_like 'a timeseries visualization' do
+  #    let(:filters) {
+  #      [
+  #          %Q{"#{dataset.name}"."time_value" > TIMESTAMP '2012-03-03 11:53:50'},
+  #          %Q{"#{dataset.name}"."column1" < 5}
+  #      ]
+  #    }
+  #  end
+  #end
+
+  context 'for oracle', :oracle_integration do
+    let(:data_source_account) { OracleIntegration.real_account }
+    let(:schema) { OracleIntegration.real_schema }
+    let(:dataset) { schema.find_or_initialize_dataset(table_name) }
+
+    it_behaves_like 'a timeseries visualization' do
+      let(:filters) {
+        [
+            %Q{"#{dataset.name}"."time_value" > TIMESTAMP '2012-03-03 11:53:50'},
+            %Q{"#{dataset.name}"."column1" < 5}
+        ]
+      }
     end
   end
 end

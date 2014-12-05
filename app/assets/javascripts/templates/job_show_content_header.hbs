@@ -1,0 +1,25 @@
+<h1 title="{{name}}">{{name}}</h1>
+<div class="item_metadata">
+    {{#if frequency}}
+        <span class="frequency"><strong>{{frequency}}</strong></span>
+    {{/if}}
+
+    {{#if nextRun}}
+        <span class="next_run">
+            <strong>{{t "job.next_run"}}:</strong>
+            {{displayTimestamp nextRun}}
+        </span>
+    {{/if}}
+    <span class="last_run">
+        <strong>{{t "job.last_run"}}:</strong>
+        {{#if lastRun}}
+            <a class='last_run_date' href='#'>{{displayTimestamp lastRun}} {{t lastRunLinkKey}}</a>
+        {{else}}
+            -
+        {{/if}}
+    </span>
+    <span class="owner pull-right">
+        <strong>{{t "job.owner"}}: </strong>
+        <a href='{{ownerUrl}}'>{{ownerName}}</a>
+    </span>
+</div>

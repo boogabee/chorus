@@ -1,15 +1,13 @@
 describe("chorus.views.ChartConfiguration", function() {
     beforeEach(function() {
-        this.dataset = rspecFixtures.workspaceDataset.datasetTable();
-        this.column1 = fixtures.databaseColumn({typeCategory: "ANIMAL", name: "B Liger"})
-        this.column2 = fixtures.databaseColumn({typeCategory: "REAL_NUMBER", name: "a Speed"})
-        this.column3 = fixtures.databaseColumn({typeCategory: "WHOLE_NUMBER", name: "A Milk Duds"})
-        this.column4 = fixtures.databaseColumn({typeCategory: "DATE", name: "the date"})
-        this.column5 = fixtures.databaseColumn({typeCategory: "TIME", name: "the time"})
-        this.column6 = fixtures.databaseColumn({typeCategory: "DATETIME", name: "the time & date"})
-
-        this.columns = fixtures.databaseColumnSet([
-            this.column1, this.column2, this.column3, this.column4, this.column5, this.column6
+        this.dataset = backboneFixtures.workspaceDataset.datasetTable();
+        this.columns = backboneFixtures.databaseColumnSet([
+            {typeCategory: "ANIMAL", name: "B Liger"},
+            {typeCategory: "REAL_NUMBER", name: "a Speed"},
+            {typeCategory: "WHOLE_NUMBER", name: "A Milk Duds"},
+            {typeCategory: "DATE", name: "the date"},
+            {typeCategory: "TIME", name: "the time"},
+            {typeCategory: "DATETIME", name: "the time & date"}
         ], {dataset: this.dataset});
 
         this.view = new chorus.views.FrequencyChartConfiguration({collection: this.columns});
@@ -21,8 +19,8 @@ describe("chorus.views.ChartConfiguration", function() {
     });
 
     describe("#buildForType(chartType)", function() {
-        it("returns an instance of the subclass for the given chart type", function() {
-            var options = {collection: fixtures.databaseColumnSet()}
+        it("returns a data source of the subclass for the given chart type", function() {
+            var options = {collection: backboneFixtures.databaseColumnSet()};
             var views = [
                 chorus.views.ChartConfiguration.buildForType("frequency", options),
                 chorus.views.ChartConfiguration.buildForType("boxplot", options),
@@ -71,7 +69,7 @@ describe("chorus.views.ChartConfiguration", function() {
             beforeEach(function() {
                 spyOn(this.view, "clearSqlErrors");
                 spyOn(this.view, "showSqlErrors");
-                this.view.model = rspecFixtures.workspaceDataset.datasetTable();
+                this.view.model = backboneFixtures.workspaceDataset.datasetTable();
                 this.view.$('button.create').click();
                 this.task = this.view.task;
                 spyOn(this.task, 'cancel').andCallThrough();
@@ -99,7 +97,7 @@ describe("chorus.views.ChartConfiguration", function() {
 
             describe("cancel:visualization", function() {
                 beforeEach(function() {
-                    chorus.PageEvents.broadcast('cancel:visualization');
+                    chorus.PageEvents.trigger('cancel:visualization');
                 });
 
                 it("cancels the task", function() {
@@ -112,7 +110,7 @@ describe("chorus.views.ChartConfiguration", function() {
                     this.view.$('button.cancel').click();
                 });
                 it("should remove the spinner from the create button", function() {
-                    expect(this.view.$('button.create')).not.toHaveSpinner()
+                    expect(this.view.$('button.create')).not.toHaveSpinner();
                 });
 
                 it("should enable the create button", function() {
@@ -144,7 +142,7 @@ describe("chorus.views.ChartConfiguration", function() {
 
             describe("when the save completes", function() {
                 beforeEach(function() {
-                    this.server.completeSaveFor(this.view.task);
+                    this.server.completeCreateFor(this.view.task);
                 });
 
                 it("starts up the visualization dialog", function() {
@@ -152,7 +150,7 @@ describe("chorus.views.ChartConfiguration", function() {
                 });
 
                 it("should remove the spinner from the create button", function() {
-                    expect(this.view.$('button.create')).not.toHaveSpinner()
+                    expect(this.view.$('button.create')).not.toHaveSpinner();
                 });
 
                 it("should enable the create button", function() {
@@ -188,7 +186,7 @@ describe("chorus.views.ChartConfiguration", function() {
                 });
 
                 it("should remove the spinner from the create button", function() {
-                    expect(this.view.$('button.create')).not.toHaveSpinner()
+                    expect(this.view.$('button.create')).not.toHaveSpinner();
                 });
 
                 it("should enable the create button", function() {
@@ -207,7 +205,7 @@ describe("chorus.views.ChartConfiguration", function() {
 
         context("not creating a visualization", function() {
             it("does not blow up when cancel:sidebar is triggered", function() {
-                chorus.PageEvents.broadcast('cancel:sidebar');
+                chorus.PageEvents.trigger('cancel:sidebar');
             });
         });
 
@@ -230,21 +228,21 @@ describe("chorus.views.ChartConfiguration", function() {
 
     describe("errors", function() {
         beforeEach(function() {
-            this.view.options.errorContainer = jasmine.createSpyObj("errorContainer", ['showError', 'closeError']);
+            this.view.options.errorContainer = jasmine.createSpyObj("errorContainer", ['showErrorWithDetailsLink', 'closeErrorWithDetailsLink']);
             this.view.task = {};
         });
 
         describe("showSqlErrors", function() {
             it("passes the task and the alert class to showSqlErrors on the errorContainer", function() {
                 this.view.showSqlErrors();
-                expect(this.view.options.errorContainer.showError).toHaveBeenCalledWith(this.view.task, chorus.alerts.VisualizationError);
+                expect(this.view.options.errorContainer.showErrorWithDetailsLink).toHaveBeenCalledWith(this.view.task, chorus.alerts.VisualizationError);
             });
         });
 
         describe("clearSqlErrors", function() {
             it("passes the task and the alert class to showSqlErrors on the errorContainer", function() {
                 this.view.clearSqlErrors();
-                expect(this.view.options.errorContainer.closeError).toHaveBeenCalled();
+                expect(this.view.options.errorContainer.closeErrorWithDetailsLink).toHaveBeenCalled();
             });
         });
     });

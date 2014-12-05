@@ -1,0 +1,63 @@
+<div class="configuration_detail pairs">
+    {{#if host}}
+        <div class='pair'>
+            <div class="key host_label">
+                {{#if isHadoop}}
+                    {{t "data_sources.sidebar.hadoop_host"}}
+                {{else}}
+                    {{t "data_sources.sidebar.host"}}
+                {{/if}}
+            </div>
+            <div class="value" title="{{host}}">{{host}}</div>
+        </div>
+    {{/if}}
+    {{#if streamUrl}}
+        <div class='pair'>
+            <div class="key">{{t "data_sources.sidebar.stream_url"}}</div>
+            <div class="value streamUrl" title="{{streamUrl}}">{{streamUrl}}</div>
+        </div>
+    {{/if}}
+    {{#if port}}
+        <div class='pair'>
+            <div class="key">{{t "data_sources.sidebar.port"}}</div>
+            <div class="value" title="{{port}}">{{port}}</div>
+        </div>
+    {{/if}}
+    {{#if size}}
+        <div class='pair'>
+            <div class="key">{{t "data_sources.sidebar.size"}}</div>
+            <div class="value" title="{{size}}">{{size}}GB</div>
+        </div>
+    {{/if}}
+    {{#if shared}}
+        <div class='pair'>
+            <div class="key">{{t "data_sources.shared_account"}}</div>
+            <div class="value shared_account_info"
+                 title="{{sharedAccountDetails}}">{{sharedAccountDetails}}</div>
+        </div>
+    {{/if}}
+    {{#if version}}
+        <div class='pair'>
+            <div class="key">{{t "data_sources.version"}}</div>
+            <div class="value" title="{{version}}">{{version}}</div>
+        </div>
+    {{/if}}
+    {{#if ownerName}}
+        <div class='pair'>
+            <div class="key">{{t "data_sources.permissions.owner"}}</div>
+            <div class="value" title="{{ownerName}}">{{ownerName}}</div>
+        </div>
+    {{/if}}
+    {{#if jobTrackerHost}}
+        <div class='pair'>
+            <div class="key">{{t "data_sources.dialog.hadoop_job_tracker_host"}}</div>
+            <div class="value job_tracker_host" title="{{jobTrackerHost}}">{{jobTrackerHost}}</div>
+        </div>
+    {{/if}}
+    {{#if jobTrackerPort}}
+        <div class='pair'>
+            <div class="key">{{t "data_sources.sidebar.port"}}</div>
+            <div class="value job_tracker_port" title="{{jobTrackerPort}}">{{jobTrackerPort}}</div>
+        </div>
+    {{/if}}
+</div>

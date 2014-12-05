@@ -1,5 +1,6 @@
 class SearchController < ApplicationController
   before_filter :require_admin, :only => [:reindex]
+  before_filter :require_full_search, :only => [:show, :workspaces]
 
   def show
     present Search.new(current_user, params)
@@ -14,7 +15,7 @@ class SearchController < ApplicationController
   end
 
   def reindex
-    QC.enqueue("SolrIndexer.refresh_and_reindex", params.fetch(:types) { 'all' })
+    QC.enqueue_if_not_queued("SolrIndexer.refresh_and_reindex", params.fetch(:types) { 'all' })
     render :json => {}
   end
 end

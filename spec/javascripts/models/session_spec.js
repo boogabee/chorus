@@ -1,6 +1,5 @@
 describe("chorus.models.Session", function() {
     var models = chorus.models;
-
     describe("#save", function() {
         beforeEach(function() {
             this.model = new models.Session({ username: "johnjohn", password: "partytime"});
@@ -14,9 +13,9 @@ describe("chorus.models.Session", function() {
 
     describe("#logout", function() {
         beforeEach(function() {
+            Backbone.history.fragment = "foo";
             this.model = new models.Session();
             spyOnEvent(this.model, "needsLogin");
-            spyOn(chorus.router, "navigate")
         });
 
         context("when the model has errors", function() {
@@ -37,7 +36,7 @@ describe("chorus.models.Session", function() {
         context("when the model does not have errors", function() {
             beforeEach(function() {
                 this.model.set({ foo: "bar", bro: "baz" });
-                this.model._user = rspecFixtures.user();
+                this.model._user = backboneFixtures.user();
                 this.model.sandboxPermissionsCreated['4'] = true;
                 this.model.logout();
             });
@@ -48,7 +47,9 @@ describe("chorus.models.Session", function() {
 
             describe("and the server responds", function() {
                 beforeEach(function() {
-                    this.server.lastDestroy().succeed();
+                    spyOn(this.model, 'updateToken');
+                    this.response = {csrf_token: 'new_token'};
+                    this.server.lastDestroy().respondJson(200, this.response);
                 });
 
                 it("triggers needsLogin", function() {
@@ -60,30 +61,35 @@ describe("chorus.models.Session", function() {
                     expect(this.model._user).toBeUndefined();
                     expect(this.model.sandboxPermissionsCreated).toEqual({});
                 });
-            })
-        })
+
+                it("updates the csrf token", function() {
+                    expect(this.model.updateToken).toHaveBeenCalledWith(this.response);
+                });
+            });
+        });
     });
 
     describe("loggedIn", function() {
         beforeEach(function() {
-            this.model = new models.Session();
+            this.model = backboneFixtures.session();
         });
 
         it("returns true when there's a user", function () {
-            this.model._user = rspecFixtures.user();
-            expect(this.model._user.get('id')).toBeTruthy();
+            expect(this.model.user().get('id')).toBeTruthy();
             expect(this.model.loggedIn()).toBeTruthy();
 
         });
 
         it("returns false when there is no _user", function () {
+            delete this.model.attributes.user;
+            expect(this.model.user()).toBeFalsy();
             expect(this.model.loggedIn()).toBeFalsy();
         });
     });
 
     describe("#fetch", function() {
         beforeEach(function() {
-            this.model = new models.Session({ id: "1234", foo: "bar" });
+            this.model = backboneFixtures.session();
 
             this.errorSpy = jasmine.createSpy("error");
             this.model.fetch({
@@ -93,16 +99,6 @@ describe("chorus.models.Session", function() {
 
         it("has the correct url", function() {
             expect(this.server.lastFetch().url).toBe("/sessions");
-        });
-
-        context("when the session is valid", function() {
-            beforeEach(function() {
-                this.server.lastFetch().succeed();
-            });
-
-            it("fetches the chorus configuration", function() {
-                expect(new chorus.models.Config()).toHaveBeenFetched();
-            });
         });
 
         context("when the session is not valid", function() {
@@ -153,12 +149,12 @@ describe("chorus.models.Session", function() {
 
     describe("#user", function() {
         beforeEach(function() {
-            this.session = new models.Session()
+            this.session = new models.Session();
         });
 
         context("when a user has been fetched", function() {
             beforeEach(function() {
-                this.session._user = rspecFixtures.user();
+                this.session = backboneFixtures.session();
             });
 
             it("returns a User", function() {
@@ -166,7 +162,7 @@ describe("chorus.models.Session", function() {
             });
 
             it("returns the same user object", function() {
-                expect(this.session.user()).toBe(this.session.user())
+                expect(this.session.user()).toBe(this.session.user());
             });
         });
 
@@ -178,19 +174,14 @@ describe("chorus.models.Session", function() {
 
     describe("resuming", function() {
         beforeEach(function() {
-            this.session = new models.Session();
-            this.session._user = rspecFixtures.user();
+            this.session = backboneFixtures.session();
         });
 
         describe("#rememberPathBeforeLoggedOut", function() {
-            beforeEach(function() {
-                this.session.user().id = 2;
-            });
-
             context("when navigating to logout", function() {
                 beforeEach(function() {
-                    Backbone.history.fragment = "/logout";
-                    this.session.rememberPathBeforeLoggedOut()
+                    Backbone.history.fragment = "logout";
+                    this.session.rememberPathBeforeLoggedOut();
                 });
 
                 it("ignores the path", function() {
@@ -200,8 +191,8 @@ describe("chorus.models.Session", function() {
 
             context("when navigating to login", function() {
                 beforeEach(function() {
-                    Backbone.history.fragment = "/login";
-                    this.session.rememberPathBeforeLoggedOut()
+                    Backbone.history.fragment = "login";
+                    this.session.rememberPathBeforeLoggedOut();
                 });
 
                 it("ignores the path", function() {
@@ -211,22 +202,22 @@ describe("chorus.models.Session", function() {
 
             context("when navigating elsewhere", function() {
                 beforeEach(function() {
-                    Backbone.history.fragment = "/elsewhere";
+                    Backbone.history.fragment = "elsewhere";
                     this.session.rememberPathBeforeLoggedOut();
                 });
 
                 it("remembers the path", function() {
-                    expect(this.session.resumePath()).toEqual("/elsewhere");
+                    expect(this.session.resumePath()).toEqual("elsewhere");
                 });
 
                 context("and then trying to log in with bad credentials", function() {
                     beforeEach(function() {
-                        Backbone.history.fragment = "/login";
+                        Backbone.history.fragment = "login";
                         this.session.rememberPathBeforeLoggedOut();
                     });
 
                     it("remembers the non-login path", function() {
-                        expect(this.session.resumePath()).toEqual("/elsewhere");
+                        expect(this.session.resumePath()).toEqual("elsewhere");
                     });
                 });
             });
@@ -236,7 +227,7 @@ describe("chorus.models.Session", function() {
             beforeEach(function() {
                 this.session.user().id = 2;
                 this.session._previousUserId = 2;
-                this.session._pathBeforeLoggedOut = '/somewhere';
+                this.session._pathBeforeLoggedOut = 'somewhere';
             });
 
             it("is true if it has somewhere to go", function() {
@@ -257,6 +248,18 @@ describe("chorus.models.Session", function() {
                 delete this.session._user;
                 expect(this.session.shouldResume()).toBeTruthy();
             });
+        });
+    });
+
+    describe("#updateToken", function() {
+        beforeEach(function() {
+            this.model = new models.Session();
+            spyOn($.fn, 'attr');
+        });
+
+        it("sets the new token", function() {
+            this.model.updateToken({csrf_token: 'new_token'});
+            expect($.fn.attr).toHaveBeenCalledWith('content', 'new_token');
         });
     });
 });

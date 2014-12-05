@@ -9,18 +9,27 @@ chorus.pages.SearchIndexPage = chorus.pages.Base.extend({
         var attrs = {
             query: (searchParams[2] || searchParams[0])
         };
-        if (searchParams.length === 3) {
+        if(searchParams.length === 3) {
             attrs.searchIn = searchParams[0];
             attrs.entityType = searchParams[1];
         }
         return attrs;
     },
 
-    setup: function() {
+    makeModel: function() {
         var searchParams = _.toArray(arguments);
         this.model = this.search = new chorus.models.SearchResult(this.parseSearchParams(searchParams));
-        this.requiredResources.add(this.model);
+        this.listenTo(this.model, "loaded", this.resourcesLoaded);
+        this.handleFetchErrorsFor(this.model);
         this.model.fetch();
+    },
+
+    unprocessableEntity: function(search) {
+        chorus.pageOptions = {
+            title: t("search.bad_entity_type.title"),
+            text: t("search.bad_entity_type.text")
+        };
+        Backbone.history.loadUrl("/unprocessableEntity");
     },
 
     searchInMenuOptions: function() {
@@ -35,20 +44,24 @@ chorus.pages.SearchIndexPage = chorus.pages.Base.extend({
             {data: "all", text: t("search.type.all")},
             {data: "workfile", text: t("search.type.workfile")},
             {data: "attachment", text: t("search.type.attachment")},
-            {data: "hdfs", text: t("search.type.hdfs")},
+            {data: "hdfs_entry", text: t("search.type.hdfs_entry")},
             {data: "dataset", text: t("search.type.dataset")},
-            {data: "instance", text: t("search.type.instance")},
+            {data: "data_source", text: t("search.type.data_source")},
             {data: "workspace", text: t("search.type.workspace")},
             {data: "user", text: t("search.type.user")}
-        ]
+        ];
+    },
+
+    title: function() {
+        return t("search.index.title", {
+            query: this.model.displayShortName()
+        });
     },
 
     resourcesLoaded: function() {
         this.mainContent = new chorus.views.MainContentView({
             contentHeader: new chorus.views.ListHeaderView({
-                title: t("search.index.title", {
-                    query: this.model.displayShortName()
-                }),
+                title: this.title(),
                 linkMenus: {
                     search_in: {
                         title: t("search.search_in"),
@@ -67,33 +80,38 @@ chorus.pages.SearchIndexPage = chorus.pages.Base.extend({
 
             content: new chorus.views.SearchResults({ model: this.model })
         });
-
-        if (this.search.isPaginated()) {
-            this.mainContent.contentDetails = new chorus.views.ListContentDetails({ collection: this.search.getResults(), modelClass: "SearchResult"});
-            this.mainContent.contentFooter  = new chorus.views.ListContentDetails({ collection: this.search.getResults(), modelClass: "SearchResult", hideCounts: true, hideIfNoPagination: true })
+        if(this.search.isPaginated() && !this.search.workspace()) {
+            this.mainContent.contentDetails = new chorus.views.ListContentDetails({ collection: this.search.getResults(), modelClass: "SearchResult", multiSelect: true});
+            this.mainContent.contentFooter = new chorus.views.ListContentDetails({ collection: this.search.getResults(), modelClass: "SearchResult", hideCounts: true, hideIfNoPagination: true });
         }
 
         this.sidebars = {
             hdfs: new chorus.views.HdfsEntrySidebar(),
             user: new chorus.views.UserSidebar({listMode: true}),
-            workfile: new chorus.views.WorkfileListSidebar(),
             workspace: new chorus.views.WorkspaceListSidebar(),
-            dataset: new chorus.views.DatasetSidebar({listMode: true}),
-            instance: new chorus.views.InstanceListSidebar(),
+            dataset: new chorus.views.DatasetSidebar({listMode: true, searchPage: true}),
+            dataSource: new chorus.views.DataSourceListSidebar({searchPage: true}),
             attachment: new chorus.views.ArtifactListSidebar()
         };
 
-        // explicitly set up bindings after initializing sidebar collection
-        chorus.PageEvents.subscribe("hdfs_entry:selected", this.hdfsSelected, this);
-        chorus.PageEvents.subscribe("workspace:selected", this.workspaceSelected, this);
-        chorus.PageEvents.subscribe("dataset:selected", this.datasetSelected, this);
-        chorus.PageEvents.subscribe("workfile:selected", this.workfileSelected, this);
-        chorus.PageEvents.subscribe("user:selected", this.userSelected, this);
-        chorus.PageEvents.subscribe("instance:selected", this.instanceSelected, this);
-        chorus.PageEvents.subscribe("attachment:selected", this.attachmentSelected, this);
+        this.multiSelectSidebarMenu = new chorus.views.MultipleSelectionSidebarMenu({
+            selectEvent: "checked",
+            actionProvider: [{name: "edit_tags", target: chorus.dialogs.EditTags}]
+        });
 
-        chorus.PageEvents.subscribe("choice:search_in", this.scopeSearchResults, this);
-        chorus.PageEvents.subscribe("choice:filter", this.filterSearchResults, this);
+        // explicitly set up bindings after initializing sidebar collection
+        this.subscribePageEvent("hdfs_entry:selected", this.hdfsSelected);
+        this.subscribePageEvent("workspace:selected", this.workspaceSelected);
+        this.subscribePageEvent("dataset:selected", this.datasetSelected);
+        this.subscribePageEvent("workfile:selected", this.workfileSelected);
+        this.subscribePageEvent("user:selected", this.userSelected);
+        this.subscribePageEvent("data_source:selected", this.dataSourceSelected);
+        this.subscribePageEvent("attachment:selected", this.attachmentSelected);
+
+        this.subscribePageEvent("choice:search_in", this.scopeSearchResults);
+        this.subscribePageEvent("choice:filter", this.filterSearchResults);
+
+        this.render();
     },
 
     hdfsSelected: function() {
@@ -108,8 +126,9 @@ chorus.pages.SearchIndexPage = chorus.pages.Base.extend({
         this.renderSidebar(this.sidebars.dataset);
     },
 
-    workfileSelected: function() {
-        this.renderSidebar(this.sidebars.workfile)
+    workfileSelected: function(workfile) {
+        var sidebar = chorus.views.WorkfileSidebar.buildFor({model: workfile, showEditingLinks: false});
+        this.renderSidebar(sidebar);
     },
 
     userSelected: function(user) {
@@ -117,9 +136,9 @@ chorus.pages.SearchIndexPage = chorus.pages.Base.extend({
         this.renderSidebar(this.sidebars.user);
     },
 
-    instanceSelected: function(instance) {
-        this.sidebars.instance.setInstance(instance);
-        this.renderSidebar(this.sidebars.instance);
+    dataSourceSelected: function(dataSource) {
+        this.sidebars.dataSource.setDataSource(dataSource);
+        this.renderSidebar(this.sidebars.dataSource);
     },
 
     attachmentSelected: function(attachment) {
@@ -128,14 +147,17 @@ chorus.pages.SearchIndexPage = chorus.pages.Base.extend({
     },
 
     renderSidebar: function(sidebar) {
-        this.sidebar && $(this.sidebar.el).removeClass("attachment_list_sidebar workspace_list_sidebar dataset_list_sidebar workfile_list_sidebar user_list_sidebar hdfs_list_sidebar");
+        this.sidebar && $(this.sidebar.el).removeClass("attachment_list_sidebar workspace_list_sidebar dataset_list_sidebar user_list_sidebar hdfs_list_sidebar");
+        this.teardownSidebar();
         this.sidebar = sidebar;
         this.renderSubview('sidebar');
         this.trigger('resized');
     },
 
-    postRender: function() {
-        this.$('li.result_item').eq(0).click()
+    teardownSidebar: function() {
+        if(this.sidebar instanceof chorus.views.WorkfileSidebar) {
+            this.sidebar.teardown(true);
+        }
     },
 
     scopeSearchResults: function(data) {

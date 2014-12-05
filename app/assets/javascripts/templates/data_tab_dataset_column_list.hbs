@@ -1,0 +1,12 @@
+{{#if models.length}}
+    <ul>
+        {{#each models}}
+            <li class='sidebar_list_item' data-name="{{name}}" data-fullname="{{fullName}}" data-cid="{{cid}}" title="{{name}}">
+                <span class="column_type list_item_text">[{{type}}]</span>
+                <span class="column_name list_item_text">{{name}}</span>
+            </li>
+        {{/each}}
+    </ul>
+{{else}}
+    <div class="none_found">{{t "schema.column.list.empty"}}</div>
+{{/if}}

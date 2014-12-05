@@ -24,6 +24,34 @@ describe SvgToPng do
         expect { subject }.not_to raise_error
       end
     end
+
+    context "When passed an svg body with an unescaped ampersand in an attribute" do
+      let(:svg_content) do
+        <<-SVG
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+          <circle cx="100" cy="50" r="40" stroke="black" stroke-width="2" fill="blue" title="&nbsp;" />
+        </svg>
+        SVG
+      end
+
+      it "not raises an exception" do
+        expect { SvgToPng.new(svg_content) }.not_to raise_error
+      end
+    end
+
+    context "When passed an svg body with an unescaped ampersand in a body" do
+      let(:svg_content) do
+        <<-SVG
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+          <text>&nbsp;</text>
+        </svg>
+        SVG
+      end
+
+      it "not raises an exception" do
+        expect { SvgToPng.new(svg_content) }.not_to raise_error
+      end
+    end
   end
 
   describe "#binary_data" do

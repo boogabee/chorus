@@ -1,12 +1,12 @@
 describe("chorus.collections.SchemaFunctionSet", function() {
     beforeEach(function() {
-        this.schema = rspecFixtures.schema();
+        this.schema = backboneFixtures.schema();
         this.functionSet = this.schema.functions();
     });
 
     describe("#urlTemplate", function() {
         beforeEach(function() {
-            this.schema = rspecFixtures.schema({name: "b/a/r", database: {name: "%foo%", instance: {id: 10000} }});
+            this.schema = backboneFixtures.schema({name: "b/a/r", database: {name: "%foo%", dataSource: {id: 10000} }});
             this.functionSet = this.schema.functions();
         });
 
@@ -17,12 +17,12 @@ describe("chorus.collections.SchemaFunctionSet", function() {
 
     describe("sort", function() {
         beforeEach(function() {
-            this.functionSet = rspecFixtures.schemaFunctionSet();
+            this.functionSet = backboneFixtures.schemaFunctionSet();
         });
 
         it("sorts by functionName, case insensitive", function() {
-            var functionNames = this.functionSet.pluck('name')
+            var functionNames = this.functionSet.pluck('name');
             expect(functionNames).toEqual(['foo', 'hello', 'ZOO']);
-        })
+        });
     });
 });

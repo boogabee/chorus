@@ -5,7 +5,7 @@ describe("chorus.models.HeatmapTask", function() {
             yAxis: "height",
             xBins: 5,
             yBins: 6,
-            dataset: newFixtures.workspaceDataset.sandboxTable({objectName: "users"})
+            dataset: backboneFixtures.workspaceDataset.datasetTable({objectName: "users"})
         });
     });
 
@@ -30,5 +30,5 @@ describe("chorus.models.HeatmapTask", function() {
             expect(this.model.getColumnLabel("foo")).toBe("foo");
         });
     });
-})
+});
 

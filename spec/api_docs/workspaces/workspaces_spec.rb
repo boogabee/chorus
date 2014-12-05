@@ -6,8 +6,8 @@ resource "Workspaces" do
   let(:id) { workspace_id }
   let(:user) { workspace.owner }
 
-  let(:gpdb_instance) { database.gpdb_instance}
-  let(:instance_id) { gpdb_instance.id }
+  let(:gpdb_data_source) { database.data_source}
+  let(:data_source_id) { gpdb_data_source.id }
   let(:database) { workspace.sandbox.database }
   let(:database_id) { database.id }
   let(:sandbox) { dataset.schema }
@@ -17,11 +17,12 @@ resource "Workspaces" do
 
   before do
     log_in user
-    stub(Dataset).refresh.with_any_args { |account, schema, options| schema.datasets }
+    stub(GpdbDataset).refresh.with_any_args { |account, schema, options| schema.datasets }
+    stub(Alpine::API).delete_work_flow.with_any_args
   end
 
   get "/workspaces" do
-    parameter :active, "1 if you only want active workspaces, 0 if you want all workspaces. Defaults to all workspaces if the parameter is not provided"
+    parameter :active, "true if you only want active workspaces, false if you want all workspaces. Defaults to all workspaces if the parameter is not provided"
     parameter :user_id, "If provided, only return workspaces the specified user is a member of"
     pagination
 
@@ -43,14 +44,13 @@ resource "Workspaces" do
   put "/workspaces/:id" do
     parameter :id, "Id of a workspace"
     parameter :name, "Name of workspace"
-    parameter :public, "1 if the workspace should be public, 0 if it should be private. Defaults to public if the parameter is not provided."
-    parameter :sandbox_id, "Id of the schema to be used as the workspace's sandbox"
+    parameter :public, "true if the workspace should be public, false if it should be private. Defaults to private if the parameter is not provided."
     parameter :summary, "Notes about the workspace"
 
-    required_parameters :name, :id
+    required_parameters :id
 
     let(:name) { "Awesome Workspace" }
-    let(:public) { "1" }
+    let(:public) { false }
     let(:summary) { "I like big data and I cannot lie, all the other coders can't deny" }
 
     example_request "Update workspace details" do
@@ -58,78 +58,84 @@ resource "Workspaces" do
     end
   end
 
-  put "/workspaces/:id", :database_integration do
-    parameter :id, "Id of a workspace"
-    parameter :instance_id, "Id of an instance to create new database in"
+  post "/workspaces/:workspace_id/sandbox", :greenplum_integration do
+    parameter :workspace_id, "Id of a workspace"
+    parameter :data_source_id, "Id of a Greenplum data source to create new database in"
     parameter :database_name, "Name of a new database"
     parameter :schema_name, "Name of new schema"
 
-    required_parameters :instance_id, :database_name, :schema_name, :id
+    required_parameters :data_source_id, :database_name, :schema_name, :workspace_id
 
-    let(:gpdb_instance) { GpdbIntegration.real_gpdb_instance }
-    let(:database_name) { "a_new_database_name" }
+    let(:gpdb_data_source) { GreenplumIntegration.real_data_source }
+    let(:database_name) { GreenplumIntegration.sandbox_created_db }
     let(:schema_name) { "a_new_schema_name" }
-    let(:user) { gpdb_instance.owner }
+    let(:user) { gpdb_data_source.owner }
 
-    after do
-      Gpdb::ConnectionBuilder.connect!(gpdb_instance, gpdb_instance.owner_account) do |conn|
-        conn.exec_query("DROP DATABASE IF EXISTS #{database_name};")
-      end
+    before do
+      gpdb_data_source.connect_with(gpdb_data_source.owner_account).execute("DROP DATABASE IF EXISTS #{database_name}")
     end
 
     example_request "Add a sandbox by creating a new schema in a new database" do
-      status.should == 200
+      status.should == 201
     end
   end
 
-  put "/workspaces/:id", :database_integration do
-    parameter :id, "Id of a workspace"
-    parameter :instance_id, "Id of the instance to create a schema in"
+  post "/workspaces/:workspace_id/sandbox", :greenplum_integration do
+    parameter :workspace_id, "Id of a workspace"
+    parameter :data_source_id, "Id of the Greenplum data source to create a schema in"
     parameter :database_id, "Id of the database to create a schema in"
     parameter :schema_name, "Name of new schema"
 
-    required_parameters :instance_id, :database_id, :schema_name, :id
+    required_parameters :data_source_id, :database_id, :schema_name, :workspace_id
 
-    let(:gpdb_instance) { GpdbIntegration.real_gpdb_instance }
-    let(:database) { GpdbIntegration.real_database }
+    let(:gpdb_data_source) { GreenplumIntegration.real_data_source }
+    let(:database) { GreenplumIntegration.real_database }
     let(:schema_name) { "a_new_schema" }
-    let(:user) { gpdb_instance.owner }
+    let(:user) { gpdb_data_source.owner }
 
     after do
-      database.with_gpdb_connection(gpdb_instance.owner_account) do |conn|
-        conn.exec_query("DROP SCHEMA IF EXISTS #{schema_name}")
-      end
+      database.connect_with(gpdb_data_source.owner_account).drop_schema(schema_name)
     end
 
     example_request "Add a sandbox by creating a new schema in an existing database" do
-      status.should == 200
+      status.should == 201
     end
   end
 
-  put "/workspaces/:id" do
-    parameter :id, "Id of a workspace"
-    parameter :sandbox_id, "Id of the schema to add as a sandbox"
+  post "/workspaces/:workspace_id/sandbox" do
+    parameter :workspace_id, "Id of a workspace"
+    parameter :schema_id, "Id of the schema to add as a sandbox"
 
-    required_parameters :sandbox_id, :id
+    required_parameters :schema_id, :workspace_id
 
     example_request "Add a sandbox schema that already exists" do
-      status.should == 200
+      status.should == 201
     end
   end
 
   post "/workspaces" do
     parameter :name, "Workspace name"
-    parameter :public, "1 if the workspace should be public, 0 if it should be private. Defaults to public if the parameter is not provided."
+    parameter :public, "true if the workspace should be public, false if it should be private. Defaults to private if the parameter is not provided."
     parameter :summary, "Notes about the workspace"
 
     required_parameters :name
 
     let(:name) { "Awesome Workspace" }
-    let(:public) { "1" }
+    let(:public) { false }
     let(:summary) { "Lots of good data in here" }
 
     example_request "Create a workspace" do
       status.should == 201
+    end
+  end
+
+ delete "/workspaces/:id" do
+    parameter :id, "Id of a workspace"
+
+    required_parameters :id
+
+    example_request "Delete a workspace" do
+      status.should == 200
     end
   end
 
@@ -143,8 +149,9 @@ resource "Workspaces" do
   end
 
   post "/workspaces/:workspace_id/external_tables" do
-    parameter :hdfs_entry_id, "Id of the source HDFS entry"
-    parameter :has_header, "'true' if data contains a header column, 'false' otherwise"
+    parameter :hdfs_entry_id, "Id of the source HDFS file or directory"
+    parameter :path_type, "Type of source for external table ['file' (default), 'pattern' or 'directory']"
+    parameter :file_pattern, "Regular expression specifying file names to include (only when path_type is 'pattern')"
     parameter :'column_names[]', "Array of column names"
     parameter :'types[]', "Array of column types"
     parameter :delimiter, "Delimiter (i.e. , or ;)"
@@ -153,8 +160,7 @@ resource "Workspaces" do
 
     required_parameters :hdfs_entry_id, :table_name, :workspace_id, :'column_names[]', :delimiter, :'types[]'
 
-    let(:hdfs_entry_id) { hdfs_entries(:hdfs_file).id }
-    let(:has_header) { true }
+    let(:hdfs_entry_id) { hdfs_entries(:directory).id }
     let(:'column_names[]') { ["field1", "field2"] }
     let(:'types[]') { ["text", "text"] }
     let(:delimiter) { ',' }
@@ -162,8 +168,8 @@ resource "Workspaces" do
 
     before do
       workspace.update_attribute(:sandbox, sandbox)
-      any_instance_of(Hdfs::ExternalTableCreator) do |instance|
-        stub(instance).create_external_table {
+      any_instance_of(ExternalTable) do |data_source|
+        stub(data_source).save {
           sandbox.datasets << FactoryGirl.create(:gpdb_table, :schema => sandbox, :name => table_name)
         }
       end

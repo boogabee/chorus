@@ -37,9 +37,9 @@ describe("chorus.views.TabControl", function() {
         expect(this.view.$("ul.tabs li").eq(1)).toHaveData("name", "statistics");
         expect(this.view.$("ul.tabs li").eq(2)).toHaveData("name", "configuration");
 
-        expect(this.view.$("ul.tabs li").eq(0).text()).toMatchTranslation("tabs.activity");
-        expect(this.view.$("ul.tabs li").eq(1).text()).toMatchTranslation("tabs.statistics");
-        expect(this.view.$("ul.tabs li").eq(2).text()).toMatchTranslation("tabs.configuration");
+        expect(this.view.$("ul.tabs li").eq(0)).toContainTranslation("tabs.activity");
+        expect(this.view.$("ul.tabs li").eq(1)).toContainTranslation("tabs.statistics");
+        expect(this.view.$("ul.tabs li").eq(2)).toContainTranslation("tabs.configuration");
     });
 
     it("renders each view inside of its 'tabbed area'", function() {
@@ -71,7 +71,7 @@ describe("chorus.views.TabControl", function() {
         beforeEach(function() {
             chorus.page = new chorus.pages.Base();
             spyOnEvent(chorus.page, 'resized');
-            this.tab1Spy.reset()
+            this.tab1Spy.reset();
             this.view.$('li').eq(1).click();
         });
 

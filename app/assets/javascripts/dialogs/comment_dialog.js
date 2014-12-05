@@ -16,7 +16,7 @@ chorus.dialogs.Comment = chorus.dialogs.Base.include(
             entityType: this.options.entityType,
             eventId: this.options.eventId
         });
-        this.bindings.add(this.model, "saved", this.saved);
+        this.listenTo(this.model, "saved", this.saved);
     },
 
     additionalContext:function () {
@@ -25,7 +25,7 @@ chorus.dialogs.Comment = chorus.dialogs.Base.include(
 
     postRender: function() {
         _.defer(_.bind(function() {
-            this.makeEditor($(this.el), ".toolbar", "text", { width: 566, height: 150 });
+            this.makeEditor($(this.el), ".toolbar", "body", { width: 'auto', height: 150 });
         }, this));
     },
 
@@ -41,18 +41,17 @@ chorus.dialogs.Comment = chorus.dialogs.Base.include(
             this.markInputAsInvalid($input, model.errors.text, true);
 
             this.$("iframe").contents().find("text").css("margin-right", "20px");
-            this.$(".cleditorMain").css("width", "545px");
         }
     },
 
     save:function (e) {
         e.preventDefault();
-        this.model.save({ text: this.getNormalizedText(this.$("textarea[name=text]")) });
+        this.model.save({ body: this.getNormalizedText(this.$("textarea[name=body]")) });
     },
 
     saved:function () {
         this.pageModel.trigger("invalidated");
-        chorus.PageEvents.broadcast("comment:added", this.model);
+        chorus.PageEvents.trigger("comment:added", this.model);
         this.closeModal();
     }
 });

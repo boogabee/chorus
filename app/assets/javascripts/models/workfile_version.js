@@ -6,7 +6,7 @@ chorus.models.WorkfileVersion = chorus.models.Base.extend({
     initialize: function() {
         this._super('initialize');
         this.bind("destroy", function() {
-            chorus.PageEvents.broadcast("workfile_version:deleted", this.get('versionInfo').versionNum);
+            chorus.PageEvents.trigger("workfile_version:deleted", this.get('versionInfo').versionNum);
         }, this);
     }
 });

@@ -6,23 +6,23 @@ describe("chorus.views.Dialog", function() {
         this.dialog.additionalContext = function() {
             return {
                 text : "OMG IM IN A DIALOG WHOA"
-            }
-        }
+            };
+        };
         spyOn(chorus, 'placeholder');
-    })
+    });
 
     describe("#render", function() {
         beforeEach(function() {
-            this.dialog.render()
-        })
+            this.dialog.render();
+        });
 
         it("displays the title in the .dialog_header", function() {
             expect(this.dialog.$(".dialog_header h1")).toContainText("OH HAI");
-        })
+        });
 
         it("renders the view in the .dialog_content", function() {
             expect(this.dialog.$(".dialog_content")).toContainText("OMG IM IN A DIALOG WHOA");
-        })
+        });
 
         it("sets up input placeholders for older browsers", function() {
             expect(chorus.placeholder).toHaveBeenCalledWith(this.dialog.$("input[placeholder], textarea[placeholder]"));
@@ -42,7 +42,7 @@ describe("chorus.views.Dialog", function() {
 
         context("with a function as the title", function() {
             beforeEach(function() {
-                this.dialog.title = function() {return 'foo'};
+                this.dialog.title = function() {return 'foo';};
                 this.dialog.render();
             });
 
@@ -57,30 +57,41 @@ describe("chorus.views.Dialog", function() {
         beforeEach(function() {
             delete chorus.modal;
 
-            spyOn($, "facebox")
-            spyOn(this.dialog, "render")
-            spyOn(this.dialog, "el")
-            this.dialog.launchModal()
-        })
+            spyOn($, "facebox");
+            spyOn(this.dialog, "render");
+            this.dialog.launchModal();
+        });
 
         it("creates a facebox", function() {
             expect($.facebox).toHaveBeenCalledWith(this.dialog.el);
-        })
+        });
 
         it("renders the dialog", function() {
             expect(this.dialog.render).toHaveBeenCalled();
-        })
-    })
+        });
+    });
 
     describe("Clicking the cancel button", function(){
         beforeEach(function() {
             this.dialog.render();
-            this.dialog.$(".dialog_content").append("<div class='modal_controls'><button class='cancel'>no</button></div>")
+            this.dialog.$(".dialog_content").append("<div class='form_controls'><button class='cancel'>no</button></div>");
             spyOnEvent($(document), "close.facebox");
             this.dialog.$("button.cancel").click();
-        })
+        });
         it("dismisses the dialog", function(){
-            expect("close.facebox").toHaveBeenTriggeredOn($(document))
+            expect("close.facebox").toHaveBeenTriggeredOn($(document));
         });
     });
-})
+
+    describe("#showDialogError", function() {
+        beforeEach(function() {
+            this.dialog.render();
+            this.dialog.model = new chorus.models.Base();
+        });
+        it("shows text given to it", function() {
+            var errorMessage = "OMG IM AN ERROR";
+            this.dialog.showDialogError(errorMessage);
+            expect(this.dialog.$(".errors")).toContainText(errorMessage);
+        });
+    });
+});

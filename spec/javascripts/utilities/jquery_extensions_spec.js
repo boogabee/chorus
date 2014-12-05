@@ -3,9 +3,9 @@ describe("jquery extensions", function() {
         beforeEach(function() {
             var container = $("<div/>");
             _.times(5, function(i) {
-                container.append("<button>Original Text " + i + "</button>");
+                container.append("<button><b>Original</b> Text " + i + "</button>");
             });
-            container.append("<span>Original Span Text</span>")
+            container.append("<span>Original Span Text</span>");
             this.buttons = container.find("button");
             this.button = this.buttons.eq(0);
             this.span = container.find("span").eq(0);
@@ -21,20 +21,20 @@ describe("jquery extensions", function() {
             describe("#stopLoading", function() {
                 it("doesn't modify the text", function() {
                     this.button.stopLoading();
-                    expect(this.button.text()).toBe("Original Text 0");
+                    expect(this.button.html()).toBe("<b>Original</b> Text 0");
                 });
-            })
+            });
         });
 
         describe("startLoading", function() {
             beforeEach(function() {
                 this.buttons.startLoading("test.mouse");
-                this.span.startLoading("test.mouse")
+                this.span.startLoading("test.mouse");
             });
 
             it("sets the elements's text to the supplied translation key", function() {
                 expect(this.button.text()).toMatchTranslation("test.mouse");
-                expect(this.span.text()).toMatchTranslation("test.mouse")
+                expect(this.span.text()).toMatchTranslation("test.mouse");
             });
 
             it("displays a spinner inside the element", function() {
@@ -71,7 +71,7 @@ describe("jquery extensions", function() {
 
                 it("still restores to the original text when stopLoading is called", function() {
                     this.button.stopLoading();
-                    expect(this.button.text()).toBe("Original Text 0");
+                    expect(this.button.html()).toBe("<b>Original</b> Text 0");
                 });
             });
 
@@ -100,7 +100,7 @@ describe("jquery extensions", function() {
                 it("removes the loading class from the elements", function() {
                     expect(this.buttons.eq(0)).not.toHaveClass("loading");
                     expect(this.buttons.eq(1)).not.toHaveClass("loading");
-                    expect(this.span).not.toHaveClass("loading")
+                    expect(this.span).not.toHaveClass("loading");
                 });
             });
         });
@@ -163,15 +163,15 @@ describe("jquery extensions", function() {
 
     describe("#isOnDom", function() {
         it("should be true if element is on the dom", function() {
-            var stuff = $("<div class='stuff'></div>")
-            $('#jasmine_content').append(stuff)
+            var stuff = $("<div class='stuff'></div>");
+            $('#jasmine_content').append(stuff);
             expect(stuff.isOnDom()).toBeTruthy();
-        })
+        });
 
         it("should be false if element is not on the dom", function() {
-            var stuff = $("<div class='stuff'></div>")
+            var stuff = $("<div class='stuff'></div>");
             expect(stuff.isOnDom()).toBeFalsy();
-        })
+        });
     });
 
     describe("#outerHtml", function() {
@@ -189,7 +189,7 @@ describe("jquery extensions", function() {
 
     describe("#stripHtml", function() {
         it("removes html tags from a string", function() {
-            expect($.stripHtml("Hello <span>how are</span> you")).toBe("Hello how are you")
+            expect($.stripHtml("Hello <span>how are</span> you")).toBe("Hello how are you");
         });
     });
 });

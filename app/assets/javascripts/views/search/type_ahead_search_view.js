@@ -1,7 +1,7 @@
 chorus.views.TypeAheadSearch = chorus.views.Base.extend({
     constructorName: "TypeAheadSearchView",
     templateName: "type_ahead_search",
-
+    additionalClass: "menu", // dismiss it like the other popups
     resultLimit: 5,
 
     makeModel: function() {
@@ -11,10 +11,13 @@ chorus.views.TypeAheadSearch = chorus.views.Base.extend({
     },
 
     context: function() {
-        var ctx = {query: this.model.get("query")};
+        var ctx = {
+            query: this.model.get("query"),
+            limitSearch: chorus.models.Config.instance().license().limitSearch()
+        };
         ctx.results = _.map(_.first(this.model.results(), this.resultLimit), function(result) {
 
-            var isBinaryHdfs = result.get('entityType') == 'hdfs_file' && ( result.get('isBinary') !== false )
+            var isBinaryHdfs = result.get('entityType') === 'hdfs_file' && ( result.get('isBinary') !== false );
 
             return {
                 name: result.highlightedName(),
@@ -28,7 +31,7 @@ chorus.views.TypeAheadSearch = chorus.views.Base.extend({
     },
 
     entityTypeForResult: function(result) {
-        if(result.get('entityType') == 'dataset' && result.get('type') == 'CHORUS_VIEW') {
+        if(result.get('entityType') === 'dataset' && result.get('entitySubtype') === 'CHORUS_VIEW') {
             return 'chorusView';
         }
         return result.get('entityType');
@@ -36,16 +39,16 @@ chorus.views.TypeAheadSearch = chorus.views.Base.extend({
 
     handleKeyEvent: function(event) {
         switch (event.keyCode) {
-            case 40:
-                this.downArrow();
-                break;
-            case 38:
-                this.upArrow();
-                break;
-            case 13:
-                this.enterKey();
-                if (this.$("li.selected").length > 0) { event.preventDefault(); }
-                break;
+        case 40:
+            this.downArrow();
+            break;
+        case 38:
+            this.upArrow();
+            break;
+        case 13:
+            this.enterKey();
+            if (this.$("li.selected").length > 0) { event.preventDefault(); }
+            break;
         }
     },
 
@@ -74,10 +77,16 @@ chorus.views.TypeAheadSearch = chorus.views.Base.extend({
         }
     },
 
+    disableSearch: function() {
+        this.searchDisabled = true;
+    },
+
     enterKey: function() {
-        var selectedLi = this.$("li.selected");
-        if (selectedLi.length) {
-            chorus.router.navigate(selectedLi.find("a").attr("href"));
+        if (!this.searchDisabled) {
+            var selectedLi = this.$("li.selected");
+            if(selectedLi.length) {
+                chorus.router.navigate(selectedLi.find("a").attr("href"));
+            }
         }
     },
 
@@ -86,6 +95,9 @@ chorus.views.TypeAheadSearch = chorus.views.Base.extend({
         if (trimmedQuery && trimmedQuery !== "" ){
             this.model.set({query: trimmedQuery}, {silent: true});
             this.model.fetch();
+            return true;
+        } else {
+            return false;
         }
     }
 });

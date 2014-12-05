@@ -12,8 +12,8 @@ resource "Chorus Views" do
 
   post "/chorus_views" do
     before do
-      any_instance_of(GpdbSchema) do |schema|
-        mock(schema).with_gpdb_connection.with_any_args
+      any_instance_of(ChorusView) do |view|
+        mock(view).validate_query
       end
     end
 
@@ -40,8 +40,8 @@ resource "Chorus Views" do
 
   put "/chorus_views/:id" do
     before do
-      any_instance_of(GpdbSchema) do |schema|
-        mock(schema).with_gpdb_connection.with_any_args
+      any_instance_of(ChorusView) do |view|
+        mock(view).validate_query
       end
     end
 
@@ -74,15 +74,16 @@ resource "Chorus Views" do
 
   post "/datasets/preview_sql" do
     let(:sql_result) {
-      SqlResult.new.tap do |r|
+      GreenplumSqlResult.new.tap do |r|
         r.add_column("t_bit", "bit")
         r.add_rows([["10101"]])
-        r.schema = schema
       end
     }
 
     before do
-      mock(SqlExecutor).execute_sql.with_any_args { sql_result }
+      mock(CancelableQuery).new.with_any_args do
+        mock(Object.new).execute.with_any_args { sql_result }
+      end
     end
 
     parameter :schema_id, "Id of the schema to use for the SQL command"
@@ -91,7 +92,7 @@ resource "Chorus Views" do
 
     required_parameters :schema_id, :query, :check_id
 
-    let(:schema) { gpdb_schemas(:default) }
+    let(:schema) { schemas(:default) }
     let(:schema_id) { schema.id }
     let(:query) { "SELECT * FROM table;" }
     let(:check_id) {'0.43214321' }
@@ -117,6 +118,27 @@ resource "Chorus Views" do
     end
 
     example_request "Convert a Chorus View to Database view" do
+      status.should == 201
+    end
+  end
+
+  post "/chorus_views/:id/duplicate" do
+    let(:chorus_view) { datasets(:chorus_view) }
+    let(:id) { chorus_view.id }
+    let(:object_name) { "new_chorus_view" }
+    let(:owner) {chorus_view.workspace.owner}
+
+    before do
+      any_instance_of(ChorusView) do |view|
+        mock(view).validate_query
+      end
+    end
+
+    parameter :id, "Id of the chorus view to be duplicated"
+    parameter :object_name, "Name of the new chorus view"
+    required_parameters :id, :object_name
+
+    example_request "Duplicate Chorus View" do
       status.should == 201
     end
   end

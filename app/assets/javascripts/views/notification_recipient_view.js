@@ -17,7 +17,7 @@ chorus.views.NotificationRecipient = chorus.views.Base.extend({
     },
 
     preRender: function() {
-        this.collection.remove(chorus.session.user())
+        this.collection.remove(chorus.session.user());
     },
 
     postRender: function() {
@@ -58,7 +58,7 @@ chorus.views.NotificationRecipient = chorus.views.Base.extend({
         });
 
         _.each(this.collection.models, function(user) {
-            var $option = this.$("<option class='name'></span>").text(user.displayName());
+            var $option = $("<option class='name'></option>").text(user.displayName());
             $option.attr("value", user.get("id").toString());
             this.$("select").append($option);
         }, this);
@@ -66,7 +66,7 @@ chorus.views.NotificationRecipient = chorus.views.Base.extend({
         chorus.styleSelect(this.$("select"));
 
         var $availableUser = this.$(".ui-selectmenu-button");
-        this.collection.length == 0 ? $availableUser.addClass("hidden") : $availableUser.removeClass("hidden");
+        this.collection.length === 0 ? $availableUser.addClass("hidden") : $availableUser.removeClass("hidden");
     },
 
     updateSelectedUserList: function() {
@@ -74,9 +74,9 @@ chorus.views.NotificationRecipient = chorus.views.Base.extend({
 
         _.each(this.selectedUsers.models, function(user) {
             var id = user.get("id");
-            var $span = this.$("<span class='name'></span>").text(user.displayName());
+            var $span = $("<span class='name'></span>").text(user.displayName());
             var $remove = $('<a href="#" class="remove"/>').text(t("notification_recipient.remove"));
-            var $li = this.$("<li></li>").append($span).append($remove).attr("data-id", id.toString());
+            var $li = $("<li></li>").append($span).append($remove).attr("data-id", id.toString());
 
             this.$(".picked_users").append($li);
         }, this);

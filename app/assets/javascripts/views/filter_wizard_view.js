@@ -1,5 +1,6 @@
 chorus.views.FilterWizard = chorus.views.Base.extend({
     templateName: "filter_wizard",
+    constructorName: "FilterWizard",
     persistent: true,
 
     events: {
@@ -10,20 +11,21 @@ chorus.views.FilterWizard = chorus.views.Base.extend({
         this.options = this.options || {};
         this.columnSet = this.options.columnSet;
         this.collection = this.collection || this.filterCollection();
-        this.bindings.add(this.columnSet, 'remove', this.removeInvalidFilters);
+        this.listenTo(this.columnSet, 'remove', this.removeInvalidFilters);
     },
 
     additionalContext: function() {
         return {
             title: t(this.title),
             extraContent: this.extraContent()
-        }
+        };
     },
 
     postRender: function() {
         _.each(this.filterViews, function(filterView) {
+            this.stopListening(filterView);
             filterView.teardown();
-        });
+        }, this);
         this.filterViews = [];
         if (!this.collection.length) {
             this.addFilter();
@@ -45,7 +47,7 @@ chorus.views.FilterWizard = chorus.views.Base.extend({
         var $ul = this.$(".filters");
         var filterView = this.filterView(filter);
         $ul.append(filterView.render().el);
-        this.bindings.add(filterView, "deleted", function() {this.removeFilterView(filterView)}, this);
+        this.listenTo(filterView, "deleted", function() {this.removeFilterView(filterView);});
         this.filterViews.push(filterView);
         this.registerSubView(filterView);
     },
@@ -59,7 +61,7 @@ chorus.views.FilterWizard = chorus.views.Base.extend({
 
     removeFilterView: function(filterView) {
         this.collection.remove(filterView.model);
-        $(filterView.el).remove();
+        filterView.teardown();
         this.tagLastLi();
     },
 

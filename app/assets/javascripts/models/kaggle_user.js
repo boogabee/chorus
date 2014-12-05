@@ -1,3 +1,4 @@
 chorus.models.KaggleUser = chorus.models.Base.extend({
-    constructorName: "KaggleUser"
+    constructorName: "KaggleUser",
+    nameAttribute: "fullName"
 });

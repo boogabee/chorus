@@ -1,0 +1,30 @@
+{{> errorDiv }}
+
+<div class="guts">
+    <div class="girdle">
+        <div class="content">
+            <div class="right">
+                <img class="message" src="/images/message_icon.png"/>
+                <img class="info" src="/images/message_info.png"/>
+                <img class="error" src="/images/message_error.png"/>
+            </div>
+            <div class="left">
+                <h1>{{title}}</h1>
+
+                <p>{{text}}</p>
+            </div>
+        </div>
+        {{#if body}}
+            <div class="body">
+                {{body}}
+            </div>
+        {{/if}}
+
+    </div>
+
+    <div class="form_controls">
+        <button type="submit" class="submit modalish hidden" tabindex=1>{{ok}}</button>
+        <button type="button" class="cancel modalish" tabindex=2>{{cancel}}</button>
+    </div>
+
+</div>

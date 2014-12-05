@@ -1,0 +1,2 @@
+class ChorusWorkfileAccess < WorkfileAccess
+end

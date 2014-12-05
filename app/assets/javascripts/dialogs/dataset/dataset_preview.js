@@ -1,5 +1,6 @@
 chorus.dialogs.DatasetPreview = chorus.dialogs.Base.extend({
     constructorName: "DatasetPreview",
+    additionalClass: "dialog_wide",
 
     templateName: 'dataset_preview',
     title: function() {return t("dataset.data_preview_title", {name: this.model.get("objectName")}); },
@@ -19,14 +20,15 @@ chorus.dialogs.DatasetPreview = chorus.dialogs.Base.extend({
             showDownloadDialog: true,
             dataset: this.model,
             enableResize: true,
-            enableExpander: true
+            enableExpander: true,
+            verticalDialogPadding: this.verticalPadding
         });
-        this.closePreviewHandle = chorus.PageEvents.subscribe("action:closePreview", this.closeModal, this);
-        this.modalClosedHandle = chorus.PageEvents.subscribe("modal:closed", this.cancelTask, this);
+        this.subscribePageEvent("action:closePreview", this.closeModal);
+        this.subscribePageEvent("modal:closed", this.cancelTask);
     },
 
     footerSize: function() {
-        return this.$('.modal_controls').outerHeight(true);
+        return this.$('.form_controls').outerHeight(true);
     },
 
     postRender: function() {
@@ -36,10 +38,5 @@ chorus.dialogs.DatasetPreview = chorus.dialogs.Base.extend({
 
     cancelTask: function(e) {
         this.task && this.task.cancel();
-        chorus.PageEvents.unsubscribe(this.modalClosedHandle);
-    },
-
-    close: function() {
-        chorus.PageEvents.unsubscribe(this.closePreviewHandle);
     }
 });

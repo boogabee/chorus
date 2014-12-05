@@ -1,7 +1,5 @@
 .notes_new, .edit_note, .dialog.comment {
 
-    width: 600px;
-
     textarea {
         min-width : 350px;
         min-height: 75px;
@@ -60,9 +58,16 @@
         line-height: 32px;
         img {
             vertical-align: middle;
-            height: 35px;
-            width:35px;
+            max-height: 35px;
+            max-width: 35px;
         }
+
+        .image {
+            height: 35px;
+            width: 35px;
+            display: inline-block;
+        }
+
         .remove {
             float: right;
             line-height: 32px;
@@ -108,7 +113,6 @@
 
         .show_options {
             font-weight: $semibold;
-            border-bottom: 1px dotted;
         }
     }
 
@@ -129,10 +133,6 @@
         margin-right: 8px;
         margin-top: 8px;
 
-        .title {
-            @include font-content-details;
-        }
-
         .add_user {
             font-size: 12px;
             font-weight: $semibold;
@@ -150,7 +150,6 @@
         .picked_users {
             .name {
                 @include ellipsis;
-                @include font-content-details;
                 max-width: 200px;
                 display: inline-block;
             }

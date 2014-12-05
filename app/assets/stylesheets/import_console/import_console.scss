@@ -1,0 +1,37 @@
+@charset "UTF-8";
+@import "base";
+
+.imports {
+    $header-line-height: 32px;
+    $line-height: 40px;
+
+    background: $data-grid-background-color;
+
+    thead {
+        background: #eaeef2;
+    }
+
+    td, th {
+        border-right: 1px solid $border-color-dark;
+    }
+
+    th {
+        line-height: $header-line-height;
+        height: $header-line-height;
+        padding: 0 10px;
+        border-bottom: 1px solid $border-color-dark;
+    }
+
+    td {
+        line-height: $line-height;
+        padding: 0 10px;
+        border-bottom : $border-canon;
+        @include font-normal-alpha;
+    }
+
+    input[type=text] {
+        width: 400px;
+        display: inline;
+    }
+}
+

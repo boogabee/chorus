@@ -2,6 +2,7 @@ chorus.dialogs.WorkspaceEditMembers = chorus.dialogs.Base.extend({
     constructorName: "WorkspaceEditMembers",
     templateName:"workspace_edit_members",
     title:t("workspace.edit_members_dialog.title"),
+    additionalClass: "dialog_wide",
     persistent:true,
 
     events:{
@@ -14,10 +15,10 @@ chorus.dialogs.WorkspaceEditMembers = chorus.dialogs.Base.extend({
         this.members = this.options.pageModel.members();
 
         this.collection.fetchAllIfNotLoaded();
-        this.members.fetchIfNotLoaded();
+        this.members.fetchAllIfNotLoaded();
 
-        this.bindings.add(this.collection, "reset", this.render);
-        this.bindings.add(this.members, "saved", this.saved);
+        this.listenTo(this.collection, "reset", this.render);
+        this.listenTo(this.members, "saved", this.saved);
     },
 
     subviews:{
@@ -35,6 +36,8 @@ chorus.dialogs.WorkspaceEditMembers = chorus.dialogs.Base.extend({
     },
 
     updateMembers:function () {
+        this.$("button.submit").startLoading("actions.saving");
+
         var self = this;
         var ids = this.shuttle.getSelectedIDs();
         var users = _.map(ids, function (userId) {

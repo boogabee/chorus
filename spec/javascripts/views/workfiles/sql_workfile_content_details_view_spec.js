@@ -1,17 +1,18 @@
 describe("chorus.views.SqlWorkfileContentDetails", function() {
     beforeEach(function() {
-        this.model = rspecFixtures.workfile.sql({ fileName: 'test.sql', versionInfo: { content: "select * from foo" } });
+        this.model = backboneFixtures.workfile.sql({ fileName: 'test.sql', versionInfo: { content: "select * from foo" } });
         this.model.workspace().set({
             sandboxInfo: {
-                id: 4, name: "schema",
-                database: { id: 3, name: "db", instance: { id: 2, name: "instance" } }
-            }});
+                id: 4,
+                name: "schema",
+                database: { id: 3, name: "db", dataSource: { id: 2, name: "data source" } }
+            }
+        });
         this.contentView = new chorus.views.SqlWorkfileContent({ model: this.model });
         spyOn(this.contentView, 'run');
         this.contentView.getSelectedText = function() {};
 
         this.view = new chorus.views.SqlWorkfileContentDetails({ model: this.model, contentView: this.contentView });
-        spyOn(this.view, 'runInExecutionSchema').andCallThrough();
         this.qtipElement = stubQtip();
     });
 
@@ -20,17 +21,30 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
             this.view.render();
         });
 
+        context("when the workfile does not have an execution schema", function() {
+            beforeEach(function() {
+                this.model = backboneFixtures.workfile.sql({ fileName: 'test.sql', versionInfo: { content: "select * from foo" } });
+                this.model.set("executionSchema", null);
+                this.view = new chorus.views.SqlWorkfileContentDetails({ model: this.model, contentView: this.contentView });
+                this.view.render();
+            });
+
+            it("shows none as execution schema name", function() {
+                expect(this.view.$(".execution_schema")).toContainTranslation("workfile.content_details.no_schema");
+            });
+        });
+
         it("shows the 'Run File' button", function() {
-            expect(this.view.$('button.run_file')).toContainTranslation('workfile.content_details.run_file')
+            expect(this.view.$('button.run_file')).toContainTranslation('workfile.content_details.run_file');
         });
 
         it("shows the execution schema name", function() {
-            expect(this.view.$(".execution_schema")).toContainText(this.model.executionSchema().canonicalName())
+            expect(this.view.$(".execution_schema")).toContainText(this.model.executionSchema().canonicalName());
         });
 
         it("puts the shortcuts next to the menu items", function() {
-            expect(this.view.$("a.run_default").siblings(".menu_shortcut")).toContainText(chorus.helpers.hotKeyName("r"));
-            expect(this.view.$("a.run_selection").siblings(".menu_shortcut")).toContainText(chorus.helpers.hotKeyName("e"));
+            expect(this.view.$("a.run_default").siblings(".menu_shortcut")).toContainText(Handlebars.helpers.hotKeyName("r"));
+            expect(this.view.$("a.run_selection").siblings(".menu_shortcut")).toContainText(Handlebars.helpers.hotKeyName("e"));
         });
 
         context("when the workspace is archived", function() {
@@ -57,6 +71,10 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
 
                 it("should disable the 'Save' button", function() {
                     expect(this.view.$(".save button")).toBeDisabled();
+                });
+
+                it("should hide the 'change' button", function(){
+                    expect(this.view.$(".change_workfile_schema")).not.toExist();
                 });
             });
 
@@ -87,19 +105,19 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
                     expect(this.view.$(".save button")).not.toBeDisabled();
                 });
             });
-        })
+        });
 
         context("when the user has not selected any text", function() {
             beforeEach(function() {
                 this.contentView.getSelectedText = function() {
                     return "";
                 };
-                spyOn(chorus.PageEvents, "broadcast").andCallThrough();
+                spyOn(chorus.PageEvents, "trigger").andCallThrough();
             });
 
             context("and opens the Run File menu", function() {
                 beforeEach(function() {
-                    this.view.$(".run_file").click()
+                    this.view.$(".run_file").click();
                 });
 
                 it("disables the 'run selected sql' links in the menu", function() {
@@ -108,50 +126,52 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
                 });
             });
 
-            it("appends the Save file as a Chorus View to the Save File menu", function() {
-                this.view.$(".save_file_as").click();
-                expect(this.qtipElement).toContainTranslation("workfile.content_details.save_file_as_chorus_view");
+            it("the 'Save As' menu includes the 'Save file as a Chorus View' option", function() {
+                this.view.$(".save_as").click();
+                expect(this.qtipElement).toContainTranslation("workfile.content_details.save_as_chorus_view");
+            });
+
+            it("the 'Save as' menu includes the disabled 'Save selection as a Chorus View' option", function() {
+                this.view.$(".save_as").click();
+                expect(this.qtipElement).toContainTranslation("workfile.content_details.save_selection_as_chorus_view");
+                expect(this.qtipElement.find("li a[data-menu-name='newSelectionChorusView']")).toHaveAttr('disabled');
             });
         });
 
         context("when the user has selected some text", function() {
             beforeEach(function() {
                 spyOn(this.contentView, "getSelectedText").andReturn("Chuck and Lenny");
-                spyOn(chorus.PageEvents, "broadcast").andCallThrough();
+                spyOn(chorus.PageEvents, "trigger").andCallThrough();
 
-                chorus.PageEvents.broadcast("file:selectionPresent");
+                chorus.PageEvents.trigger("file:selectionPresent");
             });
 
             it("Changes the 'Run file' button text to 'Run Selected'", function() {
                 expect(this.view.$(".run_file .run_description")).toContainTranslation("workfile.content_details.run_selected");
             });
 
-            it("Changes the 'Save File As' button to 'Save Selection As'", function() {
-                expect(this.view.$(".save_selection_as")).not.toHaveClass("hidden");
-                expect(this.view.$(".save_file_as")).toHaveClass("hidden");
-            });
-
-            it("appends the Save selection as a Chorus View to the Save File menu", function() {
-                this.view.$(".save_selection_as").click();
-                expect(this.qtipElement).toContainTranslation("workfile.content_details.save_selection_as_chorus_view");
+            it("it enables the 'Save selection as a Chorus View' option", function() {
+                this.view.$(".save_as").click();
+                expect(this.qtipElement.find("li a[data-menu-name='newSelectionChorusView']")).not.toHaveAttr('disabled');
             });
 
             context("when the user de-selects text", function() {
                 beforeEach(function() {
-                    chorus.PageEvents.broadcast("file:selectionEmpty");
+                    chorus.PageEvents.trigger("file:selectionEmpty");
                 });
+
                 it("changes Run Selected button text back to Run File", function() {
                     expect(this.view.$(".run_file .run_description")).toContainTranslation("workfile.content_details.run_file");
                 });
 
-                it("changes 'Save Selection As' button back to 'Save File As'", function() {
-                    expect(this.view.$(".save_selection_as")).toHaveClass("hidden");
-                    expect(this.view.$(".save_file_as")).not.toHaveClass("hidden");
+                it("disables the 'Save selection as a Chorus View' option", function() {
+                    this.view.$(".save_as").click();
+                    expect(this.qtipElement.find("li a[data-menu-name='newSelectionChorusView']")).toHaveAttr('disabled');
                 });
             });
 
-            context("and there is a schema to run in", function() {
-                context("and opens the Run File menu", function() {
+            context("when the model has an execution schema", function() {
+                describe("opening the Run File menu", function() {
                     beforeEach(function() {
                         this.view.$(".run_file").click();
                     });
@@ -163,7 +183,7 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
 
                     it("runs the selected sql when the user says to", function() {
                         this.qtipElement.find(".run_selection").click();
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("file:runSelected");
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("file:runSelected");
                     });
 
                     context("clicking on 'Run selection and download'", function() {
@@ -177,11 +197,11 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
                 });
             });
 
-            context("and there is no schema to run in", function() {
-                context("and opens the Run File menu", function() {
+            context("when the model has no execution schema", function() {
+                context("opening the Run File menu", function() {
                     beforeEach(function() {
-                        this.view.model.workspace().unset("sandboxInfo");
-                        delete this.view.model.workspace()._sandbox;
+                        this.model.set("executionSchema", null);
+                        delete this.model._executionSchema;
                         this.view.render();
                         this.view.$(".run_file").click();
                     });
@@ -191,13 +211,13 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
                     });
 
                     it("has the right translation", function() {
-                        expect(this.qtipElement.find(".run_selection")).toContainTranslation("workfile.content_details.run_selection_sandbox");
+                        expect(this.qtipElement.find(".run_selection")).toContainTranslation("workfile.content_details.run_selection");
                     });
 
                     it("does nothing when the user clicks run selection", function() {
-                        chorus.PageEvents.broadcast.reset();
+                        chorus.PageEvents.trigger.reset();
                         this.qtipElement.find(".run_selection").click();
-                        expect(chorus.PageEvents.broadcast).not.toHaveBeenCalled();
+                        expect(chorus.PageEvents.trigger).not.toHaveBeenCalled();
                     });
                 });
             });
@@ -205,17 +225,13 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
 
         context("opening the Run File menu", function() {
             beforeEach(function() {
-                this.view.$(".run_file").click()
+                this.view.$(".run_file").click();
             });
 
-            it("shows the 'run in another' schema link in the menu", function() {
-                expect(this.qtipElement).toContainTranslation("workfile.content_details.run_in_another_schema")
-            });
-
-
-            describe("when the workspace does not have a sandbox", function() {
+            describe("when the workfile does not have an execution schema", function() {
                 beforeEach(function() {
-                    spyOn(this.model.workspace(), 'sandbox');
+                    this.model.set("executionSchema", null);
+                    delete this.model._executionSchema;
                     this.view.render();
                     this.view.$(".run_file").click();
                 });
@@ -226,21 +242,27 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
                     expect(runLink).toBe("span");
                 });
 
+                it("disables the 'run and download ' link", function() {
+                    var runAndDownloadLink = this.qtipElement.find(".run_and_download");
+                    expect(runAndDownloadLink).toContainTranslation("workfile.content_details.run_and_download");
+                    expect(runAndDownloadLink).toBe("span");
+                });
+
                 it("does nothing when the disabled span is clicked", function() {
-                    spyOn(chorus.PageEvents, "broadcast").andCallThrough();
+                    spyOn(chorus.PageEvents, "trigger").andCallThrough();
                     this.qtipElement.find(".run_default").click();
-                    expect(chorus.PageEvents.broadcast).not.toHaveBeenCalled();
+                    expect(chorus.PageEvents.trigger).not.toHaveBeenCalled();
                 });
             });
 
             context("clicking on 'Run file'", function() {
                 beforeEach(function() {
-                    spyOn(chorus.PageEvents, "broadcast").andCallThrough();
+                    spyOn(chorus.PageEvents, "trigger").andCallThrough();
                     this.qtipElement.find('.run_default').click();
                 });
 
-                it("broadcasts the 'file:runCurrent' event on the view", function() {
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("file:runCurrent");
+                it("triggers the 'file:runCurrent' event on the view", function() {
+                    expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("file:runCurrent");
                 });
             });
 
@@ -253,105 +275,103 @@ describe("chorus.views.SqlWorkfileContentDetails", function() {
                 });
             });
 
-            describe("clicking on 'Run in another schema'", function() {
-                it("launches the RunFileInSchema dialog", function() {
-                    var modalSpy = stubModals();
-                    this.qtipElement.find('.run_other_schema').click();
-                    expect(modalSpy).toHaveModal(chorus.dialogs.RunFileInSchema);
-                })
-            });
-
             context("it fires an event - editorSelectionStatus", function() {
                 beforeEach(function() {
                     spyOn(this.contentView, "getSelectedText").andReturn("Chuck and Lenny");
-                    spyOn(chorus.PageEvents, "broadcast").andCallThrough();
+                    spyOn(chorus.PageEvents, "trigger").andCallThrough();
                     this.qtipElement.find('.run_default').click();
                     this.view.render();
                 });
 
-                it("broadcast the event", function() {
-                    expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("file:editorSelectionStatus")
+                it("trigger the event", function() {
+                    expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("file:editorSelectionStatus");
                 });
+            });
+        });
+
+        describe("clicking the change button", function(){
+            var modalSpy;
+            beforeEach(function() {
+                modalSpy = stubModals();
+                this.saveDraftSpy = jasmine.createSpy("saveDraft");
+                chorus.PageEvents.on('file:saveDraft', this.saveDraftSpy);
+
+                this.view.$(".change_workfile_schema").click();
+            });
+
+            it("triggers a 'file:saveDraft' page event", function() {
+                expect(this.saveDraftSpy).toHaveBeenCalled();
+            });
+
+            it("shows the change schema dialog", function(){
+                expect(modalSpy).toHaveModal(chorus.dialogs.ChangeWorkfileSchema);
             });
         });
     });
 
     describe("event handling", function() {
-        describe("workfile:executed", function() {
+
+        describe("a.change_workfile_schema:clicked", function() {
             beforeEach(function() {
-                spyOn(this.view, "render");
-                spyOnEvent(this.view.model, "change");
-                this.executionSchema = rspecFixtures.schema();
-
-                chorus.PageEvents.broadcast("workfile:executed", this.model, this.executionSchema);
+                this.view.render();
+                spyOn(this.view, "changeWorkfileSchema");
+                this.view.delegateEvents();
+                this.view.$("a.change_workfile_schema").click();
             });
-
-            it("updates the execution schema in the workfile", function() {
-                expect(this.view.model.get("executionSchema")).toBe(this.executionSchema);
-            });
-
-            it("re-renders", function() {
-                expect(this.view.render).toHaveBeenCalled();
-            });
-
-            it("does not trigger change on the model", function() {
-                expect("change").not.toHaveBeenTriggeredOn(this.view.model);
+            it("calls the changeWorkfileSchema function", function() {
+                expect(this.view.changeWorkfileSchema).toHaveBeenCalled();
             });
         });
     });
 
     describe("create chorus view", function() {
         beforeEach(function() {
+            stubModals();
             this.view.model.workspace().set({active: true});
-            spyOn(chorus.PageEvents, "broadcast");
+            spyOn(chorus.PageEvents, "trigger").andCallThrough();
         });
 
-        context("when there is no selection", function() {
+        describe("from file", function() {
             beforeEach(function() {
-                chorus.PageEvents.broadcast('file:selectionEmpty');
+                this.view.render();
+                chorus.PageEvents.trigger('file:selectionEmpty');
             });
 
-            it("broadcasts file:newChorusView", function() {
-                this.view.render();
-                this.view.$('.save_file_as').click();
+            it("triggers file:newChorusView", function() {
+                this.view.$('.save_as').click();
                 this.qtipElement.$('a[data-menu-name="newChorusView"]').click();
-
-                expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("file:newChorusView");
-            });
-
-            context("there is no sandbox nor executionSchema", function() {
-                it("disables the Chorus View creation menu", function() {
-                    this.view.model.attributes.executionSchema = null;
-                    spyOn(this.view.model.workspace(), 'sandbox').andReturn(null);
-                    this.view.render();
-
-                    this.view.$('.save_file_as').click();
-                    expect(this.qtipElement.$('a[data-menu-name="newChorusView"]')).toHaveAttr('disabled');
-                });
+                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("file:newChorusView");
             });
         });
 
-        context("when there is selection", function() {
-            beforeEach(function() {
-                chorus.PageEvents.broadcast('file:selectionPresent');
-            });
+        it("it disables the Chorus View creation menu if no valid schema", function() {
+            this.view.model.attributes.executionSchema = null;
+            spyOn(this.view.model.workspace(), 'sandbox').andReturn(null);
+            this.view.render();
 
-            it("broadcasts file:newChorusView", function() {
+            this.view.$('.save_as').click();
+            expect(this.qtipElement.$('a[data-menu-name="newChorusView"]')).toHaveAttr('disabled');
+        });
+
+        context("with a selection", function() {
+            it("triggers file:newSelectionChorusView", function() {
                 this.view.render();
-
-                this.view.$('.save_selection_as').click();
+                chorus.PageEvents.trigger('file:selectionPresent');
+                this.view.$('.save_as').click();
                 this.qtipElement.$('a[data-menu-name="newSelectionChorusView"]').click();
 
-                expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("file:newSelectionChorusView");
+                expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("file:newSelectionChorusView");
             });
 
             context("there is no sandbox nor executionSchema", function() {
                 it("disables the Chorus View creation menu", function() {
                     this.view.model.attributes.executionSchema = null;
                     spyOn(this.view.model.workspace(), 'sandbox').andReturn(null);
-                    this.view.render();
 
-                    this.view.$('.save_selection_as').click();
+                    this.view.render();
+                    chorus.PageEvents.trigger('file:selectionPresent');
+
+                    this.view.$('.save_as').click();
                     expect(this.qtipElement.$('a[data-menu-name="newSelectionChorusView"]')).toHaveAttr('disabled');
                 });
             });

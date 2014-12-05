@@ -31,10 +31,10 @@ chorus.views.TimeseriesChartConfiguration = chorus.views.ChartConfiguration.exte
     ],
 
     chartOptions: function() {
-        var aggMap = {}
+        var aggMap = {};
         _.each(["sum", "min", "max", "avg", "count"], function(name){
             aggMap[t("dataset.group."+name)] = name;
-        })
+        });
 
         var xAxis = this.$(".time select option:selected").text();
         var timeColumn = (_.filter(this.columns, function(column){
@@ -49,6 +49,6 @@ chorus.views.TimeseriesChartConfiguration = chorus.views.ChartConfiguration.exte
             aggregation: aggMap[this.$(".value .selected_value").text()],
             timeInterval: this.$(".time .selected_value").text(),
             timeType: timeColumn.get("typeCategory").toLowerCase()
-        }
+        };
     }
 });

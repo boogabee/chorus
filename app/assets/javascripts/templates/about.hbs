@@ -1,0 +1,17 @@
+<div id="header"></div>
+
+<div class="about_box">
+    <h1 class="title">{{t applicationKey}}</h1>
+    <div class="content">
+        <ul class="list_vertical_divided items">
+            {{#each items}}
+                <li class="{{key}}">
+                    <strong>{{t translationKey}}:</strong> <span class="about_item">{{value}}</span>
+                </li>
+            {{/each}}
+            <li>
+                <strong>{{t "login.version"}}: </strong><span class="version about_item"></span>
+            </li>
+        </ul>
+    </div>
+</div>

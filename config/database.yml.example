@@ -1,0 +1,57 @@
+default: &default
+  adapter: jdbcpostgresql
+  encoding: unicode
+  username: postgres_chorus
+  password:
+  port: 8543
+  min_messages: warning
+  # Connect on a TCP socket. Omitted by default since the client uses a
+  # domain socket that doesn't need configuration. Windows does not have
+  # domain sockets, so uncomment these lines.
+  host: 127.0.0.1
+  pool: 5
+
+  # Schema search path. The server defaults to $user,public
+  #schema_search_path: myapp,sharedapp,public
+
+  # Minimum log levels, in increasing order:
+  #   debug5, debug4, debug3, debug2, debug1,
+  #   log, notice, warning, error, fatal, and panic
+  # The server defaults to notice.
+  #min_messages: warning
+
+development:
+  database: chorus_rails_development
+  <<: *default
+
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  database: chorus_rails_test
+  <<: *default
+
+ci_jasmine:
+  database: chorus_rails_ci_jasmine
+  <<: *default
+
+ci_legacy:
+  database: chorus_rails_ci_legacy
+  <<: *default
+
+ci_next:
+  database: chorus_rails_ci_next
+  <<: *default
+
+integration:
+  database: chorus_rails_integration
+  <<: *default
+
+production:
+  database: chorus
+  <<: *default
+
+packaging:
+  database: chorus_rails_packaging
+  <<: *default

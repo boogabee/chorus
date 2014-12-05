@@ -1,0 +1,9 @@
+<ul class="list accordion"></ul>
+
+{{#if models.length}}
+    {{#if showMoreLink}}
+        <a href="#" class="more">{{t "schema.metadata.more"}}</a>
+    {{/if}}
+{{else}}
+    <div class="none_found">{{t "schema.metadata.list.empty"}}</div>
+{{/if}}

@@ -7,6 +7,8 @@
 #   Mayor.create(:name => 'Emanuel', :city => cities.first)
 require 'user'
 
+ActiveRecord::Base.connection.schema_cache.clear!
+
 class BlackholeSession
   def initialize(*args)
   end

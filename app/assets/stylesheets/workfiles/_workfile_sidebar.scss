@@ -1,24 +1,24 @@
-.workfile_list_sidebar, .workfile_show_sidebar {
+.workfile_sidebar {
     .info {
         .fileName {
             @include ellipsis;
             @include heading-sidebar;
+            margin-bottom: 10px;
         }
 
         .updated {
             color: $color-text4;
-            font-size: 12px;
             margin-top: 5px;
         }
+    }
 
-        .fileName {
-            margin-bottom: 10px;
-        }
+    .workfile_image {
+        display: none;
     }
 }
 
 
-.workfile_list_sidebar {
+.workfile_sidebar {
     .info {
         margin-bottom: 20px;
     }
@@ -31,13 +31,9 @@
     }
 }
 
-.workfile_show_sidebar {
+.workfile_sidebar {
     .info {
         margin: 5px 0 20px 0;
-    }
-
-    .display_title {
-        @include font-content-details;
     }
 
     .version_list {
@@ -45,7 +41,6 @@
         margin-left: 3px;
         span {
             color : $link-color;
-            border-bottom: 1px dotted $link-color;
             color: $link-color;
         }
 
@@ -58,6 +53,7 @@
 .workfile_version_list {
     li {
         position: relative;
+        max-width: 360px;
 
         a {
             padding-top: 10px;
@@ -100,7 +96,7 @@
         }
 
         .spacer {
-            border-bottom: $dotted-list-item-border;
+            border-bottom: $border-canon;
         }
 
         a.delete_link {

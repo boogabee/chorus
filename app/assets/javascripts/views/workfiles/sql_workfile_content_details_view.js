@@ -1,18 +1,21 @@
 chorus.views.SqlWorkfileContentDetails = chorus.views.WorkfileContentDetails.extend({
     templateName: "sql_workfile_content_details",
+    constructorName: "SqlWorkContentDetailsView",
 
     setup: function() {
         this._super("setup", arguments);
-
-        chorus.PageEvents.subscribe("workfile:executed", this.workfileExecuted, this);
-        chorus.PageEvents.subscribe("file:selectionPresent", this.changeRunFileButtonText, this);
-        chorus.PageEvents.subscribe("file:selectionEmpty", this.changeRunSelectedButtonText, this);
+        this.subscribePageEvent("file:selectionPresent", this.onSelectedText);
+        this.subscribePageEvent("file:selectionEmpty", this.onNoSelectedText);
         this.contentView = this.options.contentView;
+    },
+
+    events: {
+        'click a.change_workfile_schema': 'changeWorkfileSchema'
     },
 
     postRender: function() {
         this._super("postRender");
-        chorus.menu(this.$('.run_file'), {
+        this.menu(this.$('.run_file'), {
             content: this.$(".run_workfile"),
             orientation: "right",
             qtipArgs: {
@@ -23,43 +26,41 @@ chorus.views.SqlWorkfileContentDetails = chorus.views.WorkfileContentDetails.ext
                 }
             },
             contentEvents: {
-                "a.run_default": _.bind(this.runInExecutionSchema, this),
-                "a.run_selection": _.bind(this.runSelectedInExecutionSchema, this),
-                "a.run_other_schema": _.bind(this.runOtherSchema, this),
-                "a.run_and_download": _.bind(this.runAndDownloadInExecutionSchema, this),
-                "a.run_selection_and_download": _.bind(this.runSelectionAndDownloadInExecutionSchema, this)
+                "a.run_default": this.runInExecutionSchema,
+                "a.run_selection": this.runSelectedInExecutionSchema,
+                "a.run_and_download": this.runAndDownloadInExecutionSchema,
+                "a.run_selection_and_download": this.runSelectionAndDownloadInExecutionSchema
             }
         });
 
         if (!this.model.workspace().isActive() || !this.model.workspace().canUpdate()) {
             this.$(".run_file").attr("disabled", "disabled");
             this.$(".save button").attr("disabled", "disabled");
+            this.$(".change_workfile_schema").remove();
         }
 
         if (!this.hasValidExecutionSchema()) {
             this.fileMenu.disableItem("newChorusView");
-            this.selectionMenu.disableItem("newSelectionChorusView");
+            this.fileMenu.disableItem("newSelectionChorusView");
         }
-        chorus.PageEvents.broadcast("file:editorSelectionStatus");
-    },
 
-    selectionMenuItems: function() {
-        var items = this._super("selectionMenuItems", arguments);
-        items.push({
-                name: "newSelectionChorusView",
-                text: t("workfile.content_details.save_selection_as_chorus_view"),
-                onSelect: _.bind(this.createChorusViewFromSelection, this)
-            })
-        return items;
+        this.fileMenu.disableItem("newSelectionChorusView");
+
+        chorus.PageEvents.trigger("file:editorSelectionStatus");
     },
 
     fileMenuItems: function() {
         var items = this._super("fileMenuItems", arguments);
         items.push({
             name: "newChorusView",
-            text: t("workfile.content_details.save_file_as_chorus_view"),
+            text: t("workfile.content_details.save_as_chorus_view"),
             onSelect: _.bind(this.createChorusViewFromFile, this)
-        })
+        });
+        items.push({
+            name: "newSelectionChorusView",
+            text: t("workfile.content_details.save_selection_as_chorus_view"),
+            onSelect: _.bind(this.createChorusViewFromSelection, this)
+        });
         return items;
     },
 
@@ -69,14 +70,6 @@ chorus.views.SqlWorkfileContentDetails = chorus.views.WorkfileContentDetails.ext
 
     hasValidExecutionSchema: function() {
         return !!(this.model.executionSchema());
-    },
-
-    changeRunFileButtonText: function() {
-        this.$(".run_file .run_description").text(t("workfile.content_details.run_selected"));
-    },
-
-    changeRunSelectedButtonText: function() {
-        this.$(".run_file .run_description").text(t("workfile.content_details.run_file"));
     },
 
     additionalContext: function() {
@@ -90,21 +83,34 @@ chorus.views.SqlWorkfileContentDetails = chorus.views.WorkfileContentDetails.ext
         });
     },
 
+    onSelectedText: function() {
+        this.$(".run_file .run_description").text(t("workfile.content_details.run_selected"));
+
+        if (this.hasValidExecutionSchema()) {
+            this.fileMenu.enableItem("newSelectionChorusView");
+        }
+    },
+
+    onNoSelectedText: function() {
+        this.$(".run_file .run_description").text(t("workfile.content_details.run_file"));
+        this.fileMenu.disableItem("newSelectionChorusView");
+    },
+
     createChorusViewFromFile: function() {
-        chorus.PageEvents.broadcast("file:newChorusView");
+        chorus.PageEvents.trigger("file:newChorusView");
     },
 
     createChorusViewFromSelection: function() {
-        chorus.PageEvents.broadcast("file:newSelectionChorusView");
+        chorus.PageEvents.trigger("file:newSelectionChorusView");
     },
 
     runInExecutionSchema: function() {
-        chorus.PageEvents.broadcast("file:runCurrent");
+        chorus.PageEvents.trigger("file:runCurrent");
     },
 
     runSelectedInExecutionSchema: function() {
         if (this.enableRunSelection()) {
-            chorus.PageEvents.broadcast("file:runSelected");
+            chorus.PageEvents.trigger("file:runSelected");
         }
     },
 
@@ -118,14 +124,14 @@ chorus.views.SqlWorkfileContentDetails = chorus.views.WorkfileContentDetails.ext
         this.dialog.launchModal();
     },
 
-    runOtherSchema: function() {
-        this.dialog = new chorus.dialogs.RunFileInSchema({ model: this.model });
-        this.dialog.launchModal();
-    },
+    changeWorkfileSchema: function(e) {
+        e.preventDefault();
 
-    workfileExecuted: function(workfile, executionSchema) {
-        this.model.set({executionSchema: executionSchema}, {silent: true});
-        this.render();
+        if (this.model.workspace().isActive() && this.model.workspace().canUpdate()) {
+            chorus.PageEvents.trigger("file:saveDraft");
+            this.dialog = new chorus.dialogs.ChangeWorkfileSchema({ model: this.model });
+            this.dialog.launchModal();
+        }
     }
 });
 

@@ -4,6 +4,7 @@ class JsonHashSerializer
   end
 
   def self.load(value)
-    value.present? ? JSON.load(value) : {}
+    result = JSON.load(value)
+    result.present? ? result : {}
   end
 end

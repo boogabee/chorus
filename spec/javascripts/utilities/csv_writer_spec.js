@@ -6,10 +6,12 @@ describe("chorus.utilities.CsvWriter", function() {
     context("data has both column names and data", function() {
         beforeEach(function() {
             var columnNames = ["col1", "col2", "col3"];
+            var uniqueNames = ["col1_0", "col2_1", "col3_2"];
             var rows = [
-                {col1: "row 11", col2: "row 12", col3: "row 13"},
-                {col1: "row 21", col2: "row 22", col3: "row 23"}];
-            this.csvWriter = new chorus.utilities.CsvWriter(columnNames, rows, this.options);
+                {col1_0: "row 11", col2_1: "row 12", col3_2: "row 13"},
+                {col1_0: "row 21", col2_1: "row 22", col3_2: "row 23"}
+            ];
+            this.csvWriter = new chorus.utilities.CsvWriter(columnNames, uniqueNames, rows, this.options);
         });
 
         it("writes both column name and data", function() {

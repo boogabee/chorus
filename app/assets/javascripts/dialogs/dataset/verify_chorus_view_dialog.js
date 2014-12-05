@@ -3,7 +3,7 @@ chorus.dialogs.VerifyChorusView = chorus.dialogs.SqlPreview.extend({
 
     templateName: "verify_chorus_view",
     title: t("dataset.verify_chorus_view.title"),
-    additionalClass: "sql_preview",
+    additionalClass: "sql_preview dialog_wide",
 
     persistent: true,
 
@@ -22,7 +22,7 @@ chorus.dialogs.VerifyChorusView = chorus.dialogs.SqlPreview.extend({
     nameChorusView: function(e) {
         e.preventDefault();
 
-        this.model.set({ query: this.sql() })
+        this.model.set({ query: this.sql() });
 
         var assignNameDialog = new chorus.dialogs.NameChorusView({
             model: this.model
@@ -34,16 +34,11 @@ chorus.dialogs.VerifyChorusView = chorus.dialogs.SqlPreview.extend({
         return this.editor.getValue();
     },
 
-    makeCodeMirrorOptions: function() {
-        var options = this._super("makeCodeMirrorOptions");
-        return options;
-    },
-
     makeEditable: function(e) {
         e && e.preventDefault();
 
         this.editor.setOption("readOnly", false);
-        this.$(".CodeMirror").addClass("editable");
+        this.editor.setOption("theme", "default editable");
 
         $(e.target).addClass("disabled");
     }

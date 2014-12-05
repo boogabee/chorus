@@ -5,7 +5,7 @@ describe("chorus.models.TimeseriesTask", function() {
             yAxis: "height",
             timeInterval: 'minute',
             aggregation: 'sum',
-            dataset: newFixtures.workspaceDataset.sandboxTable({objectName: "users"})
+            dataset: backboneFixtures.workspaceDataset.datasetTable({objectName: "users"})
         });
     });
 
@@ -35,10 +35,10 @@ describe("chorus.models.TimeseriesTask", function() {
 
         it("renames the 'xAxis', 'yAxis', 'aggregation', and 'timeInterval' as required by the api", function() {
             var request = this.server.lastCreate();
-            expect(request.params()['chart_task[x_axis]']).toBe("age");
-            expect(request.params()['chart_task[y_axis]']).toBe("height");
-            expect(request.params()['chart_task[aggregation]']).toBe("sum");
-            expect(request.params()['chart_task[time_interval]']).toBe("minute");
+            expect(request.json()['chart_task']['x_axis']).toBe("age");
+            expect(request.json()['chart_task']['y_axis']).toBe("height");
+            expect(request.json()['chart_task']['aggregation']).toBe("sum");
+            expect(request.json()['chart_task']['time_interval']).toBe("minute");
         });
     });
-})
+});

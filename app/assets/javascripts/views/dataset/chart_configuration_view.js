@@ -1,5 +1,12 @@
-;
 (function() {
+    function nameGetter(prop) {
+        return function() {
+            return _.map(this[prop], function(col) {
+                return col.get('name');
+            });
+        };
+    }
+
     chorus.views.ChartConfiguration = chorus.views.Base.extend({
         additionalClass: "chart_configuration",
 
@@ -11,20 +18,21 @@
         setup: function() {
             var alphaSort = function(column) {
                 return column.get("name") && column.get("name").toLowerCase();
-            }
+            };
             this.columns = _.sortBy(this.collection.models, alphaSort);
-
-            this.numericalColumns = filterColumns(['WHOLE_NUMBER', 'REAL_NUMBER'], this.columns)
-            this.datetimeColumns = filterColumns(['DATE', 'TIME', "DATETIME"], this.columns);
-
-            this.cancelVisualizationHandle = chorus.PageEvents.subscribe("cancel:visualization", this.cancelVisualization, this);
 
             function filterColumns(types, columns) {
                 return _.filter(columns, function(col) {
-                    var category = col.get('typeCategory')
-                    return _.include(types, category)
-                })
+                    var category = col.get('typeCategory');
+                    return _.include(types, category);
+                });
             }
+
+            this.numericalColumns = filterColumns(['WHOLE_NUMBER', 'REAL_NUMBER'], this.columns);
+            this.datetimeColumns = filterColumns(['DATE', 'TIME', "DATETIME"], this.columns);
+
+            this.subscribePageEvent("cancel:visualization", this.cancelVisualization);
+
         },
 
         additionalContext: function() {
@@ -57,24 +65,18 @@
 
         columnNamesOfType: function(type) {
             switch (type) {
-                case "numeric":
-                    return this.numericColumnNames();
-                case "time":
-                    return this.datetimeColumnNames();
-                default:
-                    return this.allColumnNames();
+            case "numeric":
+                return this.numericColumnNames();
+            case "time":
+                return this.datetimeColumnNames();
+            default:
+                return this.allColumnNames();
             }
         },
 
-        cleanup: function() {
-            this._super("cleanup");
-            this.clearSqlErrors();
-            chorus.PageEvents.unsubscribe(this.cancelVisualizationHandle);
-        },
-
         teardown: function() {
-            this.cleanup();
-            this._super("teardown")
+            this.clearSqlErrors();
+            this._super("teardown", arguments);
         },
 
         postRender: function() {
@@ -82,19 +84,18 @@
 
             var $a = this.$(".limiter a");
             var $el = $(this.el);
-            var limiterSelected = _.bind(this.limiterSelected, this);
-            $.each($a, function(index, link) {
+            $.each($a, _.bind(function(index, link) {
                 var $link = $(link);
-                chorus.menu($link, {
+                this.menu($link, {
                     content: $link.parent().find(".limiter_menu_container").html(),
                     container: $el,
                     contentEvents: {
-                        'li': limiterSelected
+                        'li': this.limiterSelected
                     }
-                })
-            })
+                });
+            }, this));
 
-            this._super("postRender")
+            this._super("postRender");
         },
 
         limiterSelected: function(e, api) {
@@ -126,7 +127,7 @@
             this.task.bindOnce("saveFailed", this.showSqlErrors, this);
 
             this.task.bindOnce("saved", this.cleanupVisualization, this);
-            this.task.bindOnce("saveFailed", this.cleanupVisualization, this)
+            this.task.bindOnce("saveFailed", this.cleanupVisualization, this);
 
             this.task.save();
         },
@@ -158,11 +159,11 @@
         },
 
         showSqlErrors: function() {
-            this.options.errorContainer.showError(this.task, chorus.alerts.VisualizationError)
+            this.options.errorContainer.showErrorWithDetailsLink(this.task, chorus.alerts.VisualizationError);
         },
 
         clearSqlErrors: function() {
-            this.options.errorContainer && this.options.errorContainer.closeError();
+            this.options.errorContainer && this.options.errorContainer.closeErrorWithDetailsLink();
         }
     }, {
         buildForType: function(chartType, options) {
@@ -170,12 +171,4 @@
             return new chorus.views[className](options);
         }
     });
-
-    function nameGetter(prop) {
-        return function() {
-            return _.map(this[prop], function(col) {
-                return col.get('name');
-            });
-        }
-    }
 })();

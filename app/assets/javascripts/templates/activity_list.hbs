@@ -1,0 +1,14 @@
+{{#if models.length}}
+    <ul class="activities"/>
+    {{#if showMoreLink}}
+        <div class="more_items">
+            <a href="#">{{t "activity.more"}}</a>
+        </div>
+    {{/if}}
+{{else}}
+    {{#if activityType}}
+        <div class="no_items">{{t "activity.none" type=activityType}}</div>
+    {{else}}
+        <div class="no_items">{{t "activity.no_recent"}}</div>
+    {{/if}}
+{{/if}}

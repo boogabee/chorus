@@ -3,8 +3,13 @@ require 'fileutils'
 class ChorusLogger
   attr_writer :logfile
 
-  def initialize(filename=nil)
-    @logfile = filename
+  def initialize(options={})
+    @logfile = options[:logfile]
+    @debug = options[:debug]
+  end
+
+  def debug(message)
+    log(message) if @debug
   end
 
   def log(message)

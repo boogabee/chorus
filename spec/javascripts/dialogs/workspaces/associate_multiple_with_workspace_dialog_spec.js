@@ -1,13 +1,13 @@
 describe("chorus.dialogs.AssociateMultipleWithWorkspace", function() {
     beforeEach(function() {
-        this.datasets = new chorus.collections.DatasetSet([
-            rspecFixtures.dataset({ id: '123' }),
-            rspecFixtures.dataset({ id: '456' }),
-            rspecFixtures.dataset({ id: '789' })
+        this.datasets = new chorus.collections.SchemaDatasetSet([
+            backboneFixtures.dataset({ id: '123' }),
+            backboneFixtures.dataset({ id: '456' }),
+            backboneFixtures.dataset({ id: '789' })
         ]);
 
         this.dialog = new chorus.dialogs.AssociateMultipleWithWorkspace({
-            datasets: this.datasets
+            collection: this.datasets
         });
         this.dialog.render();
     });
@@ -19,8 +19,8 @@ describe("chorus.dialogs.AssociateMultipleWithWorkspace", function() {
     describe("when the workspaces are fetched and one is chosen", function() {
         beforeEach(function() {
             this.server.completeFetchAllFor(chorus.session.user().workspaces(), [
-                rspecFixtures.workspace({ name: "abra", id: "11" }),
-                rspecFixtures.workspace({ name: "cadabra", id: "12" })
+                backboneFixtures.workspace({ name: "abra", id: "11" }),
+                backboneFixtures.workspace({ name: "cadabra", id: "12" })
             ]);
 
             this.dialog.$("li:eq(1)").click();
@@ -33,10 +33,8 @@ describe("chorus.dialogs.AssociateMultipleWithWorkspace", function() {
         });
 
         it("sends all of the datasets' ids", function() {
-            var datasetIdParams = this.server.lastCreate().params()['dataset_ids']
-            expect(datasetIdParams).toContain('123');
-            expect(datasetIdParams).toContain('456');
-            expect(datasetIdParams).toContain('789');
+            var json = this.server.lastCreate().json();
+            expect(json['dataset_ids']).toEqual(['123', '456', '789']);
         });
 
         it("display loading message on the button", function() {
@@ -58,6 +56,26 @@ describe("chorus.dialogs.AssociateMultipleWithWorkspace", function() {
 
             it("closes the dialog", function() {
                 expect(this.dialog.closeModal).toHaveBeenCalled();
+            });
+
+            it("fetches the associated datasets", function() {
+                this.dialog.datasets.each(function(dataset) {
+                    expect(dataset).toHaveBeenFetched();
+                });
+            });
+        });
+
+        describe("when the request fails", function() {
+            beforeEach(function() {
+                this.server.lastCreate().failUnprocessableEntity({ fields: { a: { BLANK: {} } } });
+            });
+
+            it("displays the error message", function() {
+                expect(this.dialog.$(".errors")).toContainTranslation("field_error.BLANK", {field: "A"});
+            });
+
+            it("stops the loading spinner", function() {
+                expect(this.dialog.$("button.submit").isLoading()).toBeFalsy();
             });
         });
     });

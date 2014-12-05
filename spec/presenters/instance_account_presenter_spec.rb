@@ -1,17 +1,17 @@
 require 'spec_helper'
 
-describe InstanceAccountPresenter, :type => :view do
+describe DataSourceAccountPresenter, :type => :view do
   before do
     @user = FactoryGirl.create :user
 
-    @gpdb_instance = FactoryGirl.create :gpdb_instance
-    @gpdb_instance.owner = @user
+    @gpdb_data_source = FactoryGirl.create :gpdb_data_source
+    @gpdb_data_source.owner = @user
 
-    @account = FactoryGirl.create :instance_account
+    @account = FactoryGirl.build(:data_source_account).tap { |a| a.save(:validate => false)}
     @account.owner = @user
-    @account.gpdb_instance = @gpdb_instance
+    @account.data_source = @gpdb_data_source
 
-    @presenter = InstanceAccountPresenter.new(@account, view)
+    @presenter = DataSourceAccountPresenter.new(@account, view)
   end
 
   describe "#to_hash" do
@@ -22,7 +22,7 @@ describe InstanceAccountPresenter, :type => :view do
     it "includes the right keys and values" do
       @hash[:id].should == @account.id
       @hash[:owner_id].should == @user.id
-      @hash[:instance_id].should == @gpdb_instance.id
+      @hash[:data_source_id].should == @gpdb_data_source.id
       @hash[:db_username].should == @account[:db_username]
     end
 
@@ -30,7 +30,5 @@ describe InstanceAccountPresenter, :type => :view do
       @owner = @hash[:owner]
       @owner.to_hash.should == (UserPresenter.new(@user, view).presentation_hash)
     end
-
-    it_behaves_like "sanitized presenter", :instance_account, :db_username
   end
 end

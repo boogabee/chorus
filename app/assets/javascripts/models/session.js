@@ -3,16 +3,16 @@ chorus.models.Session = chorus.models.Base.extend({
     urlTemplate: "sessions",
 
     initialize: function() {
-        this.sandboxPermissionsCreated = {}
+        this.sandboxPermissionsCreated = {};
         _.bindAll(this, ['logout']);
     },
 
     user: function() {
-        if (!this._user && this.get("id")) {
-            this._user = new chorus.models.User(this.attributes);
+        if (!this._user && this.get("user")) {
+            this._user = new chorus.models.User(this.get('user'));
         }
 
-        return this._user
+        return this._user;
     },
 
     loggedIn: function() {
@@ -24,7 +24,6 @@ chorus.models.Session = chorus.models.Base.extend({
         var success = options.success, error = options.error;
 
         options.success = function(model, data, xhr) {
-            chorus.models.Config.instance();
             if (success) success(model, data);
         };
 
@@ -49,10 +48,11 @@ chorus.models.Session = chorus.models.Base.extend({
 
         if (this.get("errors")) {
             this.rememberPathBeforeLoggedOut();
-            this.trigger("needsLogin")
+            this.trigger("needsLogin");
         } else {
-            this.requestLogout(function() {
-                self.trigger("needsLogin")
+            this.requestLogout(function(res) {
+                self.updateToken(res);
+                self.trigger("needsLogin");
             });
         }
     },
@@ -63,16 +63,16 @@ chorus.models.Session = chorus.models.Base.extend({
         $.ajax({
             type: "DELETE",
             url: self.url(),
-            success: function() {
+            success: function(res) {
                 self.clear();
-                logoutSucceeded();
+                logoutSucceeded(res);
             }
         });
     },
 
     rememberPathBeforeLoggedOut: function() {
-        if (!Backbone.history.fragment.match('^/logout/?$')) {
-            if(!Backbone.history.fragment.match('^/login/?$')) {
+        if (!Backbone.history.fragment.match('^logout/?$')) {
+            if(!Backbone.history.fragment.match('^login/?$')) {
                 this._pathBeforeLoggedOut = Backbone.history.fragment;
             }
         } else {
@@ -91,6 +91,12 @@ chorus.models.Session = chorus.models.Base.extend({
     declareValidations: function(newAttrs) {
         this.require("username", newAttrs);
         this.require("password", newAttrs);
+    },
+
+    updateToken: function(response) {
+        if (response['csrf_token']) {
+            $('meta[name="csrf-token"]').attr('content', response['csrf_token']);
+        }
     },
 
     attrToLabel: {

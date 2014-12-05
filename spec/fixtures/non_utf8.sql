@@ -1,0 +1,1 @@
+select * from two_rows where second '²Ð';

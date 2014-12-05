@@ -4,7 +4,9 @@ describe("chorus.alerts.Error", function() {
         text: 'i am text'
     });
     beforeEach(function() {
-        this.modelWithError = rspecFixtures.userWithErrors();
+        this.modelWithError = backboneFixtures.userWithErrors();
+        this.modelWithError.fetch();
+        this.server.lastFetchFor(this.modelWithError).failUnprocessableEntity(this.modelWithError.attributes);
         this.alert = new FakeAlert({model: this.modelWithError});
     });
 
@@ -29,11 +31,11 @@ describe("chorus.alerts.Error", function() {
             });
 
             it("should have the correct title", function() {
-               expect(this.alert.title).toBe("There was an error!");
+                expect(this.alert.title).toBe("There was an error!");
             });
 
             it("should have the correct body", function() {
-               expect(this.alert.body).toBe("Something failed");
+                expect(this.alert.body).toBe("Something failed");
             });
         });
     });
@@ -50,5 +52,9 @@ describe("chorus.alerts.Error", function() {
         it("should display a 'Close Window' button", function() {
             expect(this.alert.$("button.cancel").text()).toMatchTranslation("actions.close_window");
         });
+
+        it("should hide the error div when model has errors", function() {
+            expect(this.alert.$(".errors")).toHaveClass('hidden');
+        });
     });
-})
+});

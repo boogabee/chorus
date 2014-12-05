@@ -3,7 +3,7 @@ describe("chorus.dialogs.DatasetDownload", function() {
         var radioButtonSpecify, radioButtonAll;
 
         beforeEach(function() {
-            this.dataset = newFixtures.workspaceDataset.sandboxTable();
+            this.dataset = backboneFixtures.workspaceDataset.datasetTable();
             spyOn(this.dataset, 'download');
             this.dialog = new chorus.dialogs.DatasetDownload({ pageModel: this.dataset });
             this.dialog.render();
@@ -15,7 +15,7 @@ describe("chorus.dialogs.DatasetDownload", function() {
         });
 
         it("has the right title", function(){
-            expect(this.dialog.$("h1").text()).toMatchTranslation("dataset.download.title", {datasetName: this.dataset.name()})
+            expect(this.dialog.$("h1").text()).toMatchTranslation("dataset.download.title", {datasetName: this.dataset.name()});
         });
 
         it("has two radio buttons", function(){
@@ -118,15 +118,15 @@ describe("chorus.dialogs.DatasetDownload", function() {
 
     describe("with a search result", function() {
         beforeEach(function() {
-            var searchResult = rspecFixtures.searchResult();
+            var searchResult = backboneFixtures.searchResult();
             this.selectedItem = searchResult.selectedItem = searchResult.datasets().at(0);
-            this.selectedItem.set({"objectName" : "test_dataset"})
+            this.selectedItem.set({"objectName" : "test_dataset"});
             this.dialog = new chorus.dialogs.DatasetDownload({ pageModel: searchResult });
             this.dialog.render();
         });
 
         it("has the right title", function(){
-            expect(this.dialog.$("h1").text()).toMatchTranslation("dataset.download.title", {datasetName: "test_dataset"})
+            expect(this.dialog.$("h1").text()).toMatchTranslation("dataset.download.title", {datasetName: "test_dataset"});
         });
     });
 });

@@ -20,7 +20,7 @@ if ( test -f $NGINX_PID_FILE ) && ( kill -0 `cat $NGINX_PID_FILE` > /dev/null 2>
     log "nginx already running as process `cat $NGINX_PID_FILE`."
 else
     log "Writing nginx config..."
-    $RUBY vendor/nginx/generate_nginx_conf.rb
+    RAILS_ENV=$RAILS_ENV $RUBY vendor/nginx/generate_nginx_conf.rb
     cd $CHORUS_HOME/vendor/nginx/nginx_dist/
 
     OPENSSL_CONF=$OPENSSL_CONF ./$NGINX
@@ -39,20 +39,25 @@ case $RAILS_ENV in
         else
             log "starting mizuno on port 3000..."
             #running mizuno in daemon mode (-D) is causing the command prompt to get screwed up
-            if bundle exec mizuno -p 3000 --threads 10 -D --pidfile $MIZUNO_PID_FILE; then
-                wait_for_start $MIZUNO_PID_FILE && reset
+            if JRUBY_OPTS=$JRUBY_OPTS SOLR_PORT=$SOLR_PORT bundle exec mizuno -p 3000 --log $CHORUS_HOME/log/mizuno.log --threads 10 -D --pidfile $MIZUNO_PID_FILE; then
+                wait_for_start $MIZUNO_PID_FILE
             fi
         fi
         ;;
     * )
-        log "updating jetty config..."
-        $RUBY packaging/update_jetty_xml.rb
-        $RUBY packaging/update_database_pool_size.rb
 
-        log "starting jetty..."
-        cd $CHORUS_HOME/vendor/jetty/
-        JETTY_PID=$JETTY_PID_FILE RAILS_ENV=$RAILS_ENV ./jetty-init start &>/dev/null &
-        cd $CHORUS_HOME
-        wait_for_start $JETTY_PID_FILE
+        if ( test -f $JETTY_PID_FILE ) && ( kill -0 `cat $JETTY_PID_FILE` > /dev/null 2>&1 ); then
+            log "jetty already running as process `cat $JETTY_PID_FILE`."
+        else
+            log "updating jetty config..."
+            $RUBY packaging/update_jetty_xml.rb
+            RAILS_ENV=$RAILS_ENV $RUBY packaging/update_database_yml.rb
+
+            log "starting jetty..."
+            cd $CHORUS_HOME/vendor/jetty/
+            JETTY_PID=$JETTY_PID_FILE CHORUS_JAVA_OPTIONS=$CHORUS_JAVA_OPTIONS RAILS_ENV=$RAILS_ENV SOLR_PORT=$SOLR_PORT ./jetty-init start 2>> $CHORUS_HOME/log/jetty.log >> $CHORUS_HOME/log/jetty.log &
+            cd $CHORUS_HOME
+            wait_for_start $JETTY_PID_FILE
+        fi
         ;;
 esac

@@ -1,0 +1,20 @@
+<span class="image">
+    <img class="icon" src="{{iconUrl}}">
+</span>
+
+<div class="item_information">
+    {{#if displayableFiletype}}
+        <a class="name" href="{{showUrl}}">{{displaySearchMatch "name"}}</a>
+    {{else}}
+        <span class="name">{{displaySearchMatch "name"}}</span>
+    {{/if}}
+    <div class='item_metadata'>
+        <div class="comments_container"/>
+        <div class="location">
+            {{t "hdfs.from"}}
+            <span class="data_source">{{dataSourceLink}} /</span>
+            <span class="path_parts">{{completePath}}</span>
+        </div>
+        {{> itemTags}}
+    </div>
+</div>

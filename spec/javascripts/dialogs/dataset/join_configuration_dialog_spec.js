@@ -1,17 +1,12 @@
 describe("chorus.dialogs.JoinConfiguration", function() {
     beforeEach(function() {
-        this.sourceTable = newFixtures.workspaceDataset.sandboxTable();
-        this.sourceTable.columns().reset([
-            fixtures.databaseColumn({ name: "source_column_1" }),
-            fixtures.databaseColumn({ name: "source_column_2" }),
-            fixtures.databaseColumn({ name: "source_column_3" }),
-            fixtures.databaseColumn({ name: "source_column_4" })
-        ]);
+        this.sourceTable = backboneFixtures.workspaceDataset.datasetTable();
+        this.sourceTable.columns().reset(backboneFixtures.databaseColumnSet().models);
 
         this.chorusView = this.sourceTable.deriveChorusView();
         this.chorusView.aggregateColumnSet = new chorus.collections.DatabaseColumnSet();
 
-        this.destinationTable = rspecFixtures.dataset({
+        this.destinationTable = backboneFixtures.dataset({
             objectType: "SANDBOX_TABLE",
             objectName: "lions_den"
         });
@@ -37,15 +32,11 @@ describe("chorus.dialogs.JoinConfiguration", function() {
 
         describe("when the fetch completes successfully for the destination table's columns", function() {
             beforeEach(function() {
-                this.server.completeFetchFor(this.destinationTable.columns(), [
-                    fixtures.databaseColumn({ name: "destination_column_1" }),
-                    fixtures.databaseColumn({ name: "destination_column_2" }),
-                    fixtures.databaseColumn({ name: "destination_column_3" })
-                ]);
+                this.server.completeFetchFor(this.destinationTable.columns(), backboneFixtures.databaseColumnSet().models);
             });
 
             it("should have a header", function() {
-                expect(this.dialog.$('.sub_header .title').text()).toMatchTranslation("dataset.manage_join_tables.create_join_title", { objectName: "lions_den" })
+                expect(this.dialog.$('.sub_header .title').text()).toMatchTranslation("dataset.manage_join_tables.create_join_title", { objectName: "lions_den" });
             });
 
             it("should have a sourceColumnSelect with the aggregateColumnSet", function() {
@@ -61,23 +52,23 @@ describe("chorus.dialogs.JoinConfiguration", function() {
             });
 
             it("should have a select for type of join", function() {
-                expect(this.dialog.$('select.join_type')).toExist()
-                var joinTypes = this.dialog.$('select.join_type option')
+                expect(this.dialog.$('select.join_type')).toExist();
+                var joinTypes = this.dialog.$('select.join_type option');
 
-                expect(joinTypes.length).toBe(4)
-                expect(joinTypes.eq(0).text()).toMatchTranslation("dataset.manage_join_tables.inner")
-                expect(joinTypes.eq(1).text()).toMatchTranslation("dataset.manage_join_tables.left")
-                expect(joinTypes.eq(2).text()).toMatchTranslation("dataset.manage_join_tables.right")
-                expect(joinTypes.eq(3).text()).toMatchTranslation("dataset.manage_join_tables.outer")
-            })
+                expect(joinTypes.length).toBe(4);
+                expect(joinTypes.eq(0).text()).toMatchTranslation("dataset.manage_join_tables.inner");
+                expect(joinTypes.eq(1).text()).toMatchTranslation("dataset.manage_join_tables.left");
+                expect(joinTypes.eq(2).text()).toMatchTranslation("dataset.manage_join_tables.right");
+                expect(joinTypes.eq(3).text()).toMatchTranslation("dataset.manage_join_tables.outer");
+            });
 
             it("should have a save button", function() {
-                expect(this.dialog.$("button.submit").text()).toMatchTranslation("actions.save_changes")
-            })
+                expect(this.dialog.$("button.submit").text()).toMatchTranslation("actions.save_changes");
+            });
 
             it("should have a cancel button", function() {
-                expect(this.dialog.$("button.cancel").text()).toMatchTranslation("actions.cancel")
-            })
+                expect(this.dialog.$("button.cancel").text()).toMatchTranslation("actions.cancel");
+            });
 
             describe("adding the join", function() {
                 beforeEach(function() {
@@ -104,12 +95,12 @@ describe("chorus.dialogs.JoinConfiguration", function() {
                 spyOn(this.dialog, "closeModal");
                 this.dialog.previousModal = {
                     showErrors: jasmine.createSpy("showErrors")
-                }
+                };
                 this.server.lastFetch().failNotFound({ record: "not found" });
             });
 
             it("copies the serverErrors to the dialog model", function() {
-                expect(this.dialog.model.serverErrors).toEqual(this.destinationTable.columns().serverErrors)
+                expect(this.dialog.model.serverErrors).toEqual(this.destinationTable.columns().serverErrors);
             });
 
             it("closes itself", function() {

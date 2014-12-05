@@ -2,26 +2,11 @@
 
     .filter_content {
         padding: 0 10px;
+        background-color: $body-background-color;
     }
     
-    .gradient_top {
-        height: 10px;
-        @include background-image(linear-gradient($content-details-info-bar-background-color, $body-background-color));
-        border-top: 1px solid $list-border-color;
-    }
-
-    .gradient_bottom {
-        @include background-image(linear-gradient($body-background-color, $content-details-info-bar-background-color));
-        height: 10px;
-    }
-
-    .filter_title {
-        @include secondary-text-small;
-    }
-
     .add_filter {
         float: right;
-        font-size: 12px;
     }
 
     .brackets {
@@ -32,13 +17,13 @@
 
         .brackets_top {
             height:50%;
-            border-left: 1px solid $list-border-color;
-            border-bottom: 1px solid $list-border-color;
+            border-left: $border-canon;
+            border-bottom: $border-canon;
         }
 
         .brackets_bottom {
             height:50%;
-            border-left: 1px solid $list-border-color;
+            border-left: $border-canon;
         }
     }
 

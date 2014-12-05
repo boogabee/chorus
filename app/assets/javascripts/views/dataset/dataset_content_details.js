@@ -1,5 +1,8 @@
-chorus.views.DatasetContentDetails = chorus.views.Base.extend({
+chorus.views.DatasetContentDetails = chorus.views.Base.include(
+        chorus.Mixins.StickyHeader
+    ).extend({
     templateName: "dataset_content_details",
+    constructorName: 'DatasetContentDetails',
     persistent: true,
 
     subviews: {
@@ -15,7 +18,7 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
         "click .edit_chorus_view .cancel": "cancelEditChorusView",
         "click .edit_chorus_view .save": "saveChorusView",
         "click .chart_icon": "selectVisualization",
-        "click .close_errors": "closeError",
+        "click .close_errors": "closeErrorWithDetailsLink",
         "click .view_error_details": "viewErrorDetails",
         "click a.select_all": "triggerSelectAll",
         "click a.select_none": "triggerSelectNone",
@@ -28,8 +31,7 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
     },
 
     setup: function() {
-        this.closePreviewHandle = chorus.PageEvents.subscribe("action:closePreview", this.closeDataPreview, this);
-
+        this.subscribePageEvent("action:closePreview", this.closeDataPreview);
         this.dataset = this.options.dataset;
         this.resultsConsole = new chorus.views.ResultsConsole({
             titleKey: "dataset.data_preview",
@@ -44,8 +46,8 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
         this.statistics = this.dataset.statistics();
         this.statistics.fetchIfNotLoaded();
 
-        this.requiredResources.add(this.statistics);
-        this.bindings.add(this.collection, "add remove", this.updateColumnCount);
+        this.listenTo(this.statistics, "loaded", this.render);
+        this.listenTo(this.collection, "add remove", this.updateColumnCount);
     },
 
     dataPreview: function(e) {
@@ -73,44 +75,46 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
             this.showEditChorusViewWizard();
         }
 
-        if (this.options.$columnList) {
-            chorus.search({
-                input: this.$("input.search"),
-                list: this.options.$columnList
-            });
-        }
+        chorus.search({
+            input: this.$("input.search"),
+            list: this.options.$columnList
+        });
 
         if(this.collection.serverErrors && _.keys(this.collection.serverErrors).length){
-            this.showError(this.collection, chorus.alerts.Error);
+            this.showErrorWithDetailsLink(this.collection, chorus.alerts.Error);
         }
+        this.showErrors(this.dataset);
+
+        this.bindStickyHeader();
     },
 
     triggerSelectAll: function(e) {
         e && e.preventDefault();
-        chorus.PageEvents.broadcast("column:select_all");
+        chorus.PageEvents.trigger("column:select_all");
     },
 
     triggerSelectNone: function(e) {
         e && e.preventDefault();
-        chorus.PageEvents.broadcast("column:select_none");
+        chorus.PageEvents.trigger("column:select_none");
     },
 
     startVisualizationWizard: function() {
+        this.resultsConsole.clickClose();
         this.$('.chart_icon:eq(0)').click();
         this.$('.column_count').addClass('hidden');
         this.$('.info_bar').removeClass('hidden');
-        this.$('.definition').addClass("hidden")
+        this.$('.definition').addClass("hidden");
         this.$('.create_chart').removeClass("hidden");
         this.$(".filters").removeClass("hidden");
         this.filterWizardView.options.showAliasedName = false;
         this.filterWizardView.resetFilters();
-        chorus.PageEvents.broadcast("start:visualization");
+        chorus.PageEvents.trigger("start:visualization");
     },
 
     selectVisualization: function(e) {
         var type = $(e.target).data('chart_type');
-        $(e.target).siblings(".cancel").data("type", type);
-        $(e.target).siblings('.chart_icon').removeClass('selected');
+        this.$(".create_chart .cancel").data("type", type);
+        this.$('.chart_icon').removeClass('selected');
         $(e.target).addClass('selected');
         this.showTitle(e);
         this.showVisualizationConfig(type);
@@ -118,19 +122,24 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
 
     cancelVisualization: function(e) {
         e.preventDefault();
-        this.$('.definition').removeClass("hidden")
+        this.$('.definition').removeClass("hidden");
         this.$('.create_chart').addClass("hidden");
         this.$(".filters").addClass("hidden");
-        this.$('.column_count').removeClass("hidden")
+        this.$('.column_count').removeClass("hidden");
         this.$('.info_bar').addClass('hidden');
         this.$(".chart_config").addClass('hidden');
-        chorus.PageEvents.broadcast('cancel:visualization');
+        chorus.PageEvents.trigger('cancel:visualization');
+        if(this.chartConfig) {
+            this.chartConfig.teardown(true);
+            delete this.chartConfig;
+        }
+
     },
 
     startCreateChorusViewWizard: function() {
         this.trigger("transform:sidebar", "chorus_view");
         this.$('.chorusview').addClass("selected");
-        this.$('.definition').addClass("hidden")
+        this.$('.definition').addClass("hidden");
         this.$('.create_chart').addClass("hidden");
         this.$('.create_chorus_view').removeClass("hidden");
         this.$('.chorus_view_info').removeClass("hidden");
@@ -145,15 +154,15 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
 
     cancelCreateChorusView: function(e) {
         e.preventDefault();
-        chorus.PageEvents.broadcast('cancel:sidebar', 'chorus_view');
-        this.$('.definition').removeClass("hidden")
+        chorus.PageEvents.trigger('cancel:sidebar', 'chorus_view');
+        this.$('.definition').removeClass("hidden");
         this.$('.create_chorus_view').addClass("hidden");
         this.$(".filters").addClass("hidden");
-        this.$('.column_count').removeClass("hidden")
+        this.$('.column_count').removeClass("hidden");
         this.$('.chorus_view_info').addClass('hidden');
 
         this.$(".column_count input.search").trigger("textchange");
-        this.closePreviewHandle = chorus.PageEvents.subscribe("action:closePreview", this.closeDataPreview, this);
+        this.subscribePageEvent("action:closePreview", this.closeDataPreview);
         this.inDeriveChorusView = false;
     },
 
@@ -179,16 +188,16 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
         this.$(".edit_chorus_view_info").addClass("hidden");
         this.$(".column_count").removeClass("hidden");
         this.$(".definition").removeClass("hidden");
-        chorus.PageEvents.broadcast('cancel:sidebar', 'chorus_view');
-        chorus.PageEvents.broadcast('dataset:cancelEdit');
         this.dataset.set({query: this.dataset.initialQuery});
+        chorus.PageEvents.trigger('cancel:sidebar', 'chorus_view');
+        chorus.PageEvents.trigger('dataset:cancelEdit');
     },
 
     saveChorusView: function() {
-        chorus.PageEvents.broadcast("dataset:saveEdit");
+        chorus.PageEvents.trigger("dataset:saveEdit");
     },
 
-    closeError: function(e) {
+    closeErrorWithDetailsLink: function(e) {
         e && e.preventDefault();
         this.$(".dataset_errors").addClass("hidden");
     },
@@ -196,18 +205,18 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
     viewErrorDetails: function(e) {
         e.preventDefault();
 
-        var alert = new this.alertClass({model: this.taskWithErrors});
+        var alert = new this.alertClass({model: this.errorSource});
         alert.launchModal();
-        $(".errors").addClass("hidden");
+        this.$(".errors").addClass("hidden");
     },
 
     showTitle: function(e) {
-        $(e.target).siblings('.title').addClass('hidden');
-        $(e.target).siblings('.title.' + $(e.target).data('chart_type')).removeClass('hidden');
+        this.$(".chart_type_title").addClass('hidden');
+        this.$('.chart_type_title.' + $(e.target).data('chart_type')).removeClass('hidden');
     },
 
     showVisualizationConfig: function(chartType) {
-        if(this.chartConfig) { this.chartConfig.cleanup();}
+        if(this.chartConfig) { this.chartConfig.teardown(true);}
 
         var options = { model: this.dataset, collection: this.collection, errorContainer: this };
         this.chartConfig = chorus.views.ChartConfiguration.buildForType(chartType, options);
@@ -218,37 +227,52 @@ chorus.views.DatasetContentDetails = chorus.views.Base.extend({
     },
 
     showSelectedTitle: function(e) {
-        $(e.target).siblings('.title').addClass('hidden');
+        this.$('.chart_type_title').addClass('hidden');
         var type = this.$('.selected').data('chart_type');
-        $(e.target).siblings('.title.' + type).removeClass('hidden');
+        this.$('.chart_type_title.' + type).removeClass('hidden');
     },
 
     additionalContext: function() {
         var workspaceArchived = this.options.workspace && !this.options.workspace.isActive();
-        var canUpdate = this.dataset.workspace() && this.dataset.workspace().canUpdate();
         return {
             definition: this.dataset.isChorusView() ? this.dataset.get("query") : this.statistics.get("definition"),
             showEdit: this.dataset.isChorusView() && !workspaceArchived,
-            showDerive: !this.dataset.isChorusView() && !this.options.isInstanceBrowser && !workspaceArchived,
-            showPublish: chorus.models.Config.instance().get('tableauConfigured') && !this.options.isInstanceBrowser && !workspaceArchived && canUpdate
-        }
+            showDerive: this.showDerive(workspaceArchived),
+            showPublish: this.showPublish(workspaceArchived),
+            showVisualize: this.dataset.schema()
+        };
     },
 
-    showError: function(task, alertClass) {
-        this.$('.dataset_errors').removeClass('hidden')
-        this.alertClass = alertClass
-        this.taskWithErrors = task
+    showErrorWithDetailsLink: function(taskOrColumnSet, alertClass) {
+        this.$('.dataset_errors').removeClass('hidden');
+        this.alertClass = alertClass;
+        this.errorSource = taskOrColumnSet;
     },
 
     updateColumnCount: function() {
-        this.$('.count').text(t("dataset.column_count", {count: this.collection.length}))
+        this.$('.count').text(t("dataset.column_count", {count: this.collection.length}));
     },
 
     displayPublishDialog: function() {
-      this.dialog = new chorus.dialogs.PublishToTableau({
-          model: this.dataset.deriveTableauWorkbook(),
-          dataset: this.dataset
-      });
-      this.dialog.launchModal();
+        this.dialog && this.dialog.teardown();
+        this.dialog = new chorus.dialogs.PublishToTableau({
+            model: this.dataset.deriveTableauWorkbook(),
+            dataset: this.dataset
+        });
+        this.dialog.launchModal();
+    },
+
+    showDerive: function (workspaceArchived) {
+        return !(this.dataset.isChorusView() || this.dataset.isOracle() || this.dataset.isJdbc()) && !this.options.isDataSourceBrowser && !workspaceArchived;
+    },
+
+    showPublish: function (workspaceArchived) {
+        var canUpdate = this.dataset.workspace() && this.dataset.workspace().canUpdate();
+        return !!(chorus.models.Config.instance().get('tableauConfigured') && !this.dataset.isOracle() && !this.dataset.isJdbc() && !this.options.isDataSourceBrowser && !workspaceArchived && canUpdate);
+    },
+
+    teardown: function() {
+        this._super("teardown", arguments);
+        this.teardownStickyHeaders();
     }
 });

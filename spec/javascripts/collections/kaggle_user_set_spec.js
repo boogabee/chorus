@@ -1,12 +1,10 @@
 describe("chorus.collections.KaggleUserSet", function() {
     beforeEach(function() {
-        this.collection = new chorus.collections.KaggleUserSet([new chorus.models.KaggleUser()], {
-            workspace: rspecFixtures.workspace({id: 1})
-        });
+        this.collection = new chorus.collections.KaggleUserSet([new chorus.models.KaggleUser()]);
     });
 
     it("has the right url", function() {
-        expect(this.collection.url()).toContain('/workspaces/1/kaggle/users');
+        expect(this.collection.url()).toHaveUrlPath('/kaggle/users');
     });
 
     describe("#count", function () {

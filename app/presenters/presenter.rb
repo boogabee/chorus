@@ -13,7 +13,7 @@ class Presenter
   end
 
   def self.present_collection(collection, view_context, options)
-    collection.map { |model| present_model(model, view_context, options) }
+    collection.map { |model| present_model(model, view_context, options.dup) }
   end
 
   def present(model, options={})
@@ -27,11 +27,7 @@ class Presenter
     @view_context = view_context
   end
 
-  def current_user
-    ActiveRecord::Base.current_user
-  end
-
-  delegate :h, :sanitize, :to => :@view_context
+  delegate :sanitize, :to => :@view_context
 
   attr_reader :model, :options
 
@@ -44,27 +40,33 @@ class Presenter
   end
 
   def presentation_hash
+    return forbidden_hash if options[:forbidden]
+
     hash = to_hash
     hash.merge(complete_json) if hash
+  end
+
+  def forbidden_hash
+    {}
   end
 
   private
 
   def self.get_presenter_class(model, options)
-    if options[:presenter_class]
-      return options.delete(:presenter_class).to_s.constantize
-    end
-    case model
-    when Paperclip::Attachment
+    return options.delete(:presenter_class).to_s.constantize if options[:presenter_class]
+
+    if model.is_a? Paperclip::Attachment
       ImagePresenter
-    when Events::Base
-      EventPresenter
     else
-      "#{model.class.name}Presenter".constantize
+      model.class.respond_to?(:presenter_class) ? model.class.presenter_class : "#{model.class.name}Presenter".constantize
     end
   end
 
   def rendering_activities?
     @options[:activity_stream]
+  end
+
+  def succinct?
+    @options[:succinct]
   end
 end

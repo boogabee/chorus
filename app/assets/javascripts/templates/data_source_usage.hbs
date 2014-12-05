@@ -1,0 +1,29 @@
+<div class='sub_header'>
+    <div class="total_usage">{{t "data_sources.usage.total" size=formattedSandboxesSize}}</div>
+</div>
+
+<div class="sub_content">
+    <ul>
+        {{#each workspaces}}
+        <li>
+            <div class="image_container">
+                <img src="/images/workspaces/workspace_small.png"/>
+            </div>
+            <div class="details">
+                <a class="workspace_link" href="{{workspacePath id}}">{{name}}</a>
+                {{workspaceUsage percentageUsed formattedSize}}
+                <div class="pair location">
+                    <div class="value">{{databaseName}}/{{schemaName}}</div>
+                    <div class="key">{{t "data_sources.usage.location"}}</div>
+                </div>
+                <div class="pair owner">
+                    <div class="value">{{ownerFullName}}</div>
+                    <div class="key">{{t "data_sources.usage.owner"}}</div>
+                </div>
+            </div>
+        </li>
+        {{/each}}
+    </ul>
+</div>
+
+{{> closeWindowFormControls }}

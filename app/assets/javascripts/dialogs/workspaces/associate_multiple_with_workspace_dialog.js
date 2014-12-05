@@ -1,33 +1,32 @@
 chorus.dialogs.AssociateMultipleWithWorkspace = chorus.dialogs.PickWorkspace.extend({
-    constructorName: "AssociateWithWorkspace",
+    constructorName: "AssociateMultipleWithWorkspace",
 
     title: t("dataset.associate.title.other"),
     submitButtonTranslationKey: "dataset.associate.button.other",
 
     setup: function(options) {
-        this.datasets = options.datasets;
-        this.requiredResources.add(this.collection);
+        this.datasets = options.collection;
         this._super('setup', arguments);
     },
 
     submit: function() {
-        this._super("submit", arguments);
         this.$("button.submit").startLoading("actions.associating");
 
         var workspace = this.selectedItem();
         var datasetSet = workspace.datasets();
         datasetSet.reset(this.datasets.models);
 
-        this.bindings.add(datasetSet, "saved", this.saved);
-
+        this.listenTo(datasetSet, "saved", this.saved);
+        this.listenTo(datasetSet, "saveFailed", this.saveFailed);
         datasetSet.save();
     },
 
     saved: function() {
-        this.closeModal();
+        this.datasets.each(function(dataset) { dataset.fetch(); });
         chorus.toast("dataset.associate.toast.other", {
             workspaceNameTarget: this.selectedItem().get("name"),
             count: this.datasets.length
         });
+        this.closeModal();
     }
 });

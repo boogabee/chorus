@@ -1,36 +1,32 @@
 require 'spec_helper'
 
 describe GpdbSchemaPresenter, :type => :view do
-  before(:each) do
-    gpdb_instance = FactoryGirl.create(:gpdb_instance, :id => 123, :name => "instance1")
-    database = FactoryGirl.create(:gpdb_database, :id => 789, :name => "db1", :gpdb_instance => gpdb_instance)
-    schema = FactoryGirl.create(:gpdb_schema, :id => 456, :name => "abc", :database => database)
-    FactoryGirl.create(:gpdb_table, :id => 1, :name => "table1", :schema => schema)
-    FactoryGirl.create(:gpdb_view, :id => 2, :name => "view1", :schema => schema)
-    schema.reload
-
-    stub(ActiveRecord::Base).current_user { users(:owner) }
-
-    @presenter = GpdbSchemaPresenter.new(schema, view)
+  before do
+    set_current_user users(:owner)
   end
 
-  describe "#to_hash" do
-    before do
-      @hash = @presenter.to_hash
+  let(:schema) { FactoryGirl.create(:gpdb_schema, :refreshed_at => Time.now) }
+  let(:presenter) { GpdbSchemaPresenter.new(schema, view) }
+  let(:hash) { presenter.to_hash }
+
+  describe '#to_hash' do
+    it 'includes the fields' do
+      hash[:id].should == schema.id
+      hash[:name].should == schema.name
+      hash[:has_credentials].should == false
+      hash[:is_deleted].should == schema.deleted?
+      hash[:refreshed_at].should == schema.refreshed_at
+      hash[:dataset_count].should == schema.active_tables_and_views.count
+      hash[:database][:id].should == schema.database.id
+      hash[:database][:data_source][:id].should == schema.data_source.id
+      hash[:database][:data_source][:name].should == schema.data_source.name
     end
 
-    it "includes the fields" do
-      @hash[:id].should == 456
-      @hash[:name].should == "abc"
-      @hash[:has_credentials].should == false
-      @hash[:dataset_count].should == 2
-      database = @hash[:database]
-      database[:id].should == 789
-      database[:name].should == "db1"
-      database[:instance][:id].should == 123
-      database[:instance][:name].should == "instance1"
+    it "uses the cached counters for the dataset count" do
+      expect {
+        Schema.increment_counter(:active_tables_and_views_count, schema.id)
+        schema.reload
+      }.to change{presenter.to_hash[:dataset_count]}.by(1)
     end
   end
-
-  it_behaves_like "sanitized presenter", :gpdb_schema, :name
 end

@@ -4,6 +4,6 @@ chorus.views.TableauWorkfileContentDetails = chorus.views.WorkfileContentDetails
     additionalContext: function() {
         return {
             workbookUrl: this.model.get('workbookUrl')
-        }
+        };
     }
 });

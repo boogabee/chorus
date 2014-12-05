@@ -1,5 +1,5 @@
 #!/bin/bash
-for file in greenplum-chorus-*.sh
+for file in chorus-*.sh
 do
   echo "Deploying $file"
   chmod +x $file

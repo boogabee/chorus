@@ -1,6 +1,6 @@
 chorus.models.Notification = chorus.models.Base.extend({
     constructorName: "Notification",
-    urlTemplate:"notification/{{id}}",
+    urlTemplate:"notifications/{{id}}",
 
     activity: function() {
         if (!this._activity) {
@@ -10,7 +10,7 @@ chorus.models.Notification = chorus.models.Base.extend({
             var notification_attributes = $.extend(this.attributes, this.attributes["event"]);
 
             if (this.attributes["comment"]) {
-                notification_attributes["body"] = this.attributes["comment"]["text"];
+                notification_attributes["body"] = this.attributes["comment"]["body"];
                 notification_attributes["actor"] = this.attributes["comment"]["author"];
             }
 

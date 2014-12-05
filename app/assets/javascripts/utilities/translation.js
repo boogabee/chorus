@@ -12,9 +12,9 @@ chorus.translation = {
                 val = _.rest(match).join("=");
             var innerHash = _.reduce(_.initial(keys), function (hash, key) {
                 return hash[key] || (hash[key] = {});
-            }, result)
-            if (innerHash[_.last(keys)] != undefined || !_.isObject(innerHash)) {
-                alert("Translation: " + line + " is a collision with an existing translation");
+            }, result);
+            if (!_.isUndefined(innerHash[_.last(keys)]) || !_.isObject(innerHash)) {
+                window.alert("Translation: " + line + " is a collision with an existing translation");
             }
             innerHash[_.last(keys)] = val;
         });
@@ -32,6 +32,6 @@ $.ajax({
     async:false,
     dataType:'text'
 }).done(function (data, status) {
-        I18n.translations = {};
-        I18n.translations[chorus.locale] = chorus.translation.parseProperties(data);
+    I18n.translations = {};
+    I18n.translations[chorus.locale] = chorus.translation.parseProperties(data);
 });

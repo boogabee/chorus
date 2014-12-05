@@ -7,7 +7,13 @@
         }
     }
 
-    .workspace_member_list {
-        margin: 5px 0px;
+    .workspace_member_list .members {
+        @include sidebar-panel;
+    }
+
+    img.workspace_image {
+        max-width: $sidebar-width - 16px;
+        width: 100%;
+        height: auto;
     }
 }

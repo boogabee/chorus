@@ -1,0 +1,14 @@
+{{#if members}}
+    <div class="members">
+        <ul>
+            {{#each members}}
+            <li>
+                <a href="{{showUrl}}" title="{{displayName}}"><img class="profile icon" src="{{imageUrl}}"/></a>
+            </li>
+            {{/each}}
+        </ul>
+        {{#if extra_members}}
+        <a class="more_members dialog" href="#">{{t "workspace.members_more" count=extra_members}}</a>
+        {{/if}}
+    </div>
+{{/if}}

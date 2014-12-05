@@ -1,0 +1,17 @@
+.job_show_content_header {
+    .frequency, .next_run, .last_run {
+        display: inline-block;
+    }
+
+    .frequency {
+        width: 120px;
+    }
+
+    .next_run {
+      width: 245px;
+    }
+
+    .last_run {
+      width: 400px;
+    }
+}

@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 resource "Kaggle", :kaggle_api => true do
+  include KaggleSpecHelpers
+
   let(:user) { users(:owner) }
   let(:workspace) { workspaces(:public) }
   let(:workspace_id) { workspace.id }
@@ -9,19 +11,22 @@ resource "Kaggle", :kaggle_api => true do
     log_in user
   end
 
-  get "/workspaces/:workspace_id/kaggle/users" do
-    parameter :workspace_id, "Workspace id"
-    parameter :'kaggle_user[]', "Array of filters, each with the pipe-separated format: 'filter|comparator|value'"
+  get "/kaggle/users" do
+    parameter :'filters[]', "Array of filters, each with the pipe-separated format: 'filter|comparator|value'"
 
-    let(:'kaggle_user[]') { "rank|greater|1" }
+    let(:'filters[]') { "rank|greater|1" }
 
-    example_request "Get a list of Kaggle users" do
+    example "Get a list of Kaggle users" do
+      stub(Kaggle::API).users(anything) do
+        kaggle_users_api_result
+      end
+
+      do_request(:'filters[]' => [])
       status.should == 200
     end
   end
 
-  post "/workspaces/:workspace_id/kaggle/messages" do
-    parameter :workspace_id, "Workspace id"
+  post "/kaggle/messages" do
     parameter :reply_to, "Email address of sender"
     parameter :subject, "Subject of message to Kaggle user"
     parameter :html_body, "Body of message to Kaggle user"
@@ -35,9 +40,9 @@ resource "Kaggle", :kaggle_api => true do
     required_parameters :reply_to, :subject, :html_body, :'recipient_ids[]'
 
     example "Send a message to Kaggle users" do
-      VCR.use_cassette('kaggle_api_spec', :tag => :filter_kaggle_api_key) do
+      VCR.use_cassette('kaggle_message_success', :tag => :filter_kaggle_api_key) do
         do_request(:reply_to => reply_to, :subject => subject, :html_body => html_body, :recipient_ids => recipient_ids)
-        status.should == 200
+        status.should == 201
       end
     end
   end

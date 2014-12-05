@@ -1,0 +1,32 @@
+<div class="user_info">
+    {{#ifAny title department}}
+      <div class="titleAndDepartment">
+        <div class="title">{{title}}</div>
+        <div class="department">{{department}}</div>
+      </div>
+    {{/ifAny}}
+
+    {{#if email}}
+      <div class="email">{{email}}</div>
+    {{/if}}
+
+    <div class="badges">
+        {{> adminBadge }}
+        {{> developerBadge }}
+    </div>
+
+    {{#if notes}}<div class="notes">{{notes}}</div>{{/if}}
+</div>
+
+<div class="edit_photo">
+    <img src="{{imageUrl}}" class="profile"/>
+</div>
+
+<div class="workspaces {{#unless workspaces.models.length}} hidden {{/unless}}">
+    <h2>{{t "users.workspaces_header"}}</h2>
+    <ul>
+        {{#each workspaces.models}}
+          <li><img src="/images/workspaces/workspace_small.png"/><a href="#/workspaces/{{id}}" title="{{attributes.name}}">{{attributes.name}}</a></li>
+        {{/each}}
+    </ul>
+</div>

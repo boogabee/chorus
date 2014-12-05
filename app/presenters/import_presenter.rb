@@ -2,18 +2,32 @@ class ImportPresenter < Presenter
 
   def to_hash
     {
-        :execution_info => {
-          :to_table => model.to_table,
-          :to_table_id => model.target_dataset_id,
-          :started_stamp => model.created_at,
-          :completed_stamp => model.created_at,
-          :state => "success",
-          :source_id => model.source_dataset_id,
-          :source_table => Dataset.find(model.source_dataset_id).name
-        },
-        :source_id => model.source_dataset_id,
-        :source_table => Dataset.find(model.source_dataset_id).name
+        :id => model.id,
+        :to_table => model.to_table,
+        :started_stamp => model.created_at,
+        :completed_stamp => model.finished_at,
+        :success => model.success,
+        :source_dataset => source_dataset,
+        :file_name => model.file_name,
+        :workspace_id => model.workspace_id,
+        :entity_type => model.entity_type_name
+    }.merge(destination_dataset)
+  end
+
+  def source_dataset
+    hide_source = model.source_id.nil?
+    {
+        :id => hide_source ? nil : model.source_id,
+        :object_name => hide_source ? nil : model.source.try(:name)
     }
+  end
+
+  def destination_dataset
+    dataset_hash = {
+        :id => model.destination_dataset ? model.destination_dataset_id : nil,
+        :object_name => model.to_table
+    }
+    {:destination_dataset => dataset_hash}
   end
 end
 

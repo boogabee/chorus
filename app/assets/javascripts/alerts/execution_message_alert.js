@@ -1,7 +1,6 @@
 chorus.alerts.ExecutionMessage = chorus.alerts.Base.extend({
     constructorName: "ExecutionMessage",
 
-    title: t("workfile.execution.message.title"),
     cancel:t("actions.close_window"),
     additionalClass: "info",
 
@@ -15,7 +14,15 @@ chorus.alerts.ExecutionMessage = chorus.alerts.Base.extend({
         }
     },
 
-    postRender: function() {
-        this.$("button.submit").addClass("hidden");
+    setup: function() {
+        this.title = this.getTitle();
+    },
+
+    getTitle:function () {
+
+        if (this.model.get("workfile"))
+            return t("workfile.execution.message.title");
+        else
+            return t("dataset.execution.message.title");
     }
 });

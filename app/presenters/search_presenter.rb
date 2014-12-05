@@ -8,9 +8,9 @@ class SearchPresenter < SearchPresenterBase
             :numFound => model.num_found[:users]
         },
 
-        :instances => {
-            :results => present_models_with_highlights(model.instances),
-            :numFound => model.num_found[:instances]
+        :data_sources => {
+            :results => present_models_with_highlights(model.data_sources),
+            :numFound => model.num_found[:data_sources]
         },
 
         :workspaces => {
@@ -28,12 +28,12 @@ class SearchPresenter < SearchPresenterBase
             :numFound => model.num_found[:datasets]
         },
 
-        :hdfs => {
+        :hdfs_entries => {
             :results => present_models_with_highlights(model.hdfs_entries),
             :numFound => model.num_found[:hdfs_entries]
         },
 
-        :attachment => {
+        :other_files => {
             :results => present_models_with_highlights(model.attachments),
             :numFound => model.num_found[:attachments]
         }
@@ -43,15 +43,12 @@ class SearchPresenter < SearchPresenterBase
   private
 
   def workspace_specific_results
-    if model.workspace_id
-      {
-          :this_workspace => {
-              :results => present_workspace_models_with_highlights(model.this_workspace),
-              :numFound => model.num_found[:this_workspace]
-          }
-      }
-    else
-      {}
-    end
+    return {} unless model.workspace_id
+    {
+        :this_workspace => {
+            :results => present_workspace_models_with_highlights(model.this_workspace),
+            :numFound => model.num_found[:this_workspace]
+        }
+    }
   end
 end

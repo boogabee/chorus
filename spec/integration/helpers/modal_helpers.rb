@@ -1,7 +1,6 @@
 def within_modal(&block)
   modal_selector = "#facebox"
-  wait_until { page.has_selector?(modal_selector) }
-  wait_for_ajax
+  page.should have_selector(modal_selector)
   within(modal_selector, &block)
-  wait_for_ajax
+  page.should have_no_selector(modal_selector)
 end

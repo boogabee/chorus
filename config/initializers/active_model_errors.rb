@@ -1,14 +1,17 @@
-module ActiveModel
-  module Validations
-    class UnlocalizedErrors < Errors
-      # errors.rb:322
-      def generate_message(attribute, type = :invalid, options = {})
-        [type, options]
-      end
-    end
+class ActiveRecord::Base
+  include ChorusApiValidationFormat
+end
 
-    def errors
-      @errors ||= UnlocalizedErrors.new(self)
+module ActiveRecord
+  module Validations
+    class AssociatedValidator < ActiveModel::EachValidator
+      def validate_each(record, attribute, value)
+        if Array.wrap(value).reject { |r| r.marked_for_destruction? || r.valid? }.any?
+          value.errors.each do |attr, error|
+            record.errors[options[:error_field] || attr] << error
+          end
+        end
+      end
     end
   end
 end

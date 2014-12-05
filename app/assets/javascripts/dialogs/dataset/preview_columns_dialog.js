@@ -8,13 +8,13 @@ chorus.dialogs.PreviewColumns = chorus.dialogs.Base.extend({
 
     setup: function() {
         this.resource = this.collection = this.model.columns();
-        this.bindings.add(this.collection, 'fetchFailed', this.columnFetchFailed);
+        this.listenTo(this.collection, 'fetchFailed', this.columnFetchFailed);
         this.collection.fetchAll();
     },
 
     columnFetchFailed: function() {
         this.model.serverErrors = this.collection.serverErrors;
-        this.closeModal()
+        this.closeModal();
         this.previousModal.showErrors(this.model);
     },
 
@@ -30,6 +30,6 @@ chorus.dialogs.PreviewColumns = chorus.dialogs.Base.extend({
         return {
             objectName: this.model.get("objectName"),
             count: this.collection.models.length
-        }
+        };
     }
 });

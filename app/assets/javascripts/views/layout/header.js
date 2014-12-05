@@ -2,12 +2,11 @@ chorus.views.Header = chorus.views.Base.extend({
     constructorName: "HeaderView",
     templateName: "header",
     events: {
-        "click .username a": "togglePopupUsername",
-        "click .account a": "togglePopupAccount",
+        "click .username a.label": "togglePopupUsername",
         "click a.notifications": "togglePopupNotifications",
-        "click .gear a": "togglePopupGear",
-        "submit .search form": "startSearch",
+        "click .drawer a": "togglePopupDrawer",
         "click .type_ahead_result a": "clearSearch",
+        "submit .search form": "startSearch",
         "keydown .search input": "searchKeyPressed"
     },
 
@@ -17,19 +16,19 @@ chorus.views.Header = chorus.views.Base.extend({
     },
 
     setup: function() {
-        this.popupEventName = "chorus:menu:popup." + this.cid;
-        $(document).bind(this.popupEventName, _.bind(this.popupEventHandler, this))
         this.session = chorus.session;
         this.unreadNotifications = new chorus.collections.NotificationSet([], { type: 'unread' });
         this.notifications = new chorus.collections.NotificationSet();
         this.notifications.per_page = 5;
-        this.requiredResources.add([this.unreadNotifications, this.notifications]);
 
         this.typeAheadView = new chorus.views.TypeAheadSearch();
 
         this.notificationList = new chorus.views.NotificationList({
             collection: new chorus.collections.NotificationSet()
         });
+
+        this.listenTo(this.unreadNotifications, "loaded", this.updateNotifications);
+        this.listenTo(this.notifications, "loaded", this.updateNotifications);
 
         this.unreadNotifications.fetchAll();
         this.notifications.fetch();
@@ -39,62 +38,69 @@ chorus.views.Header = chorus.views.Base.extend({
             this.users.fetchAll();
         }
 
-        chorus.PageEvents.subscribe("notification:deleted", this.refreshNotifications, this);
+        this.subscribePageEvent("notification:deleted", this.refreshNotifications);
     },
 
-    resourcesLoaded: function() {
-        this.notificationList.collection.reset(this.unreadNotifications.models, { silent: true });
-        var numberToAdd = (5 - this.unreadNotifications.length);
-        if (numberToAdd > 0) {
-            this.notificationList.collection.add(this.notifications.chain().reject(
-                function(model) {
-                    return !!this.unreadNotifications.get(model.get("id"));
-                }, this).first(numberToAdd).value());
-        }
+    disableSearch: function() {
+        this.typeAheadView.disableSearch();
+    },
 
-        this.notificationList.collection.loaded = true;
-        this.render();
+    updateNotifications: function() {
+        if (this.notifications.loaded && this.unreadNotifications.loaded) {
+            this.notificationList.collection.reset(this.unreadNotifications.models, { silent: true });
+            var numberToAdd = (5 - this.unreadNotifications.length);
+            if (numberToAdd > 0) {
+                this.notificationList.collection.add(this.notifications.chain().reject(
+                    function(model) {
+                        return !!this.unreadNotifications.get(model.get("id"));
+                    }, this).first(numberToAdd).value());
+            }
+
+            this.notificationList.collection.loaded = true;
+            this.render();
+        }
     },
 
     postRender: function() {
-        this.$(".search input").unbind("textchange").bind("textchange", _.bind(this.displayResult, this));
+        this.$(".search input").unbind("textchange").bind("textchange", _.bind(_.throttle(this.displayResult, 500), this));
         chorus.addClearButton(this.$(".search input"));
 
         if (chorus.isDevMode()) {
             this.addFastUserToggle();
         }
+        this.modifyTypeAheadSearchLength();
     },
 
     addFastUserToggle: function() {
+        var self = this;
+        var session = chorus.session;
+
+        function switchUser(username) {
+            session.requestLogout(function(res) {
+                // log back in as new user
+                session.updateToken(res);
+                self.listenTo(session, "saved", _.bind(chorus.router.reload, chorus.router));
+                self.listenTo(session, "saveFailed", function() { session.trigger("needsLogin"); });
+                session.save({username: username, password: "secret"});
+            });
+        }
+
         function addDropdown() {
             $('select.switch_user').remove();
             var $select = $("<select class='switch_user'></select>");
 
-            $select.append("<option>Switch to user..</option>")
-            this.users.each(function(user) {
-                $select.append("<option value=" + user.get("username") + ">" + user.displayName() + "</option>")
+            $select.append("<option>Switch to user..</option>");
+            self.users.each(function(user) {
+                $select.append("<option value=" + Handlebars.Utils.escapeExpression(user.get("username")) + ">" + Handlebars.Utils.escapeExpression(user.displayName()) + "</option>");
             });
 
-            $select.css({position: 'fixed', bottom: 0, right: 0})
             $("body").append($select);
             $select.unbind("change").bind("change", function() {
                 switchUser($(this).val());
             });
         }
 
-        var self = this;
-        var session = chorus.session;
-
-        function switchUser(username) {
-            session.requestLogout(function() {
-                // log back in as new user
-                self.bindings.add(session, "saved", _.bind(chorus.router.reload, chorus.router))
-                self.bindings.add(session, "saveFailed", function() { session.trigger("needsLogin"); });
-                session.save({username: username, password: "secret"});
-            });
-        }
-
-        this.bindings.add(this.users, "loaded", addDropdown);
+        this.listenTo(this.users, "loaded", addDropdown);
     },
 
     searchKeyPressed: function(event) {
@@ -103,39 +109,34 @@ chorus.views.Header = chorus.views.Base.extend({
 
     displayResult: function() {
         var query = this.$(".search input").val();
-        this.typeAheadView.searchFor(query);
-        if (query.length > 0) {
-            this.$(".type_ahead_result").removeClass("hidden");
-            this.captureClicks();
+        if (this.typeAheadView.searchFor(query)) {
+            if ( this.typeAheadView.$el.hasClass("hidden") ) {
+                chorus.PopupMenu.toggle(this, this.typeAheadView.el);
+            }
         } else {
-            this.$(".type_ahead_result").addClass("hidden");
-            this.releaseClicks();
+            chorus.PopupMenu.close(this);
         }
     },
 
     clearSearch: function() {
         this.$(".search input").val('');
-        this.dismissSearch();
-    },
-
-    dismissSearch: function() {
-        this.$(".type_ahead_result").addClass("hidden");
-    },
-
-    teardown: function() {
-        $(document).unbind(this.popupEventName);
-        this._super("teardown");
+        this.displayResult();
     },
 
     additionalContext: function(ctx) {
         this.requiredResources.reset();
         var user = this.session.user();
+        var license = chorus.models.Config.instance().license();
 
         return _.extend(ctx, this.session.attributes, {
             notifications: this.unreadNotifications,
             fullName: user && user.displayName(),
-            displayName: user && user.displayShortName(),
-            userUrl: user && user.showUrl()
+            firstName: user && user.get('firstName'),
+            userUrl: user && user.showUrl(),
+            helpLinkUrl: 'help.link_address.' + license.branding(),
+            brandingLogo: license.branding() + "-logo.png",
+            advisorNow: license.advisorNowEnabled(),
+            advisorNowLink: this.advisorNowLink(user, license)
         });
     },
 
@@ -148,107 +149,61 @@ chorus.views.Header = chorus.views.Base.extend({
     },
 
     togglePopupNotifications: function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
         var beingShown = this.$(".menu.popup_notifications").hasClass("hidden");
-        this.dismissPopups();
-        this.triggerPopupEvent(e.target);
+
+        chorus.PopupMenu.toggle(this, ".menu.popup_notifications", e, '.messages');
 
         if (beingShown) {
-            this.captureClicks();
             this.unreadNotifications.markAllRead({ success: _.bind(this.clearNotificationCount, this) });
             this.notificationList.show();
         } else {
             this.unreadNotifications.each(function(model) {
-                model.set({ unread: false }, { silent: true })
+                model.set({ unread: false }, { silent: true });
             });
-            this.notificationList.collection.trigger("reset")
+            this.notificationList.collection.trigger("reset");
         }
-
-        this.$(".menu.popup_notifications").toggleClass("hidden", !beingShown);
     },
 
     clearNotificationCount: function() {
-        this.$("a.notifications").text("0").addClass("empty")
+        this.$("a.notifications .lozenge").text("0").addClass("empty");
     },
 
     togglePopupUsername: function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
+        chorus.PopupMenu.toggle(this, ".menu.popup_username", e, '.username');
+    },
 
-        var userNameWasPoppedUp = !this.$(".menu.popup_username").hasClass("hidden");
-        this.dismissPopups();
-        this.triggerPopupEvent(e.target);
+    togglePopupDrawer: function(e) {
+        chorus.PopupMenu.toggle(this, ".menu.popup_drawer", e, '.drawer');
+    },
 
-        if (!userNameWasPoppedUp) {
-            this.captureClicks();
+    modifyTypeAheadSearchLength: function() {
+        if(!_.isEmpty($('.left')) && !_.isEmpty($('.type_ahead_search'))) {
+            this.$('.type_ahead_search').css('left', (this.$('.left').width() + parseInt($('.search').css('padding-left'), 10)) + "px");
         }
-
-        this.$(".menu.popup_username").toggleClass("hidden", userNameWasPoppedUp);
-    },
-
-    togglePopupGear: function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
-        var gearNameWasPoppedUp = !this.$(".menu.popup_gear").hasClass("hidden");
-        this.dismissPopups();
-        this.triggerPopupEvent(e.target);
-
-        if (!gearNameWasPoppedUp) {
-            this.captureClicks();
-        }
-
-        this.$(".menu.popup_gear").toggleClass("hidden", gearNameWasPoppedUp);
-    },
-
-    togglePopupAccount: function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
-        var accountNameWasPoppedUp = !this.$(".menu.popup_account").hasClass("hidden");
-        this.dismissPopups();
-        this.triggerPopupEvent(e.target);
-
-        if (!accountNameWasPoppedUp) {
-            this.captureClicks();
-        }
-
-        this.$(".menu.popup_account").toggleClass("hidden", accountNameWasPoppedUp)
-    },
-
-    triggerPopupEvent: function(el) {
-        $(document).trigger("chorus:menu:popup", el);
-    },
-
-    captureClicks: function() {
-        $(document).bind("click.popup_menu", _.bind(this.dismissPopups, this));
-    },
-
-    releaseClicks: function() {
-        $(document).unbind("click.popup_menu");
-    },
-
-    popupEventHandler: function(ev, el) {
-        if ($(el).closest(".header").length == 0) {
-            this.dismissPopups();
-            this.releaseClicks();
-        }
-    },
-
-    dismissPopups: function() {
-        this.dismissSearch();
-        this.releaseClicks();
-        this.$(".menu").addClass("hidden");
     },
 
     startSearch: function(e) {
         e.preventDefault();
-        var search = new chorus.models.SearchResult({
-            workspaceId: this.options.workspaceId,
-            query: this.$(".search input:text").val()
+        var query = this.$(".search input:text").val();
+        if (query.length > 0 && !chorus.models.Config.instance().license().limitSearch()) {
+            var search = new chorus.models.SearchResult({
+                workspaceId: this.workspaceId,
+                query: query
+            });
+            chorus.router.navigate(search.showUrl());
+        }
+    },
+
+    advisorNowLink: function(user, license) {
+        return URI({
+            hostname: "http://advisor.alpinenow.com",
+            path: "start",
+            query: $.param({
+                first_name: user.get("firstName"),
+                last_name: user.get("lastName"),
+                email: user.get("email"),
+                org_id: license.get("organizationUuid")
+            })
         });
-        chorus.router.navigate(search.showUrl());
     }
 });

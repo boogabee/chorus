@@ -1,0 +1,15 @@
+<span class="image">
+    <img class="icon" src="{{iconUrl}}">
+</span>
+<div class='item_information'>
+    <div class="description">
+        <a class="name" href="{{showUrl}}">{{displaySearchMatch "fileName"}}</a>
+
+        <div class="item_metadata">
+            <div class="comments_container"/>
+            <div class="description_content">{{displaySearchMatch "description"}}</div>
+            <div class="location">{{usedInWorkspaces workspaces resource}}</div>
+            {{> itemTags}}
+        </div>
+    </div>
+</div>

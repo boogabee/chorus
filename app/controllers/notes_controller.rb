@@ -1,5 +1,3 @@
-require Rails.root + 'app/permissions/note_access'
-
 class NotesController < ApplicationController
   include ActionView::Helpers::SanitizeHelper
 
@@ -7,15 +5,17 @@ class NotesController < ApplicationController
     note_params = params[:note]
     entity_type = note_params[:entity_type]
     entity_id = note_params[:entity_id]
-    authorize! :create, Events::Note, entity_type, entity_id
+    model = ModelMap.model_from_params(entity_type, entity_id)
+
+    authorize! :create_note_on, model
     note_params[:body] = sanitize(note_params[:body])
 
-    note = Events::Note.create_from_params(note_params, current_user)
+    note = Events::Note.build_for(model, note_params)
 
-    if note_params[:recipients]
-      note_params[:recipients].each do |recipient_id|
-        Notification.create!(:recipient_id => recipient_id, :event_id => note.id)
-      end
+    note.save!
+
+    (note_params[:recipients] || []).each do |recipient_id|
+      Notification.create!(:recipient_id => recipient_id, :event_id => note.id)
     end
 
     present note, :status => :created

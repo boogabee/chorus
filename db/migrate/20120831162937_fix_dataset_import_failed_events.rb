@@ -1,20 +1,15 @@
 class FixDatasetImportFailedEvents < ActiveRecord::Migration
   def up
-    Events::DatasetImportFailed.all.each do |e|
-      next unless e.additional_data.has_key?('source_dataset_id')
-      dataset_id = e.additional_data.delete('source_dataset_id')
-      e.target2_type = 'Dataset'
-      e.target2_id = dataset_id
-      e.save!
+    dataset_import_failed_events = select_all "select id, additional_data, action from events where action = 'Events::DatasetImportFailed'"
+    dataset_import_failed_events.each do |event|
+      event_id = event['id']
+      source_dataset_id =  JSON.parse(event['additional_data'])['source_dataset_id']
+      next unless source_dataset_id
+      execute "update events set target2_type='Dataset', target2_id=#{source_dataset_id} where id=#{event_id}"
     end
   end
 
   def down
-    Events::DatasetImportFailed.all.each do |e|
-      e.additional_data['source_dataset_id'] = e.target2_id
-      e.target2_type = nil
-      e.target2_id = nil
-      e.save!
-    end
+    raise ActiveRecord::IrreversibleMigration
   end
 end

@@ -1,0 +1,22 @@
+<ul>
+    {{#unless limitSearch}}
+        <li class="search_all underline">
+            <a href="#/search/{{query}}">
+                <div>{{t "type_ahead.show_all_results"}} "<em>{{query}}</em>"</div>
+            </a>
+        </li>
+    {{/unless}}
+{{#each results}}
+    {{#if linkable }}
+    <li class="result">
+        <a href="{{url}}">
+            <div>
+                <span class="name">{{name}}</span>
+                <br/>
+                <sub class="type">{{type}}</sub>
+            </div>
+        </a>
+    </li>
+    {{/if}}
+{{/each}}
+</ul>

@@ -1,13 +1,14 @@
 module Jasmine
-  class Config
-    def start_server(port = 8888)
-      if defined? Rack::Server # Rack ~>1.0 compatibility
-        server = Rack::Server.new(:Port => port, :AccessLog => [], :server => 'mizuno')
-        server.instance_variable_set(:@app, Jasmine.app(self)) # workaround for Rack bug, when Rack > 1.2.1 is released Rack::Server.start(:app => Jasmine.app(self)) will work
-        server.start
-      else
+  class Server
+    def start
+      if Jasmine::Dependencies.legacy_rack?
         handler = Rack::Handler.get('webrick')
-        handler.run(Jasmine.app(self), :Port => port, :AccessLog => [])
+        handler.run(@application, :Port => @port, :AccessLog => [])
+      else
+        server = Rack::Server.new(:Port => @port, :AccessLog => [], :server => 'mizuno')
+        # workaround for Rack bug, when Rack > 1.2.1 is released Rack::Server.start(:app => Jasmine.app(self)) will work
+        server.instance_variable_set(:@app, @application)
+        server.start
       end
     end
   end

@@ -1,6 +1,7 @@
 describe("chorus.views.WorkspaceQuickstart", function() {
     beforeEach(function() {
-        this.model = rspecFixtures.workspace({id: "999", hasAddedSandbox: false});
+        this.modalSpy = stubModals();
+        this.model = backboneFixtures.workspace({id: "999", hasAddedSandbox: false, hasAddedWorkfile: false});
         this.model.loaded = true;
         spyOn(chorus.router, "navigate");
         this.view = new chorus.views.WorkspaceQuickstart({model: this.model});
@@ -15,7 +16,6 @@ describe("chorus.views.WorkspaceQuickstart", function() {
         expect(this.view.$(".body")).toContainTranslation("workspace.quickstart.body");
     });
 
-
     context("when the quickstart guide is shown", function() {
         context("the tasks haven't been done", function() {
             beforeEach(function() {
@@ -24,17 +24,41 @@ describe("chorus.views.WorkspaceQuickstart", function() {
                     hasAddedWorkfile: false,
                     hasAddedSandbox: false,
                     hasChangedSettings: false
-                })
+                });
                 this.view = new chorus.views.WorkspaceQuickstart({model: this.model});
             });
 
-            it("shows the correct boxes", function() {
-                this.view.render();
-                expect(this.view.$(".add_team_members")).toExist();
-                expect(this.view.$(".edit_workspace_settings")).toExist();
-                expect(this.view.$(".add_sandbox")).toExist();
-                expect(this.view.$(".add_workfiles")).toExist();
+            context("when some actions are limited", function() {
+                beforeEach(function () {
+                    spyOn(chorus.models.Config.instance().license(), 'limitWorkspaceMembership').andReturn(true);
+                    spyOn(chorus.models.Config.instance().license(), 'limitSandboxes').andReturn(true);
+                    this.view.render();
+                });
+
+                it("shows the correct boxes without add_team_members", function() {
+                    expect(this.view.$(".add_team_members")).not.toExist();
+                    expect(this.view.$(".edit_workspace_settings")).toExist();
+                    expect(this.view.$(".add_sandbox")).not.toExist();
+                    expect(this.view.$(".add_workfiles")).toExist();
+                });
             });
+
+            context("when actions are not limited", function() {
+                beforeEach(function () {
+                    spyOn(chorus.models.Config.instance().license(), 'limitWorkspaceMembership').andReturn(false);
+                    spyOn(chorus.models.Config.instance().license(), 'limitSandboxes').andReturn(false);
+                    this.view.render();
+                });
+
+                it("shows the correct boxes", function() {
+                    expect(this.view.$(".add_team_members")).toExist();
+                    expect(this.view.$(".edit_workspace_settings")).toExist();
+                    expect(this.view.$(".add_sandbox")).toExist();
+                    expect(this.view.$(".add_workfiles")).toExist();
+                });
+            });
+
+
         });
 
         context("the tasks have mostly been done", function() {
@@ -89,15 +113,12 @@ describe("chorus.views.WorkspaceQuickstart", function() {
             expect(this.view.$(".add_team_members .text")).toContainTranslation("workspace.quickstart.add_team_members.text");
         });
 
-        it("launches the right dialog", function() {
-            expect(this.view.$(".add_team_members a")).toHaveClass("dialog");
-            expect(this.view.$(".add_team_members a").data("dialog")).toBe("WorkspaceEditMembers");
-        });
-
         it("hides the box when hasAddedMember is true", function() {
             this.view.model.set({"hasAddedMember": true});
             expect(this.view.$(".add_team_members")).not.toExist();
-        })
+        });
+
+        itBehavesLike.aDialogLauncher("a.edit_workspace_members", chorus.dialogs.WorkspaceEditMembers);
     });
 
     describe("the 'Add a Sandbox' section", function() {
@@ -119,20 +140,12 @@ describe("chorus.views.WorkspaceQuickstart", function() {
             expect(this.view.$(".add_sandbox .text")).toContainTranslation("workspace.quickstart.add_sandbox.text");
         });
 
-        it("launches the right dialog", function() {
-            expect(link).toHaveClass("dialog");
-            expect(link).toHaveData("dialog", "SandboxNew");
-            expect(link).toHaveData("workspaceId", 999);
-        });
-
-        it("makes the sandbox dialog *not* reload the page on completion", function() {
-            expect(link).toHaveData("noReload", true);
-        });
-
         it("hides the box when hasAddedSandbox is true", function() {
             this.view.model.set({"hasAddedSandbox": true});
             expect(this.view.$(".add_sandbox")).not.toExist();
-        })
+        });
+
+        itBehavesLike.aDialogLauncher("a.new_sandbox", chorus.dialogs.SandboxNew);
     });
 
     describe("the 'Add Work Files' section", function() {
@@ -154,22 +167,25 @@ describe("chorus.views.WorkspaceQuickstart", function() {
             expect(this.view.$(".add_workfiles .text")).toContainTranslation("workspace.quickstart.add_workfiles.text");
         });
 
-        it("launches the right dialog", function() {
-            expect(link).toHaveClass("dialog");
-            expect(link).toHaveData("dialog", "WorkfilesImport");
-            expect(link).toHaveData("workspaceId", 999);
-        });
-
         it("hides the box when hasAddedWorkfile is true", function() {
             this.view.model.set({"hasAddedWorkfile": true});
             expect(this.view.$(".add_workfiles")).not.toExist();
-        })
+        });
+
+        it("lets the dialog create a new workfile", function () {
+            this.view.$('a.import_workfiles').click();
+            var workfileDialog = this.modalSpy.modals()[0];
+            expect(workfileDialog.model).toBeA(chorus.models.Workfile);
+            expect(workfileDialog.model.isNew()).toBeTruthy();
+        });
+
+        itBehavesLike.aDialogLauncher("a.import_workfiles", chorus.dialogs.WorkfilesImport);
     });
 
     describe("the 'Edit Workspace Settings' section", function() {
         var link;
         beforeEach(function() {
-            link = this.view.$(".edit_workspace_settings a")
+            link = this.view.$(".edit_workspace_settings a");
         });
 
         it("has a link", function() {
@@ -184,10 +200,7 @@ describe("chorus.views.WorkspaceQuickstart", function() {
             expect(this.view.$(".edit_workspace_settings .text")).toContainTranslation("workspace.quickstart.edit_workspace_settings.text");
         });
 
-        it("launches the right dialog", function() {
-            expect(this.view.$(link)).toHaveClass("dialog");
-            expect(this.view.$(link).data("dialog")).toBe("WorkspaceSettings");
-        });
+        itBehavesLike.aDialogLauncher("a.edit_workspace", chorus.dialogs.EditWorkspace);
     });
 
     describe("when the workspace is edited", function() {
@@ -210,8 +223,8 @@ describe("chorus.views.WorkspaceQuickstart", function() {
     describe("when dialogs are dismissed", function() {
         context("and there are still unhidden info boxes", function() {
             beforeEach(function() {
-                this.view.$(".info_box.edit_workspace_settings").addClass("hidden")
-                chorus.PageEvents.broadcast("modal:closed")
+                this.view.$(".info_box.edit_workspace_settings").addClass("hidden");
+                chorus.PageEvents.trigger("modal:closed");
             });
 
             it("does not navigate", function() {
@@ -221,8 +234,8 @@ describe("chorus.views.WorkspaceQuickstart", function() {
 
         context("and all info boxes are hidden", function() {
             beforeEach(function() {
-                this.view.$(".info_box").addClass("hidden")
-                chorus.PageEvents.broadcast("modal:closed")
+                this.view.$(".info_box").addClass("hidden");
+                chorus.PageEvents.trigger("modal:closed");
 
                 this.model.set({
                     hasAddedMember: true,
@@ -236,7 +249,7 @@ describe("chorus.views.WorkspaceQuickstart", function() {
 
             it("navigates to the normal workspace show page", function() {
                 this.view.render();
-                expect(chorus.router.navigate).toHaveBeenCalledWith(this.view.model.showUrl())
+                expect(chorus.router.navigate).toHaveBeenCalledWith(this.view.model.showUrl());
             });
         });
     });

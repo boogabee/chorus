@@ -1,4 +1,4 @@
-.errors, .sql_errors, .dataset_errors {
+.errors, .sql_errors, .dataset_errors, .warning {
     @include after-clearfix;
     background-color: $error-background-color;
     vertical-align: middle;
@@ -25,18 +25,20 @@
         margin: 0 10px;
         font-size: 14px;
         color: white;
-        border-bottom: 1px dotted white;
         padding-top: 10px;
     }
 }
 
-input.has_error, textarea.has_error {
+.warning {
+    background-color: $needs-attention;
+}
+
+input.has_error, textarea.has_error, .text-core .text-wrap textarea.has_error, .text-core .text-wrap input.has_error {
     border: 2px solid $error-background-color;
     background-image: url("/images/error-exclamation.png");
     background-repeat: no-repeat;
     background-position: 99%;
     padding-right: 20px;
-
 }
 
 .cleditorMain.has_error {

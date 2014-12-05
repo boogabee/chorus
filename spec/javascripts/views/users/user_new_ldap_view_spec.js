@@ -2,9 +2,9 @@ describe("chorus.views.UserNewLdap", function() {
     describe("#render", function() {
         context("as an admin", function() {
             beforeEach(function() {
-                spyOn($.fn, "limitMaxlength")
+                spyOn($.fn, "limitMaxlength");
                 setLoggedInUser({'admin': true});
-                this.user = new chorus.models.User()
+                this.user = new chorus.models.User();
                 this.view = new chorus.views.UserNewLdap({ model: this.user });
                 this.modalSpy = stubModals();
                 this.view.render();
@@ -16,7 +16,7 @@ describe("chorus.views.UserNewLdap", function() {
 
             it("limits the length of the notes field", function() {
                 expect($.fn.limitMaxlength).toHaveBeenCalledOnSelector("textarea");
-            })
+            });
 
             describe("#fieldValues", function() {
                 beforeEach(function() {
@@ -27,6 +27,7 @@ describe("chorus.views.UserNewLdap", function() {
                     this.view.$("input[name=dept]").val("awesomeness dept");
                     this.view.$("input[name=title]").val("fashion policeman");
                     this.view.$("input[name=admin]").prop("checked", true);
+                    this.view.$("input[name=developer]").prop("checked", true);
                     this.view.$("textarea[name=notes]").val("some notes");
                 });
 
@@ -39,6 +40,7 @@ describe("chorus.views.UserNewLdap", function() {
                         dept: "awesomeness dept",
                         title: "fashion policeman",
                         admin: true,
+                        developer: true,
                         notes: "some notes"
                     });
                 });
@@ -53,6 +55,19 @@ describe("chorus.views.UserNewLdap", function() {
                     it("sets the 'admin' field to false", function() {
                         this.view.$("input[name=admin]").prop("checked", false);
                         expect(this.view.fieldValues().admin).toBeFalsy();
+                    });
+                });
+
+                context("when the 'developer' box is checked", function() {
+                    it("sets the 'developer' field to true", function() {
+                        expect(this.view.fieldValues().developer).toBeTruthy();
+                    });
+                });
+
+                context("when the 'developer' box is unchecked", function() {
+                    it("sets the 'developer' field to false", function() {
+                        this.view.$("input[name=developer]").prop("checked", false);
+                        expect(this.view.fieldValues().developer).toBeFalsy();
                     });
                 });
 
@@ -95,7 +110,7 @@ describe("chorus.views.UserNewLdap", function() {
                 context("when the username matches an LDAP user", function() {
                     beforeEach(function() {
                         this.server.completeFetchFor(this.ldapUsers, [
-                            rspecFixtures.user({
+                            backboneFixtures.user({
                                 username: "john_henry",
                                 firstName: "John",
                                 lastName: "Henry",
@@ -134,6 +149,7 @@ describe("chorus.views.UserNewLdap", function() {
                     this.view.$("input[name=email]").val("frankie_knuckles@nyclol.com");
                     this.view.$("input[name=dept]").val("awesomeness dept");
                     this.view.$("input[name=admin]").prop("checked", true);
+                    this.view.$("input[name=developer]").prop("checked", true);
 
                     this.view.$("form").submit();
                 });
@@ -146,7 +162,7 @@ describe("chorus.views.UserNewLdap", function() {
                 context("when user creation is successful", function() {
                     it("redirects to user index", function() {
                         spyOn(chorus.router, "navigate");
-                        this.server.completeSaveFor(this.user);
+                        this.server.completeCreateFor(this.user);
                         expect(chorus.router.navigate).toHaveBeenCalledWith("/users");
                     });
                 });
@@ -154,28 +170,29 @@ describe("chorus.views.UserNewLdap", function() {
                 context("when user creation fails on the server", function() {
                     beforeEach(function() {
                                 this.view.model.serverErrors = {fields: {a: {BLANK: {}}}};
-                        this.view.$("form").submit();
-                        this.view.model.trigger("saveFailed");
-                    });
+                                this.view.$("form").submit();
+                                this.view.model.trigger("saveFailed");
+                            });
 
                     it("doesn't redirect", function() {
                         expect(this.view.$("form")).toExist();
-                    })
+                    });
 
                     it("retains the data already entered", function() {
                         expect(this.view.$("input[name=firstName]").val()).toBe("Frankie");
                         expect(this.view.$("input[name=lastName]").val()).toBe("Knuckles");
-                                expect(this.view.$("input[name=username]").val()).toBe("frankie2002");
-                                expect(this.view.$("input[name=email]").val()).toBe("frankie_knuckles@nyclol.com");
-                                expect(this.view.$("input[name=dept]").val()).toBe("awesomeness dept");
+                        expect(this.view.$("input[name=username]").val()).toBe("frankie2002");
+                        expect(this.view.$("input[name=email]").val()).toBe("frankie_knuckles@nyclol.com");
+                        expect(this.view.$("input[name=dept]").val()).toBe("awesomeness dept");
                         expect(this.view.$("input[name=admin]")).toBeChecked();
+                        expect(this.view.$("input[name=developer]")).toBeChecked();
                     });
 
                     describe("check another user name", function() {
                         beforeEach(function() {
                                     this.view.$("input[name=username]").val("max");
-                            this.view.$("a.check_username").click();
-                        });
+                                    this.view.$("a.check_username").click();
+                                });
 
                         it("clears the existing error", function() {
                             expect(this.view.$(".errors")).toBeEmpty();
@@ -188,16 +205,16 @@ describe("chorus.views.UserNewLdap", function() {
             context("cancelling", function() {
                 beforeEach(function() {
                     this.view.$("button.cancel").click();
-                })
+                });
 
                 it("does not save the user", function() {
                     expect(this.user).not.toHaveBeenCreated();
-                })
+                });
 
                 it("navigates back", function() {
                     expect(window.history.back).toHaveBeenCalled();
-                })
-            })
+                });
+            });
         });
 
         context("as a non admin", function() {
@@ -211,6 +228,6 @@ describe("chorus.views.UserNewLdap", function() {
                 expect(this.view.$(".aint_admin")).toExist();
             });
         });
-    })
-})
+    });
+});
 

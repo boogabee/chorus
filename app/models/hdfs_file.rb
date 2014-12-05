@@ -1,14 +1,14 @@
 class HdfsFile
-  attr_reader :hadoop_instance, :path
+  attr_reader :hdfs_data_source, :path
 
-  def initialize(path, hadoop_instance, attributes={})
+  def initialize(path, hdfs_data_source, attributes={})
     @attributes = attributes
-    @hadoop_instance = hadoop_instance
+    @hdfs_data_source = hdfs_data_source
     @path = path
   end
 
   def contents
-    hdfs_query = Hdfs::QueryService.new(hadoop_instance.host, hadoop_instance.port, hadoop_instance.username, hadoop_instance.version)
+    hdfs_query = Hdfs::QueryService.for_data_source(hdfs_data_source)
     hdfs_query.show(path)
   end
 
@@ -17,6 +17,6 @@ class HdfsFile
   end
 
   def url
-    hadoop_instance.url.chomp('/') + path
+    hdfs_data_source.url.chomp('/') + path
   end
 end

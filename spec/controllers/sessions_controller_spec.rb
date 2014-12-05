@@ -4,29 +4,30 @@ require 'timecop'
 describe SessionsController do
   describe "#create" do
     let(:user) { users(:admin) }
-    let(:params) { {:username => user.username, :password => 'secret'} }
+    let(:params) { {:username => user.username, :password => FixtureBuilder.password} }
 
     describe "with the correct credentials" do
-
-      before do
-        stub(CredentialsValidator).user('admin', 'secret') { user }
-        post :create, params
-      end
-
       it "succeeds" do
+        post :create, params
         response.code.should == "201"
       end
 
-      it "includes the user info in the response" do
-        decoded_response.should be_present
-        decoded_response.username.should be_present
+      it "creates a new session" do
+        expect { post :create, params }.to change(Session, :count).by(1)
+        Session.last.user.should == user
       end
 
-      it "sets session expiration" do
-        stub(Chorus::Application.config.chorus).[]('session_timeout_minutes') { 123 }
+      it "adds the session_id to the session" do
+        expect { post :create, params }.to change(Session, :count).by(1)
+        session[:chorus_session_id].should == Session.last.session_id
+      end
+
+      it "should present the session" do
+        mock_present do |model|
+          model.should be_a Session
+          model.user.should == user
+        end
         post :create, params
-        response.should be_success
-        session[:expires_at].should be_within(1.minute).of(123.minutes.from_now)
       end
     end
 
@@ -43,11 +44,8 @@ describe SessionsController do
     end
 
     describe "with incorrect credentials" do
+      let(:params) { {:username => user.username, :password => 'badpassword'} }
       before do
-        thing = Object.new
-        stub(thing).errors.stub!.messages { {:field => [["error", {}]]} }
-        invalid_exception = CredentialsValidator::Invalid.new(thing)
-        stub(CredentialsValidator).user(user.username, 'secret') { raise(invalid_exception) }
         post :create, params
       end
 
@@ -56,24 +54,42 @@ describe SessionsController do
       end
 
       it "includes details of invalid credentials" do
-        decoded_errors.fields.field.ERROR.should == {}
+        decoded_errors.fields.username_or_password.INVALID.should == {}
+      end
+    end
+
+    context 'the last system status indicates expired' do
+      before do
+        FactoryGirl.create(:system_status, :expired => true)
+      end
+
+      it 'presents license expired errors' do
+        post :create, params
+        response.code.should == '503'
       end
     end
   end
 
   describe "#show" do
     context "When logged in" do
-      let(:user) { users(:owner) }
+      let(:user) { users(:default) }
 
       before do
         log_in user
         get :show
       end
-      it "should return the current user" do
+
+      it "should present the session" do
+        mock_present do |model|
+          model.should be_a Session
+          model.user.should == user
+        end
+        get :show
         response.code.should == "200"
       end
-      it "should have the user attributes" do
-        decoded_response.username.should == user.username
+
+      generate_fixture "session.json" do
+        get :show
       end
     end
 
@@ -88,18 +104,25 @@ describe SessionsController do
   end
 
   describe "#destroy" do
-    it "returns no content" do
+    it 'returns a new csrf token' do
+      initial_token = subject.send(:form_authenticity_token)
+
       delete :destroy
-      response.code.should == "204"
-      response.body.strip.should be_empty
+      response.should be_success
+
+      new_token = subject.send(:form_authenticity_token)
+      new_token.should_not == initial_token
+      decoded = JSON.parse(response.body)
+      decoded['csrf_token'].should == new_token
     end
 
-    it "clears the session" do
-      log_in users(:owner)
+    it 'clears the session' do
+      session_object = log_in users(:owner)
       delete :destroy
-      response.code.should == "204"
+      response.should be_success
       session[:user_id].should_not be_present
       session[:expires_at].should_not be_present
+      Session.find_by_id(session_object.id).should be_nil
     end
   end
 end

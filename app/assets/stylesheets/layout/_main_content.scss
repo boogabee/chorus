@@ -1,5 +1,5 @@
 #main_content {
-    border: 1px solid $guts-border-color;
+    border: $border-canon;
     @include border-radius(3px);
 }
 
@@ -7,8 +7,22 @@
     background: white;
     min-height: 36px;
     padding: 12px $padding-x 5px;
-    border-bottom: 1px solid $subheader-border-color;
+    border-bottom: $border-canon;
     @include border-top-radius(3px);
+
+    .tags_input {
+        border: none;
+        .text-core .text-wrap .text-tags {
+            cursor: inherit;
+            .text-tag div.text-button {
+                padding-right: 1px;
+            }
+        }
+
+        .text-remove, .transition-border, #tag_editor {
+            display: none;
+        }
+    }
 
     h1 {
         @include ellipsis;
@@ -18,6 +32,7 @@
     }
 
     .icon {
+        padding-top: 6px;
         float: left;
         padding-right: 5px;
     }
@@ -29,40 +44,34 @@
         height: 25px;
         @include after-clearfix;
     }
+}
 
-    .found_in {
-        margin-bottom: 7px;
+.list_header {
+    @include toggle-menus;
 
-        a {
-            display: inline;
+    .title {
+        img {
+            float: left;
+        }
+        h1 {
+            padding-left: 5px;
         }
     }
-}
 
-.content_details, .content_footer {
-    height: 32px;
-    line-height: 32px;
-    vertical-align: middle;
-    @include font-content-details;
-    border-bottom: 1px solid $pagination-border-color;
-    padding: 0 $padding-x;
-
-    &.hidden {
-        padding: 0;
-        height: 0;
-        border: none;
-    }
-
-    button {
-        @include font-content-details;
-        @include content-details-button($border-color);
+    select, .ui-selectmenu-button .ui-button {
+        display: block;
+        min-width: 215px;
     }
 }
+
+.content_details {
+    border-bottom: $border-canon;
+}
+
 
 .content_footer {
     height: auto;
-    border-bottom: none;
-    border-top: 1px solid $pagination-border-color;
+    border-top: $border-canon;
 }
 
 .tableau_icon {

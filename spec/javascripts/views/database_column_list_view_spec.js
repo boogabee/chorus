@@ -1,22 +1,25 @@
 describe("chorus.views.DatabaseColumnList", function() {
     describe("#render", function() {
         beforeEach(function() {
-            this.column1 = fixtures.databaseColumn({
-                name: "column_name_1",
-                typeCategory: "BOOLEAN",
-                dataType: "boolean",
-                comment: "column comment"
-            });
-            this.column2 = fixtures.databaseColumn({
-                name: "column_name_2",
-                typeCategory: "WHOLE_NUMBER",
-                dataType: "int4",
-                comment: "column comment"
-            });
-            this.dataset = newFixtures.workspaceDataset.sandboxTable();
+            this.dataset = backboneFixtures.workspaceDataset.datasetTable();
             this.dataset.setDatasetNumber(1);
-            this.dataset.columns().reset([this.column1, this.column2]);
-            this.collection = fixtures.databaseColumnSet([this.column1, this.column2]);
+            this.collection = backboneFixtures.databaseColumnSet([
+                {
+                    name: "column_name_1",
+                    typeCategory: "BOOLEAN",
+                    dataType: "boolean",
+                    description: "column comment"
+                },
+                {
+                    name: "column_name_2",
+                    typeCategory: "WHOLE_NUMBER",
+                    dataType: "int4",
+                    description: "column comment"
+                }
+            ]);
+            this.column1 = this.collection.at(0);
+            this.column2 = this.collection.at(1);
+            this.dataset.columns().reset(this.collection.models);
             this.view = new chorus.views.DatabaseColumnList({collection: this.collection});
             this.view.render();
         });
@@ -31,7 +34,7 @@ describe("chorus.views.DatabaseColumnList", function() {
 
         it("shows the comment for each column", function() {
             expect(this.view.$("li:eq(0) .summary")).toHaveText("column comment");
-        })
+        });
 
         it("shows the type for each column", function() {
             expect(this.view.$("li:eq(0) .type")).toHaveClass("boolean");
@@ -39,30 +42,30 @@ describe("chorus.views.DatabaseColumnList", function() {
 
             expect(this.view.$("li:eq(1) .type")).toHaveClass("numeric");
             expect(this.view.$("li:eq(1) .type_name").text().trim()).toBe("int4");
-        })
+        });
 
         it("sorts the columns by ordinalPosition", function() {
             expect(this.view.$("li:eq(0) .name")).toHaveText("column_name_1");
             expect(this.view.$("li:eq(1) .name")).toHaveText("column_name_2");
-        })
+        });
 
         it("subscribes to column:select_all", function() {
-            expect(chorus.PageEvents.hasSubscription("column:select_all", this.view.selectAll, this.view)).toBeTruthy();
+            expect(this.view).toHaveSubscription("column:select_all", this.view.selectAll);
         });
 
         it("subscribes to column:select_none", function() {
-            expect(chorus.PageEvents.hasSubscription("column:select_none", this.view.selectNone, this.view)).toBeTruthy();
+            expect(this.view).toHaveSubscription("column:select_none", this.view.selectNone);
         });
 
         it("subscribes to column:removed", function() {
-            expect(chorus.PageEvents.hasSubscription("column:removed", this.view.deselectColumn, this.view)).toBeTruthy();
+            expect(this.view).toHaveSubscription("column:removed", this.view.deselectColumn);
         });
 
         describe("column:deselected", function() {
             beforeEach(function() {
                 this.view.selectMulti = true;
 
-                chorus.PageEvents.broadcast("column:deselected", this.collection.at(0));
+                chorus.PageEvents.trigger("column:deselected", this.collection.at(0));
             });
 
             it("deselects the column", function() {
@@ -72,7 +75,7 @@ describe("chorus.views.DatabaseColumnList", function() {
 
         describe("clicking on a list item", function() {
             beforeEach(function() {
-                spyOn(chorus.PageEvents, "broadcast").andCallThrough();
+                spyOn(chorus.PageEvents, "trigger").andCallThrough();
             });
 
             context("with selectMulti false", function() {
@@ -90,12 +93,12 @@ describe("chorus.views.DatabaseColumnList", function() {
                         expect(this.view.$("li:eq(1)")).toHaveClass("selected");
                     });
 
-                    it("broadcasts the column:selected page event with the corresponding model as an argument", function() {
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("column:selected", this.collection.at(1));
+                    it("triggers the column:selected page event with the corresponding model as an argument", function() {
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("column:selected", this.collection.at(1));
                     });
 
-                    it("broadcasts the column:deselected page event with the corresponding model as an argument", function() {
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("column:deselected", this.collection.at(0));
+                    it("triggers the column:deselected page event with the corresponding model as an argument", function() {
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("column:deselected", this.collection.at(0));
                     });
 
                     describe("#selectNone", function() {
@@ -106,46 +109,46 @@ describe("chorus.views.DatabaseColumnList", function() {
                         it("should remove class selected from all list items and select the first item", function() {
                             expect(this.view.$("li.selected").length).toBe(1);
                             expect(this.view.$("li:eq(0)")).toHaveClass("selected");
-                        })
-                    })
-                })
+                        });
+                    });
+                });
             });
 
             context("with selectMulti true", function() {
                 beforeEach(function() {
                     this.view.selectMulti = true;
                     this.view.render();
-                })
+                });
 
                 it("has nothing selected by default", function() {
                     expect(this.view.$("li.selected")).not.toExist();
-                })
+                });
 
                 context("with a column selected", function() {
                     beforeEach(function() {
                         this.column2.selected = true;
                         this.view.render();
-                    })
+                    });
 
                     it("renders a selected column as selected", function() {
                         expect(this.view.$('.selected').length).toBe(1);
-                    })
-                })
+                    });
+                });
 
                 context("selecting multiple", function() {
                     beforeEach(function() {
                         this.view.$("li:eq(0)").click();
                         this.view.$("li:eq(1)").click();
-                    })
+                    });
 
                     it("selects both", function() {
                         expect(this.view.$("li:eq(0)")).toHaveClass("selected");
                         expect(this.view.$("li:eq(1)")).toHaveClass("selected");
                     });
 
-                    it("broadcasts the column:selected page event with the corresponding model as an argument", function() {
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("column:selected", this.collection.at(0));
-                        expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("column:selected", this.collection.at(1));
+                    it("triggers the column:selected page event with the corresponding model as an argument", function() {
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("column:selected", this.collection.at(0));
+                        expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("column:selected", this.collection.at(1));
                     });
 
                     describe("deselecting", function() {
@@ -162,37 +165,37 @@ describe("chorus.views.DatabaseColumnList", function() {
                         });
 
                         it("triggers the column:deselected event with the corresponding model as an argument", function() {
-                            expect(chorus.PageEvents.broadcast).toHaveBeenCalledWith("column:deselected", this.collection.at(1));
+                            expect(chorus.PageEvents.trigger).toHaveBeenCalledWith("column:deselected", this.collection.at(1));
                         });
                     });
-                })
+                });
 
 
             });
-        })
+        });
 
         describe("showDatasetName", function() {
             context("when enabled", function() {
                 beforeEach(function() {
                     this.view.showDatasetName = true;
                     this.view.render();
-                })
+                });
 
                 it("shows the dataset name", function() {
                     expect(this.view.$("li:eq(0) .aliased_name .letter")).toContainText(this.column1.dataset.aliasedName);
-                })
-            })
+                });
+            });
 
             context("when disabled", function() {
                 beforeEach(function() {
                     this.view.showDatasetName = false;
                     this.view.render();
-                })
+                });
 
                 it("does not show the dataset name", function() {
                     expect(this.view.$("li:eq(0) .aliased_name")).not.toExist();
-                })
-            })
-        })
+                });
+            });
+        });
     });
 });

@@ -1,22 +1,17 @@
 require 'spec_helper'
 
 describe SolrIndexer do
-  describe ".refresh" do
-    it "refreshes all gpdb instances, all their databases, and all hadoop instances" do
-      gpdb_instance_count = 0
-      any_instance_of(GpdbInstance) do |instance|
-        stub(instance).refresh_all(:mark_stale => true) { gpdb_instance_count += 1 }
+  describe ".refresh_external_data" do
+    it "refreshes Oracle, Gpdb, and Hadoop Data Sources" do
+      DataSource.pluck(:id).each do |id|
+        mock(QC.default_queue).enqueue_if_not_queued("DataSource.refresh", id, 'mark_stale' => true, 'force_index' => false)
       end
 
-      hadoop_instance_count = 0
-      any_instance_of(HadoopInstance) do |hadoop_instance|
-        stub(hadoop_instance).refresh { hadoop_instance_count += 1 }
+      HdfsDataSource.pluck(:id).each do |id|
+        mock(QC.default_queue).enqueue_if_not_queued("HdfsDataSource.refresh", id)
       end
 
       SolrIndexer.refresh_external_data
-
-      gpdb_instance_count.should == GpdbInstance.count
-      hadoop_instance_count.should == HadoopInstance.count
     end
   end
 
@@ -35,8 +30,8 @@ describe SolrIndexer do
     context "when passed more than one type to index" do
       it "should index all types" do
         mock(Dataset).solr_reindex
-        mock(GpdbInstance).solr_reindex
-        SolrIndexer.reindex(['Dataset', 'GpdbInstance'])
+        mock(GpdbDataSource).solr_reindex
+        SolrIndexer.reindex(['Dataset', 'GpdbDataSource'])
       end
     end
 
@@ -48,6 +43,16 @@ describe SolrIndexer do
         SolrIndexer.reindex('all')
       end
     end
+
+    context "when passes an empty string" do
+      it "should index nothing" do
+        mock.proxy(SolrIndexer).types_to_index("") do |results|
+          results.should be_empty
+          results
+        end
+        SolrIndexer.reindex('')
+      end
+    end
   end
 
   describe ".refresh_and_reindex" do
@@ -55,6 +60,30 @@ describe SolrIndexer do
       mock(SolrIndexer).refresh_external_data
       mock(SolrIndexer).reindex("Model")
       SolrIndexer.refresh_and_reindex("Model")
+    end
+  end
+
+  describe ".reindex_objects" do
+    let(:model_1) { workfiles(:public) }
+    let(:model_2) { workspaces(:public) }
+    let(:job_args) { [
+        [model_1.class.to_s, model_1.id],
+        [model_2.class.to_s, model_2.id],
+    ] }
+
+    before do
+      mock(Sunspot).commit
+    end
+
+    it "reindexes objects that are tagged with the tag" do
+      mock(Sunspot).index([model_1, model_2])
+      SolrIndexer.reindex_objects(job_args)
+    end
+
+    it "ignores bad ids" do
+      mock(Sunspot).index([model_2])
+      job_args[0][1] = 123456789
+      SolrIndexer.reindex_objects(job_args)
     end
   end
 end

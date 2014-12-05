@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PMML xmlns="http://www.dmg.org/PMML-4_1" version="4.1">
+    <Header copyright="www.dmg.org" description="The workflow 6 starting from Logistic Regression"/>
+    <DataDictionary numberOfFields="5">
+        <DataField name="outlook" optype="categorical" dataType="string">
+            <Value value="sunny"/>
+            <Value value="rain"/>
+            <Value value="overcast"/>
+        </DataField>
+        <DataField name="wind" optype="categorical" dataType="string">
+            <Value value="false"/>
+            <Value value="true"/>
+        </DataField>
+        <DataField name="play" optype="categorical" dataType="string">
+            <Value value="yes"/>
+            <Value value="no"/>
+        </DataField>
+        <DataField name="humidity" optype="continuous" dataType="double"/>
+        <DataField name="temperature" optype="continuous" dataType="double"/>
+    </DataDictionary>
+    <GeneralRegressionModel targetVariableName="play" modelType="multinomialLogistic" functionName="classification">
+        <MiningSchema>
+            <MiningField name="outlook" usageType="active"/>
+            <MiningField name="wind" usageType="active"/>
+            <MiningField name="play" usageType="predicted"/>
+            <MiningField name="humidity" usageType="active"/>
+            <MiningField name="temperature" usageType="active"/>
+        </MiningSchema>
+        <ParameterList>
+            <Parameter name="intercept"/>
+            <Parameter name="wind(true)"/>
+            <Parameter name="outlook(rain)"/>
+            <Parameter name="temperature"/>
+            <Parameter name="outlook(sunny)"/>
+            <Parameter name="humidity"/>
+        </ParameterList>
+        <FactorList>
+            <Predictor name="outlook"/>
+            <Predictor name="wind"/>
+        </FactorList>
+        <CovariateList>
+            <Predictor name="temperature"/>
+            <Predictor name="humidity"/>
+        </CovariateList>
+        <PPMatrix>
+            <PPCell value="true" predictorName="wind" parameterName="wind(true)"/>
+            <PPCell value="rain" predictorName="outlook" parameterName="outlook(rain)"/>
+            <PPCell value="1" predictorName="temperature" parameterName="temperature"/>
+            <PPCell value="sunny" predictorName="outlook" parameterName="outlook(sunny)"/>
+            <PPCell value="1" predictorName="humidity" parameterName="humidity"/>
+        </PPMatrix>
+        <ParamMatrix>
+            <PCell targetCategory="yes" parameterName="intercept" beta="44.49777735560481" df="1"/>
+            <PCell targetCategory="yes" parameterName="temperature" beta="-0.10188160768716549" df="1"/>
+            <PCell targetCategory="yes" parameterName="outlook(rain)" beta="-21.387766302252263" df="1"/>
+            <PCell targetCategory="yes" parameterName="humidity" beta="-0.16854225725489672" df="1"/>
+            <PCell targetCategory="yes" parameterName="outlook(sunny)" beta="-21.835015225752073" df="1"/>
+            <PCell targetCategory="yes" parameterName="wind(true)" beta="-4.275949559816774" df="1"/>
+        </ParamMatrix>
+    </GeneralRegressionModel>
+</PMML>

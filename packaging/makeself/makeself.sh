@@ -340,7 +340,7 @@ test -d "$archdir" || { echo "Error: $archdir does not exist."; rm -f "$tmpfile"
 echo About to compress $USIZE KB of data...
 echo Adding files to archive named \"$archname\"...
 exec 3<> "$tmpfile"
-(cd "$archdir" && ( $TAR_EXEC $TAR_ARGS - . --exclude config/database.yml --exclude config/chorus.yml --exclude javadoc | eval "$GZIP_CMD" >&3 ) ) || { echo Aborting: Archive directory not found or temporary file: "$tmpfile" could not be created.; exec 3>&-; rm -f "$tmpfile"; exit 1; }
+(cd "$archdir" && ( $TAR_EXEC $TAR_ARGS - . --exclude config/database.yml --exclude config/chorus.properties --exclude javadoc | eval "$GZIP_CMD" >&3 ) ) || { echo Aborting: Archive directory not found or temporary file: "$tmpfile" could not be created.; exec 3>&-; rm -f "$tmpfile"; exit 1; }
 exec 3>&- # try to close the archive
 
 fsize=`cat "$tmpfile" | wc -c | tr -d " "`

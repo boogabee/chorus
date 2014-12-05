@@ -1,25 +1,4 @@
 .dataset_sidebar {
-    .multiple_selection {
-        @include box-shadow(0 0 4px #999 inset);
-        @include border-radius(8px);
-        margin-bottom: 10px;
-        margin-right: 10px;
-        padding: 10px;
-        background-color: $shaded-background-color;
-
-        .count {
-            font-size: 18px;
-            font-weight: $semibold;
-            display: inline-block;
-            margin-bottom: 8px;
-        }
-
-        li a {
-            font-size: 12px;
-            font-weight: $semibold;
-        }
-    }
-
     .info {
         margin-bottom: 5px;
 
@@ -32,8 +11,7 @@
         }
     }
 
-    .last_import, .next_import {
-        @include results-console-message;
+    .last_import {
         line-height: 16px;
         margin-bottom: 10px;
         .icon {
@@ -42,10 +20,6 @@
             margin-right: 5px;
         }
         .right {
-            a {
-                font-size: 12px;
-                font-weight: $semibold;
-            }
             padding-left: 22px;
             &.last_import_text {
                 padding-top: 10px;
@@ -54,7 +28,7 @@
     }
 
     &.visualizing {
-        .actions, .last_import, .next_import {
+        .actions, .last_import {
             display: none;
         }
     }
@@ -71,6 +45,8 @@
             font-size: 16px;
             font-weight: $semibold;
             overflow: hidden; /*this is neccesary for alignment in firefox due to the overflow:hidden firefox bug*/
+            line-height: 22px;
+            color: #5f5f5f;
         }
 
         .column_title {

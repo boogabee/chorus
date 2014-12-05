@@ -5,12 +5,10 @@ http_interactions:
     uri: http://localhost:8981/solr/select?wt=ruby
     body:
       encoding: US-ASCII
-      string: fq=type%3A%28User+OR+GpdbInstance+OR+HadoopInstance+OR+GnipInstance+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment+OR+Events%5C%3A%5C%3ANote%29&fq=type_name_s%3A%28User+OR+Instance+OR+Instance+OR+Instance+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment%29&fq=-%28security_type_name_s%3AWorkspace+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_s%3AWorkfile+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_s%3ADataset+AND+-instance_account_ids_im%3A%281000000+OR+1000002+OR+1000004%29%29&fq=-%28security_type_name_s%3ADataset+AND+-instance_account_ids_im%3A%281000000+OR+1000002+OR+1000004%29%29&fq=-%28security_type_name_s%3AWorkspace+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_s%3AWorkfile+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&q=greenplumsearch&fl=%2A+score&qf=first_name_texts+last_name_texts+username_texts+email_texts+name_texts+description_texts+summary_texts+file_name_texts+database_name_texts+schema_name_texts+column_name_texts+query_texts+parent_name_texts+body_texts&defType=edismax&hl=on&hl.simple.pre=%40%40%40hl%40%40%40&hl.simple.post=%40%40%40endhl%40%40%40&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true&facet=true&f.type_name_s.facet.mincount=1&facet.field=type_name_s
+      string: fq=type%3A%28User+OR+GpdbDataSource+OR+HdfsDataSource+OR+GnipDataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment+OR+OracleDataSource+OR+JdbcDataSource+OR+PgDataSource+OR+Events%5C%3A%5C%3ANote+OR+Comment%29&fq=type_name_s%3A%28User+OR+DataSource+OR+Workspace+OR+Workfile+OR+Dataset+OR+HdfsEntry+OR+Attachment%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000015+OR+1000017+OR+1000018+OR+1000019+OR+1000020+OR+1000025+OR+1000027+OR+1000028+OR+1000029%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3ARelationalDataset+AND+-data_source_account_ids_im%3A%281000001+OR+1000004+OR+1000002+OR+1000006+OR+1000007+OR+1000008+OR+1000010+OR+1000011+OR+1000012+OR+1000013+OR+1000014+OR+1000015+OR+1000017+OR+1000018+OR+1000019+OR+1000020+OR+1000025+OR+1000027+OR+1000028+OR+1000029%29%29&fq=-%28security_type_name_sm%3AChorusView+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3AHdfsDataset+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workspace%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&fq=-%28security_type_name_sm%3A%28Workfile%29+AND+-member_ids_im%3A1000006+AND+-public_b%3Atrue%29&q=greenplumsearch&fl=%2A+score&qf=first_name_texts+last_name_texts+username_texts+email_texts+tag_names_texts+name_texts+description_texts+summary_texts+file_name_texts+version_comments_texts+database_name_texts+table_description_texts+schema_name_texts+column_name_texts+column_description_texts+query_texts+parent_name_texts+body_texts+first_name_stemmed_texts+last_name_stemmed_texts+username_stemmed_texts+email_stemmed_texts+tag_names_stemmed_texts+name_stemmed_texts+description_stemmed_texts+summary_stemmed_texts+file_name_stemmed_texts+version_comments_stemmed_texts+database_name_stemmed_texts+table_description_stemmed_texts+schema_name_stemmed_texts+column_name_stemmed_texts+column_description_stemmed_texts+query_stemmed_texts+parent_name_stemmed_texts+body_stemmed_texts&defType=edismax&hl=on&hl.simple.pre=%40%40%40hl%40%40%40&hl.simple.post=%40%40%40endhl%40%40%40&hl.snippets=100&start=0&rows=50&group=true&group.ngroups=true&group.field=grouping_id_s&group.limit=3&group.truncate=true&facet=true&f.type_name_s.facet.mincount=1&facet.field=type_name_s
     headers:
       content-type:
       - application/x-www-form-urlencoded; charset=UTF-8
-      connection:
-      - close
   response:
     status:
       code: 200
@@ -24,35 +22,56 @@ http_interactions:
       - Jetty(6.1-SNAPSHOT)
     body:
       encoding: US-ASCII
-      string: ! '{''responseHeader''=>{''status''=>0,''QTime''=>8,''params''=>{''facet''=>''true'',''group.ngroups''=>''true'',''group.limit''=>''3'',''qf''=>''first_name_texts
-        last_name_texts username_texts email_texts name_texts description_texts summary_texts
-        file_name_texts database_name_texts schema_name_texts column_name_texts query_texts
-        parent_name_texts body_texts'',''hl.simple.pre''=>''@@@hl@@@'',''wt''=>''ruby'',''hl''=>''on'',''rows''=>''50'',''defType''=>''edismax'',''fl''=>''*
-        score'',''start''=>''0'',''q''=>''greenplumsearch'',''group.truncate''=>''true'',''f.type_name_s.facet.mincount''=>''1'',''group.field''=>''grouping_id_s'',''hl.simple.post''=>''@@@endhl@@@'',''group''=>''true'',''facet.field''=>''type_name_s'',''fq''=>[''type:(User
-        OR GpdbInstance OR HadoopInstance OR GnipInstance OR Workspace OR Workfile
-        OR Dataset OR HdfsEntry OR Attachment OR Events\\:\\:Note)'',''type_name_s:(User
-        OR Instance OR Instance OR Instance OR Workspace OR Workfile OR Dataset OR
-        HdfsEntry OR Attachment)'',''-(security_type_name_s:Workspace AND -member_ids_im:1000006
-        AND -public_b:true)'',''-(security_type_name_s:Workfile AND -member_ids_im:1000006
-        AND -public_b:true)'',''-(security_type_name_s:Dataset AND -instance_account_ids_im:(1000000
-        OR 1000002 OR 1000004))'',''-(security_type_name_s:Dataset AND -instance_account_ids_im:(1000000
-        OR 1000002 OR 1000004))'',''-(security_type_name_s:Workspace AND -member_ids_im:1000006
-        AND -public_b:true)'',''-(security_type_name_s:Workfile AND -member_ids_im:1000006
-        AND -public_b:true)'']}},''grouped''=>{''grouping_id_s''=>{''matches''=>4,''ngroups''=>2,''groups''=>[{''groupValue''=>''GpdbInstance
-        1000000'',''doclist''=>{''numFound''=>2,''start''=>0,''maxScore''=>1816.4136,''docs''=>[{''id''=>''GpdbInstance
-        1000000'',''name_texts''=>[''searchquery''],''description_texts''=>[''Just
-        for searchquery and greenplumsearch''],''score''=>1816.4136},{''id''=>''Events::NoteOnGreenplumInstance
-        1000030'',''body_texts''=>[''i am a comment with greenplumsearch in me''],''score''=>1.1195954}]}},{''groupValue''=>''GpdbInstance
-        1000002'',''doclist''=>{''numFound''=>2,''start''=>0,''maxScore''=>1.7913526,''docs''=>[{''id''=>''Events::NoteOnGreenplumInstance
-        1000034'',''body_texts''=>[''no, not greenplumsearch''],''score''=>1.7913526},{''id''=>''Events::NoteOnGreenplumInstance
-        1000033'',''body_texts''=>[''is this a greenplumsearch instance?''],''score''=>1.5674336}]}}]}},''facet_counts''=>{''facet_queries''=>{},''facet_fields''=>{''type_name_s''=>[''Instance'',2]},''facet_dates''=>{},''facet_ranges''=>{}},''highlighting''=>{''GpdbInstance
-        1000000''=>{''description_texts''=>[''Just for searchquery and @@@hl@@@greenplumsearch@@@endhl@@@'']},''Events::NoteOnGreenplumInstance
-        1000030''=>{''body_texts''=>[''i am a comment with @@@hl@@@greenplumsearch@@@endhl@@@
-        in me'']},''Events::NoteOnGreenplumInstance 1000034''=>{''body_texts''=>[''no,
-        not @@@hl@@@greenplumsearch@@@endhl@@@'']},''Events::NoteOnGreenplumInstance
-        1000033''=>{''body_texts''=>[''is this a @@@hl@@@greenplumsearch@@@endhl@@@
-        instance?'']}}}'
+      string: "{'responseHeader'=>{'status'=>0,'QTime'=>21,'params'=>{'facet'=>'true','group.ngroups'=>'true','group.limit'=>'3','qf'=>'first_name_texts\
+        \ last_name_texts username_texts email_texts tag_names_texts name_texts description_texts\
+        \ summary_texts file_name_texts version_comments_texts database_name_texts\
+        \ table_description_texts schema_name_texts column_name_texts column_description_texts\
+        \ query_texts parent_name_texts body_texts first_name_stemmed_texts last_name_stemmed_texts\
+        \ username_stemmed_texts email_stemmed_texts tag_names_stemmed_texts name_stemmed_texts\
+        \ description_stemmed_texts summary_stemmed_texts file_name_stemmed_texts\
+        \ version_comments_stemmed_texts database_name_stemmed_texts table_description_stemmed_texts\
+        \ schema_name_stemmed_texts column_name_stemmed_texts column_description_stemmed_texts\
+        \ query_stemmed_texts parent_name_stemmed_texts body_stemmed_texts','hl.simple.pre'=>'@@@hl@@@','wt'=>'ruby','hl'=>'on','rows'=>'50','defType'=>'edismax','fl'=>'*\
+        \ score','hl.snippets'=>'100','start'=>'0','q'=>'greenplumsearch','group.truncate'=>'true','f.type_name_s.facet.mincount'=>'1','group.field'=>'grouping_id_s','hl.simple.post'=>'@@@endhl@@@','group'=>'true','facet.field'=>'type_name_s','fq'=>['type:(User\
+        \ OR GpdbDataSource OR HdfsDataSource OR GnipDataSource OR Workspace OR Workfile\
+        \ OR Dataset OR HdfsEntry OR Attachment OR OracleDataSource OR JdbcDataSource\
+        \ OR PgDataSource OR Events\\\\:\\\\:Note OR Comment)','type_name_s:(User\
+        \ OR DataSource OR Workspace OR Workfile OR Dataset OR HdfsEntry OR Attachment)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:RelationalDataset\
+        \ AND -data_source_account_ids_im:(1000001 OR 1000004 OR 1000002 OR 1000006\
+        \ OR 1000007 OR 1000008 OR 1000010 OR 1000011 OR 1000012 OR 1000013 OR 1000014\
+        \ OR 1000015 OR 1000017 OR 1000018 OR 1000019 OR 1000020 OR 1000025 OR 1000027\
+        \ OR 1000028 OR 1000029))','-(security_type_name_sm:ChorusView AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:HdfsDataset AND -member_ids_im:1000006\
+        \ AND -public_b:true)','-(security_type_name_sm:RelationalDataset AND -data_source_account_ids_im:(1000001\
+        \ OR 1000004 OR 1000002 OR 1000006 OR 1000007 OR 1000008 OR 1000010 OR 1000011\
+        \ OR 1000012 OR 1000013 OR 1000014 OR 1000015 OR 1000017 OR 1000018 OR 1000019\
+        \ OR 1000020 OR 1000025 OR 1000027 OR 1000028 OR 1000029))','-(security_type_name_sm:ChorusView\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:HdfsDataset\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workspace)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)','-(security_type_name_sm:(Workfile)\
+        \ AND -member_ids_im:1000006 AND -public_b:true)']}},'grouped'=>{'grouping_id_s'=>{'matches'=>4,'ngroups'=>2,'groups'=>[{'groupValue'=>'GpdbDataSource\
+        \ 1000000','doclist'=>{'numFound'=>2,'start'=>0,'maxScore'=>12532.612,'docs'=>[{'id'=>'GpdbDataSource\
+        \ 1000000','name_texts'=>['searchquery'],'name_stemmed_texts'=>['searchquery'],'description_texts'=>['Just\
+        \ for searchquery and greenplumsearch'],'description_stemmed_texts'=>['Just\
+        \ for searchquery and greenplumsearch'],'score'=>12532.612},{'id'=>'Events::NoteOnDataSource\
+        \ 1000047','body_stemmed_texts'=>['i am a comment with greenplumsearch in\
+        \ me'],'body_texts'=>['i am a comment with greenplumsearch in me'],'score'=>6.723225}]}},{'groupValue'=>'GpdbDataSource\
+        \ 1000001','doclist'=>{'numFound'=>2,'start'=>0,'maxScore'=>9.412516,'docs'=>[{'id'=>'Events::NoteOnDataSource\
+        \ 1000051','body_stemmed_texts'=>['no, not greenplumsearch'],'body_texts'=>['no,\
+        \ not greenplumsearch'],'score'=>9.412516},{'id'=>'Events::NoteOnDataSource\
+        \ 1000050','body_stemmed_texts'=>['is this a greenplumsearch data source?'],'body_texts'=>['is\
+        \ this a greenplumsearch data source?'],'score'=>6.723225}]}}]}},'facet_counts'=>{'facet_queries'=>{},'facet_fields'=>{'type_name_s'=>['DataSource',2]},'facet_dates'=>{},'facet_ranges'=>{}},'highlighting'=>{'GpdbDataSource\
+        \ 1000000'=>{'description_stemmed_texts'=>['Just for searchquery and @@@hl@@@greenplumsearch@@@endhl@@@'],'description_texts'=>['Just\
+        \ for searchquery and @@@hl@@@greenplumsearch@@@endhl@@@']},'Events::NoteOnDataSource\
+        \ 1000047'=>{'body_stemmed_texts'=>['i am a comment with @@@hl@@@greenplumsearch@@@endhl@@@\
+        \ in me'],'body_texts'=>['i am a comment with @@@hl@@@greenplumsearch@@@endhl@@@\
+        \ in me']},'Events::NoteOnDataSource 1000051'=>{'body_stemmed_texts'=>['no,\
+        \ not @@@hl@@@greenplumsearch@@@endhl@@@'],'body_texts'=>['no, not @@@hl@@@greenplumsearch@@@endhl@@@']},'Events::NoteOnDataSource\
+        \ 1000050'=>{'body_stemmed_texts'=>['is this a @@@hl@@@greenplumsearch@@@endhl@@@\
+        \ data source?'],'body_texts'=>['is this a @@@hl@@@greenplumsearch@@@endhl@@@\
+        \ data source?']}}}"
     http_version: '1.1'
-  recorded_at: Mon, 15 Oct 2012 22:19:06 GMT
-recorded_with: VCR 2.1.1
-...
+  recorded_at: Mon, 16 Jun 2014 20:55:00 GMT
+recorded_with: VCR 2.3.0

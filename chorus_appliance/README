@@ -1,0 +1,10 @@
+Register on the Greenplum website to download the Greenplum Database and Greenplum Hadoop tar distribution.
+
+Place these files in the /chorus_appliance directory:
+
+hadoop-0.20.205.0-gphd-1.1.0.0.tar.gz (from the gphd 1.2 tar distribution)
+greenplum-db-4.2.5.0.tar.gz (the tarred directory greenplum-db-4.2.5.0 after running the greenplum installer.)
+
+If you have another version of greenplum-db, be sure to edit cookbooks/default/recipes/default.rb to reflect the appropriate version numbers by changing any strings like 'greenplum-db-X.X.X.X'.
+
+This will also need a Centos 5.6 minimal vagrant base box called 'centos56'.
